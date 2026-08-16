@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
+from importlib.metadata import distribution
 from io import BytesIO
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,17 +16,17 @@ def load_font(size):
         Path("C:/Windows/Fonts/meiryo.ttc"),
         Path("C:/Windows/Fonts/YuGothM.ttc"),
         Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
     ]
 
     try:
-        import japanize_matplotlib
-
-        candidates.insert(
-            0,
-            Path(japanize_matplotlib.__file__).resolve().parent / "fonts" / "ipaexg.ttf",
+        ipa_font_path = Path(
+            distribution("japanize-matplotlib").locate_file(
+                "japanize_matplotlib/fonts/ipaexg.ttf"
         )
-    except ImportError:
+    )
+        candidates.insert(0, ipa_font_path)
+
+    except Exception:
         pass
 
     for font_path in candidates:
