@@ -544,7 +544,6 @@ with candidate_tab:
                     f"イベント候補 {result['event_candidate_count']}件、"
                     f"エラー {result['error_count']}件"
                 )
-                st.rerun()
             except Exception as error:
                 st.error(f"自動取得を実行できませんでした：{error}")
 
