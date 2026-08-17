@@ -333,7 +333,10 @@ def review_schedule_candidates():
             save_schedules,
             "Approve descent schedule candidates",
         )
-        st.success(message)
+        st.session_state.pop("schedule_editor", None)
+        st.session_state.pop("schedule_candidate_editor", None)
+        st.session_state["admin_flash_success"] = message
+        st.rerun()
 
 
 def review_event_candidates():
@@ -400,10 +403,16 @@ def review_event_candidates():
             save_events,
             "Approve event candidates",
         )
-        st.success(message)
+        st.session_state.pop("event_editor", None)
+        st.session_state.pop("event_candidate_editor", None)
+        st.session_state["admin_flash_success"] = message
+        st.rerun()
 
 
 st.title("モンスト スケジュール管理")
+flash_success = st.session_state.pop("admin_flash_success", None)
+if flash_success:
+    st.success(flash_success)
 st.warning(
     "この画面は管理者用です。公開アプリではなく、あなたのPCでのみ起動してください。"
 )
