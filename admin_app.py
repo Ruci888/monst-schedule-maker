@@ -45,6 +45,7 @@ SCHEDULE_CATEGORIES = ["event", "high_difficulty"]
 EVENT_CATEGORIES = [
     "定期コンテンツ",
     "コラボ・期間限定",
+    "コラボガチャ",
     "ガチャ",
     "育成キャンペーン",
     "ゲーム内キャンペーン",

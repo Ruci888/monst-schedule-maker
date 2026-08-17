@@ -12,7 +12,7 @@ OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
-UPDATER_VERSION = "1.1.4"
+UPDATER_VERSION = "1.1.5"
 ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
 ARTICLE_URL_PATTERN = re.compile(
     r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
@@ -557,6 +557,13 @@ def extract_event_candidates(
     primary = extract_primary_event(title, text, source_url, fetched_at)
     if primary:
         primary = normalize_known_event_name(primary)
+        if primary["category"] == "コラボ・期間限定":
+            for candidate in candidates:
+                if candidate["category"] == "ガチャ":
+                    candidate["category"] = "コラボガチャ"
+                    candidate["review_reason"] = (
+                        "コラボ記事内のガチャとして分類しました。"
+                    )
         # 同じ記事の見出しと記事全体から同一イベントを二重取得した場合は、
         # 短く整形済みのprimary候補を優先する。
         candidates = [

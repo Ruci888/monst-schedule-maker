@@ -9,6 +9,7 @@ from image_generator import draw_centered_text, fit_font, get_theme, load_font
 CATEGORY_COLORS = {
     "定期コンテンツ": "#2563EB",
     "コラボ・期間限定": "#DC2626",
+    "コラボガチャ": "#C026D3",
     "ガチャ": "#D97706",
     "育成キャンペーン": "#059669",
     "ゲーム内キャンペーン": "#0F766E",
