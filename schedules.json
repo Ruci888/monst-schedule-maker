@@ -5,9 +5,14 @@
         "start_time": "12:00",
         "end_time": "14:00",
         "name": "麗夏映夢",
+        "quest_name": "",
         "attribute": "光",
         "difficulty": "超究極",
-        "category": "event"
+        "category": "event",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     },
     {
         "year": 2026,
@@ -15,9 +20,14 @@
         "start_time": "19:00",
         "end_time": "21:00",
         "name": "ディジェン",
+        "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
-        "category": "high_difficulty"
+        "category": "high_difficulty",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     },
     {
         "year": 2026,
@@ -25,9 +35,14 @@
         "start_time": "21:00",
         "end_time": "23:00",
         "name": "ハービセル",
+        "quest_name": "",
         "attribute": "水",
         "difficulty": "轟絶",
-        "category": "high_difficulty"
+        "category": "high_difficulty",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     },
     {
         "year": 2026,
@@ -35,9 +50,14 @@
         "start_time": "19:00",
         "end_time": "23:59",
         "name": "士道龍聖",
+        "quest_name": "",
         "attribute": "光",
         "difficulty": "超究極",
-        "category": "event"
+        "category": "event",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     },
     {
         "year": 2026,
@@ -45,9 +65,14 @@
         "start_time": "20:00",
         "end_time": "22:00",
         "name": "ペグイル",
+        "quest_name": "",
         "attribute": "闇",
         "difficulty": "黎絶",
-        "category": "high_difficulty"
+        "category": "high_difficulty",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     },
     {
         "year": 2026,
@@ -55,8 +80,13 @@
         "start_time": "19:00",
         "end_time": "21:00",
         "name": "グノーシス",
+        "quest_name": "",
         "attribute": "木",
         "difficulty": "超究極・兵",
-        "category": "high_difficulty"
+        "category": "high_difficulty",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     }
 ]
