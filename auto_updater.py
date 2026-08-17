@@ -12,7 +12,7 @@ OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
-UPDATER_VERSION = "1.1.5"
+UPDATER_VERSION = "1.1.7"
 ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
 ARTICLE_URL_PATTERN = re.compile(
     r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
@@ -275,11 +275,19 @@ def section_definition(heading, text):
     if "英雄の神殿" in heading or (
         "わくわくの実" in heading and "2個" in heading
     ):
-        return "英雄の神殿 わくわくの実2個", "神殿CP", "育成キャンペーン"
+        return (
+            "英雄の神殿 わくわくの実2個",
+            "神殿CP・わくわく×2",
+            "育成キャンペーン",
+        )
     if "追憶の書庫" in heading and any(
         word in heading for word in ("金卵", "金の卵", "排出率", "2倍")
     ):
-        return "追憶の書庫 金卵排出率2倍", "書庫CP", "育成キャンペーン"
+        return (
+            "追憶の書庫 金卵排出率2倍",
+            "書庫卵2倍CP",
+            "育成キャンペーン",
+        )
     if "追憶の書庫" in heading:
         return "追憶の書庫キャンペーン", "書庫CP", "育成キャンペーン"
     if "クエストサーチ" in heading:
@@ -289,11 +297,49 @@ def section_definition(heading, text):
     if "スタミナ" in heading and any(
         word in heading for word in ("バック", "返却", "消費", "回復")
     ):
-        return "消費スタミナバック", "スタミナ還元", "ゲーム内キャンペーン"
+        return (
+            "マルチ・スタミナバックキャンペーン",
+            "マルチ・スタミナバックCP",
+            "マルチキャンペーン",
+        )
+    if "期間限定ミッション" in heading:
+        if any(
+            word in text
+            for word in ("特設サイト", "キャンペーンページ", "本キャンペーンに参加")
+        ):
+            return None
+        if any(word in text for word in ("入手方法", "その他", "交代劇")):
+            return (
+                "その他クリアミッション",
+                "その他クリアミッション",
+                "ミッション",
+            )
+    if "セレクションミッション" in heading:
+        return "コラボミッション", "コラボミッション", "ミッション"
     if "ミッション" in heading:
         name = re.sub(r"^[!！◆◇●・\s]+", "", heading)
         return name[:32], name[:10], "ミッション"
     return None
+
+
+def library_campaign_short_name(section_text):
+    target_position = section_text.find("対象クエスト")
+    target_text = (
+        section_text[target_position:]
+        if target_position != -1
+        else section_text
+    )
+    attributes = re.findall(r"([火水木光闇])属性クエスト", target_text)
+
+    ordered_attributes = []
+    for attribute in attributes:
+        if attribute not in ordered_attributes:
+            ordered_attributes.append(attribute)
+
+    if not ordered_attributes:
+        return "書庫卵2倍CP"
+    attribute_order = "・".join(ordered_attributes)
+    return f"書庫卵2倍CP({attribute_order})"
 
 
 def extract_section_events(sections, source_url, fetched_at):
@@ -304,6 +350,8 @@ def extract_section_events(sections, source_url, fetched_at):
             continue
 
         name, short_name, category = definition
+        if name == "追憶の書庫 金卵排出率2倍":
+            short_name = library_campaign_short_name(section_text)
         ranges = parse_all_datetime_ranges(section_text)
         for interval_number, (start, end) in enumerate(ranges, start=1):
             interval_name = name
@@ -347,7 +395,11 @@ def extract_primary_event(title, text, source_url, fetched_at):
         name = quoted_name(clean_title) or clean_title
         return build_event_candidate(
             name=name,
-            short_name="獣神化・改" if "獣神化・改" in clean_title else "獣神化",
+            short_name=(
+                f"{name}、獣神化・改"
+                if "獣神化・改" in clean_title
+                else f"{name}、獣神化"
+            ),
             category="獣神化情報",
             start=start,
             end=start,
@@ -427,7 +479,7 @@ def extract_primary_event(title, text, source_url, fetched_at):
         collab_name = collab_name.replace("×モンスト", "")
         return build_event_candidate(
             f"{collab_name}コラボ",
-            collab_name,
+            f"{collab_name}コラボ",
             "コラボ・期間限定",
             start,
             end,
@@ -522,6 +574,10 @@ def normalize_known_event_name(event):
     if "アゲインガチャ" in name:
         normalized["name"] = "アゲインガチャ"
         normalized["short_name"] = "アゲインガチャ"
+        normalized["category"] = "周年CP"
+        normalized["review_reason"] = (
+            "周年イベントとして開催されるガチャのため周年CPに分類しました。"
+        )
 
     return normalized
 
@@ -561,8 +617,21 @@ def extract_event_candidates(
             for candidate in candidates:
                 if candidate["category"] == "ガチャ":
                     candidate["category"] = "コラボガチャ"
+                    if not candidate["name"].endswith("コラボガチャ"):
+                        candidate["name"] = re.sub(
+                            r"ガチャ$", "コラボガチャ", candidate["name"]
+                        )
+                    if not candidate["short_name"].endswith("コラボガチャ"):
+                        candidate["short_name"] = re.sub(
+                            r"ガチャ$", "コラボガチャ", candidate["short_name"]
+                        )
                     candidate["review_reason"] = (
                         "コラボ記事内のガチャとして分類しました。"
+                    )
+                elif candidate["category"] == "ミッション":
+                    candidate["category"] = "コラボミッション"
+                    candidate["review_reason"] = (
+                        "コラボ本体記事内のミッションとして分類しました。"
                     )
         # 同じ記事の見出しと記事全体から同一イベントを二重取得した場合は、
         # 短く整形済みのprimary候補を優先する。
@@ -570,9 +639,15 @@ def extract_event_candidates(
             candidate
             for candidate in candidates
             if not (
-                candidate["category"] == primary["category"]
-                and candidate["start_date"] == primary["start_date"]
+                candidate["start_date"] == primary["start_date"]
                 and candidate["end_date"] == primary["end_date"]
+                and (
+                    candidate["category"] == primary["category"]
+                    or (
+                        primary["category"] == "周年CP"
+                        and candidate["category"] == "ガチャ"
+                    )
+                )
             )
         ]
         candidates.append(primary)
