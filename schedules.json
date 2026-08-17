@@ -88,20 +88,5 @@
         "source_url": "",
         "confirmed_at": "",
         "published": true
-    },
-    {
-        "year": 2026,
-        "date": "8/31",
-        "start_time": "11:00",
-        "end_time": "13:00",
-        "name": "Test",
-        "quest_name": "",
-        "attribute": "光",
-        "difficulty": "超絶",
-        "category": "high_difficulty",
-        "source_type": "manual",
-        "source_url": "",
-        "confirmed_at": "",
-        "published": false
     }
 ]
