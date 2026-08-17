@@ -550,6 +550,9 @@ with candidate_tab:
                             load_json(filename),
                             f"Update {filename} from admin",
                         )
+                # data_editorが前回の候補一覧を保持しないようにする。
+                st.session_state.pop("schedule_candidate_editor", None)
+                st.session_state.pop("event_candidate_editor", None)
                 st.success(
                     "取得完了："
                     f"降臨候補 {result['schedule_candidate_count']}件、"
