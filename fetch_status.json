@@ -1,9 +1,10 @@
 [
     {
-        "fetched_at": "2026-08-17T03:19:21+00:00",
-        "article_count": 20,
+        "fetched_at": "2026-08-17T12:22:48+09:00",
+        "article_count": 21,
         "schedule_candidate_count": 0,
-        "event_candidate_count": 9,
+        "event_candidate_count": 16,
+        "expired_event_count": 7,
         "error_count": 0
     }
 ]
