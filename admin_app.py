@@ -47,6 +47,8 @@ EVENT_CATEGORIES = [
     "コラボ・期間限定",
     "ガチャ",
     "育成キャンペーン",
+    "ゲーム内キャンペーン",
+    "ミッション",
     "獣神化情報",
     "期限",
 ]
@@ -277,6 +279,7 @@ def review_schedule_candidates():
             "category": candidate.get("category", "high_difficulty"),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
+            "review_reason": candidate.get("review_reason", ""),
             "confirmed_at": candidate.get("confirmed_at", ""),
             "published": True,
         })
@@ -292,6 +295,10 @@ def review_schedule_candidates():
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=SCHEDULE_CATEGORIES
+            ),
+            "source_url": st.column_config.LinkColumn("公式記事"),
+            "review_reason": st.column_config.TextColumn(
+                "確認理由", disabled=True
             ),
         },
     )
@@ -343,6 +350,7 @@ def review_event_candidates():
             "description": candidate.get("description", ""),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
+            "review_reason": candidate.get("review_reason", ""),
             "confirmed_at": candidate.get("confirmed_at", ""),
             "published": True,
         })
@@ -356,6 +364,10 @@ def review_event_candidates():
             "approve": st.column_config.CheckboxColumn("承認"),
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=EVENT_CATEGORIES
+            ),
+            "source_url": st.column_config.LinkColumn("公式記事"),
+            "review_reason": st.column_config.TextColumn(
+                "確認理由", disabled=True
             ),
         },
     )
@@ -542,6 +554,7 @@ with candidate_tab:
                     "取得完了："
                     f"降臨候補 {result['schedule_candidate_count']}件、"
                     f"イベント候補 {result['event_candidate_count']}件、"
+                    f"終了済み除外 {result['expired_event_count']}件、"
                     f"エラー {result['error_count']}件"
                 )
             except Exception as error:
@@ -557,8 +570,14 @@ with candidate_tab:
     with event_candidate_tab:
         review_event_candidates()
     with log_tab:
+        statuses = load_admin_json("fetch_status.json")
+        if statuses:
+            st.caption("直近の取得状況")
+            st.dataframe(statuses, use_container_width=True, hide_index=True)
+
         logs = load_admin_json("fetch_errors.json")
         if logs:
+            st.caption("取得失敗ログ")
             st.dataframe(logs, use_container_width=True, hide_index=True)
         else:
             st.info("取得失敗ログはありません。")

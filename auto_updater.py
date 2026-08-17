@@ -1,39 +1,63 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import urljoin, urlparse
-
-import requests
-from bs4 import BeautifulSoup
+from zoneinfo import ZoneInfo
 
 from data_manager import save_json
 
 
 OFFICIAL_NEWS_URL = "https://www.monster-strike.com/news/"
+OFFICIAL_HOME_URL = "https://www.monster-strike.com/"
+OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
+ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
+ARTICLE_URL_PATTERN = re.compile(
+    r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
+)
 
 DATE_RANGE_PATTERN = re.compile(
-    r"(?P<start_year>20\d{2})年"
-    r"(?P<start_month>\d{1,2})月"
+    r"(?P<start_year>20\d{2})年\s*"
+    r"(?P<start_month>\d{1,2})月\s*"
     r"(?P<start_day>\d{1,2})日"
     r"(?:（[^）]+）|\([^\)]+\))?\s*"
     r"(?P<start_hour>\d{1,2}):(?P<start_minute>\d{2})\s*"
     r"[～〜]\s*"
-    r"(?:(?P<end_year>20\d{2})年)?"
-    r"(?P<end_month>\d{1,2})月"
+    r"(?:(?P<end_year>20\d{2})年\s*)?"
+    r"(?P<end_month>\d{1,2})月\s*"
     r"(?P<end_day>\d{1,2})日"
     r"(?:（[^）]+）|\([^\)]+\))?\s*"
     r"(?P<end_hour>\d{1,2}):(?P<end_minute>\d{2})"
 )
+SINGLE_DATE_PATTERN = re.compile(
+    r"(?P<year>20\d{2})年\s*"
+    r"(?P<month>\d{1,2})月\s*"
+    r"(?P<day>\d{1,2})日"
+    r"(?:（[^）]+）|\([^\)]+\))?"
+    r"(?:\s*(?P<hour>\d{1,2}):(?P<minute>\d{2}))?"
+)
 
-PERIOD_LABELS = (
+DEFAULT_PERIOD_LABELS = (
     "初出現日時",
     "初出現日程",
     "初出現期間",
     "出現期間",
+    "ガチャ開催期間",
     "開催期間",
     "対象期間",
+    "実施期間",
+)
+EXCLUDED_SECTION_WORDS = (
+    "SNS",
+    "Xキャンペーン",
+    "公式X",
+    "グッズ",
+    "チケット",
+    "WEBショップ",
+    "Webショップ",
+    "パックを販売",
+    "購入",
 )
 
 
@@ -43,13 +67,22 @@ def validate_url(url):
 
 
 def fetch_html(url):
+    # requestsは実行時だけ読み込む。テスト時に通信ライブラリを不要にするため。
+    import requests
+
     if not validate_url(url):
         raise ValueError(f"許可されていないURLです: {url}")
 
     response = requests.get(
         url,
         timeout=(5, 15),
-        headers={"User-Agent": "MonstScheduleMaker/1.1"},
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36"
+            ),
+            "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.7",
+        },
         allow_redirects=True,
     )
     response.raise_for_status()
@@ -68,14 +101,15 @@ def normalize_space(value):
 
 
 def extract_article_links(index_html):
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(index_html, "html.parser")
     links = []
     seen = set()
 
     for anchor in soup.find_all("a", href=True):
         url = urljoin(OFFICIAL_NEWS_URL, anchor["href"])
-        path = urlparse(url).path
-        if not re.fullmatch(r"/news/20\d{6}(?:_\d+)?\.html", path):
+        if not ARTICLE_PATH_PATTERN.fullmatch(urlparse(url).path):
             continue
         if url in seen or not validate_url(url):
             continue
@@ -84,23 +118,18 @@ def extract_article_links(index_html):
         if len(links) >= ARTICLE_LIMIT:
             break
 
-    return links
-
-
-def parse_datetime_range(text):
-    for label in PERIOD_LABELS:
-        label_position = text.find(label)
-        if label_position == -1:
+    # aタグが変更された場合に備え、HTML内の公式記事URLも確認する。
+    normalized_html = index_html.replace("\\/", "/")
+    for match in ARTICLE_URL_PATTERN.finditer(normalized_html):
+        url = urljoin(OFFICIAL_NEWS_URL, match.group(0))
+        if url in seen or not validate_url(url):
             continue
-        nearby_text = text[label_position:label_position + 220]
-        match = DATE_RANGE_PATTERN.search(nearby_text)
-        if match:
-            return range_from_match(match), label
+        seen.add(url)
+        links.append(url)
+        if len(links) >= ARTICLE_LIMIT:
+            break
 
-    match = DATE_RANGE_PATTERN.search(text)
-    if match:
-        return range_from_match(match), "ラベル未判定"
-    return None, None
+    return links
 
 
 def range_from_match(match):
@@ -126,26 +155,305 @@ def range_from_match(match):
     return start, end
 
 
-def classify_event(title):
-    excluded_words = ("SNS", "グッズ", "リアルイベント", "チケット")
-    if any(word in title for word in excluded_words):
-        return None
-    if "獣神化" in title or "真獣神化" in title:
-        return "獣神化情報"
-    if "ガチャ" in title or "獣神祭" in title:
-        return "ガチャ"
-    if "コラボ" in title or "期間限定イベント" in title:
-        return "コラボ・期間限定"
-    if any(word in title for word in ("天魔", "星墓", "覇者の塔", "未開", "神獣")):
-        return "定期コンテンツ"
-    if any(word in title for word in ("キャンペーン", "追憶の書庫", "英雄の神殿")):
-        return "育成キャンペーン"
+def parse_all_datetime_ranges(text):
+    return [range_from_match(match) for match in DATE_RANGE_PATTERN.finditer(text)]
+
+
+def first_range_after_label(text, label, search_length=500):
+    position = text.find(label)
+    while position != -1:
+        match = DATE_RANGE_PATTERN.search(text[position:position + search_length])
+        if match:
+            return range_from_match(match)
+        position = text.find(label, position + len(label))
     return None
+
+
+def select_datetime_range(text, preferred_labels=()):
+    labels = tuple(preferred_labels) + DEFAULT_PERIOD_LABELS
+    checked = set()
+    for label in labels:
+        if label in checked:
+            continue
+        checked.add(label)
+        date_range = first_range_after_label(text, label)
+        if date_range:
+            return date_range, label
+
+    match = DATE_RANGE_PATTERN.search(text)
+    if match:
+        return range_from_match(match), "ラベル未判定"
+    return None, None
+
+
+def first_single_date_after_label(text, labels):
+    for label in labels:
+        position = text.find(label)
+        if position == -1:
+            continue
+        match = SINGLE_DATE_PATTERN.search(text[position:position + 250])
+        if not match:
+            continue
+        values = match.groupdict()
+        return datetime(
+            int(values["year"]),
+            int(values["month"]),
+            int(values["day"]),
+            int(values["hour"] or 0),
+            int(values["minute"] or 0),
+        ), label
+    return None, None
+
+
+def extract_sections(soup):
+    sections = []
+    for heading in soup.find_all(["h2", "h3"]):
+        heading_text = normalize_space(heading.get_text(" "))
+        if not heading_text:
+            continue
+
+        body_parts = []
+        for sibling in heading.next_siblings:
+            sibling_name = getattr(sibling, "name", None)
+            if sibling_name in ("h2", "h3"):
+                break
+            if hasattr(sibling, "get_text"):
+                value = normalize_space(sibling.get_text(" "))
+            else:
+                value = normalize_space(str(sibling))
+            if value:
+                body_parts.append(value)
+        section_text = normalize_space(" ".join([heading_text, *body_parts]))
+        sections.append((heading_text, section_text))
+    return sections
+
+
+def build_event_candidate(
+    name,
+    short_name,
+    category,
+    start,
+    end,
+    source_url,
+    fetched_at,
+    period_label,
+    review_reason,
+):
+    return {
+        "name": normalize_space(name),
+        "short_name": normalize_space(short_name)[:18],
+        "category": category,
+        "start_date": start.date().isoformat(),
+        "end_date": end.date().isoformat(),
+        "description": "",
+        "source_type": "official",
+        "source_url": source_url,
+        "fetched_at": fetched_at,
+        "period_label": period_label,
+        "review_status": "needs_review",
+        "review_reason": review_reason,
+        "published": False,
+    }
+
+
+def section_definition(heading, text):
+    combined = f"{heading} {text}"
+    if any(word in combined for word in EXCLUDED_SECTION_WORDS):
+        return None
+
+    if "英雄の神殿" in combined or (
+        "わくわくの実" in combined and "2個" in combined
+    ):
+        return "英雄の神殿 わくわくの実2個", "神殿CP", "育成キャンペーン"
+    if "追憶の書庫" in combined and any(
+        word in combined for word in ("金卵", "金の卵", "排出率", "2倍")
+    ):
+        return "追憶の書庫 金卵排出率2倍", "書庫CP", "育成キャンペーン"
+    if "追憶の書庫" in combined:
+        return "追憶の書庫キャンペーン", "書庫CP", "育成キャンペーン"
+    if "クエストサーチ" in combined:
+        return "クエストサーチミッション", "サーチ任務", "ミッション"
+    if "タイムシフト" in combined:
+        return "タイムシフトミッション", "時差任務", "ミッション"
+    if "スタミナ" in combined and any(
+        word in combined for word in ("バック", "返却", "消費")
+    ):
+        return "消費スタミナバック", "スタミナ還元", "ゲーム内キャンペーン"
+    if "ミッション" in heading:
+        name = re.sub(r"^[!！◆◇●・\s]+", "", heading)
+        return name[:32], name[:10], "ミッション"
+    return None
+
+
+def extract_section_events(sections, source_url, fetched_at):
+    candidates = []
+    for heading, section_text in sections:
+        definition = section_definition(heading, section_text)
+        if not definition:
+            continue
+
+        name, short_name, category = definition
+        ranges = parse_all_datetime_ranges(section_text)
+        for interval_number, (start, end) in enumerate(ranges, start=1):
+            interval_name = name
+            if len(ranges) > 1:
+                interval_name = f"{name}（第{interval_number}期間）"
+            candidates.append(build_event_candidate(
+                name=interval_name,
+                short_name=short_name,
+                category=category,
+                start=start,
+                end=end,
+                source_url=source_url,
+                fetched_at=fetched_at,
+                period_label="記事内項目",
+                review_reason="記事内のキャンペーン項目から個別抽出しました。",
+            ))
+    return candidates
 
 
 def clean_event_name(title):
     title = re.sub(r"\s*[-｜|].*?モンスト公式.*$", "", title)
+    title = re.sub(r"\s*\|\s*モンスターストライク.*$", "", title)
     return normalize_space(title)
+
+
+def quoted_name(title):
+    matches = re.findall(r"[「『]([^」』]+)[」』]", title)
+    return matches[0].strip() if matches else ""
+
+
+def extract_primary_event(title, text, source_url, fetched_at):
+    clean_title = clean_event_name(title)
+
+    if "獣神化" in clean_title or "真獣神化" in clean_title:
+        start, period_label = first_single_date_after_label(
+            text,
+            ("解禁日時", "獣神化・改 解禁日時", "獣神化 解禁日時"),
+        )
+        if not start:
+            return None
+        name = quoted_name(clean_title) or clean_title
+        return build_event_candidate(
+            name=name,
+            short_name="獣神化・改" if "獣神化・改" in clean_title else "獣神化",
+            category="獣神化情報",
+            start=start,
+            end=start,
+            source_url=source_url,
+            fetched_at=fetched_at,
+            period_label=period_label,
+            review_reason="解禁日時から抽出しました。キャラ名を確認してください。",
+        )
+
+    if "未開の幻洞" in clean_title:
+        date_range, period_label = select_datetime_range(
+            text, ("初出現期間", "出現期間")
+        )
+        if not date_range:
+            return None
+        start, end = date_range
+        return build_event_candidate(
+            "未開の幻洞",
+            "未開の幻洞",
+            "定期コンテンツ",
+            start,
+            end,
+            source_url,
+            fetched_at,
+            period_label,
+            "毎月14日開始の定期コンテンツとして分類しました。",
+        )
+
+    if "覇者の塔" in clean_title:
+        date_range, period_label = select_datetime_range(text, ("出現期間",))
+        if not date_range:
+            return None
+        start, end = date_range
+        return build_event_candidate(
+            "覇者の塔",
+            "覇者の塔",
+            "定期コンテンツ",
+            start,
+            end,
+            source_url,
+            fetched_at,
+            period_label,
+            "定期コンテンツとして分類しました。",
+        )
+
+    if any(word in clean_title for word in ("天魔", "破界の星墓", "神獣")):
+        date_range, period_label = select_datetime_range(text)
+        if not date_range:
+            return None
+        start, end = date_range
+        name = quoted_name(clean_title) or clean_title[:32]
+        return build_event_candidate(
+            name,
+            name[:18],
+            "定期コンテンツ",
+            start,
+            end,
+            source_url,
+            fetched_at,
+            period_label,
+            "定期コンテンツとして分類しました。",
+        )
+
+    # 記念キャンペーン記事は上の項目単位抽出だけを使う。
+    if "コラボ" in clean_title and "キャンペーン" not in clean_title:
+        date_range, period_label = select_datetime_range(
+            text,
+            ("コラボイベント開催期間", "コラボ開催期間", "開催期間"),
+        )
+        if not date_range:
+            return None
+        start, end = date_range
+        collab_name = quoted_name(clean_title)
+        if not collab_name:
+            match = re.search(r"【([^】]+×モンスト)】", clean_title)
+            collab_name = match.group(1) if match else "コラボイベント"
+        collab_name = collab_name.replace("×モンスト", "")
+        return build_event_candidate(
+            f"{collab_name}コラボ",
+            collab_name,
+            "コラボ・期間限定",
+            start,
+            end,
+            source_url,
+            fetched_at,
+            period_label,
+            "コラボ全体の開催期間として抽出しました。",
+        )
+
+    if "ガチャ" in clean_title or "獣神祭" in clean_title:
+        date_range, period_label = select_datetime_range(
+            text,
+            ("ガチャ開催期間", "開催期間"),
+        )
+        if not date_range:
+            return None
+        start, end = date_range
+        name = quoted_name(clean_title)
+        if "モンスト夏休み" in clean_title:
+            name = "モンスト夏休み2026 復刻ガチャ"
+        elif not name and "アゲインガチャ" in clean_title:
+            name = "アゲインガチャ"
+        elif not name:
+            name = clean_title[:32]
+        return build_event_candidate(
+            name,
+            name[:18],
+            "ガチャ",
+            start,
+            end,
+            source_url,
+            fetched_at,
+            period_label,
+            "ガチャ開催期間を優先して抽出しました。",
+        )
+
+    return None
 
 
 def extract_high_difficulty(title, text, source_url, fetched_at):
@@ -154,16 +462,15 @@ def extract_high_difficulty(title, text, source_url, fetched_at):
     if not difficulty_match or not name_match:
         return None
 
-    date_range, period_label = parse_datetime_range(text)
+    date_range, period_label = select_datetime_range(
+        text, ("初出現日時", "初出現日程")
+    )
     if not date_range or period_label not in ("初出現日時", "初出現日程"):
         return None
 
     start, end = date_range
     attribute_match = re.search(r"([火水木光闇])属性\s*★\d", text)
-    quest_match = re.search(
-        rf"{difficulty_match.group(1)}クエスト「([^」]+)」",
-        text,
-    )
+    quest_match = re.search(rf"{difficulty_match.group(1)}クエスト「([^」]+)」", text)
     return {
         "year": start.year,
         "date": f"{start.month}/{start.day}",
@@ -178,36 +485,7 @@ def extract_high_difficulty(title, text, source_url, fetched_at):
         "source_url": source_url,
         "fetched_at": fetched_at,
         "review_status": "needs_review",
-        "published": False,
-    }
-
-
-def extract_event(title, text, source_url, fetched_at):
-    category = classify_event(title)
-    if not category:
-        return None
-    date_range, period_label = parse_datetime_range(text)
-    if not date_range:
-        return None
-
-    start, end = date_range
-    name = clean_event_name(title)
-    review_reason = ""
-    if period_label == "ラベル未判定":
-        review_reason = "期間ラベルを特定できませんでした。"
-
-    return {
-        "name": name,
-        "short_name": name[:18],
-        "category": category,
-        "start_date": start.date().isoformat(),
-        "end_date": end.date().isoformat(),
-        "source_type": "official",
-        "source_url": source_url,
-        "fetched_at": fetched_at,
-        "period_label": period_label,
-        "review_status": "needs_review",
-        "review_reason": review_reason,
+        "review_reason": "初出現日時から抽出しました。",
         "published": False,
     }
 
@@ -224,20 +502,75 @@ def deduplicate(items, fields):
     return results
 
 
+def japan_today():
+    return datetime.now(ZoneInfo("Asia/Tokyo")).date()
+
+
+def remove_expired_events(events, reference_date=None):
+    current_date = reference_date or japan_today()
+    active = []
+    expired_count = 0
+    for event in events:
+        if date.fromisoformat(event["end_date"]) < current_date:
+            expired_count += 1
+        else:
+            active.append(event)
+    return active, expired_count
+
+
+def extract_event_candidates(
+    title,
+    text,
+    sections,
+    source_url,
+    fetched_at,
+    reference_date=None,
+):
+    candidates = extract_section_events(sections, source_url, fetched_at)
+    primary = extract_primary_event(title, text, source_url, fetched_at)
+    if primary:
+        candidates.append(primary)
+    candidates = deduplicate(candidates, ("name", "start_date", "end_date"))
+    return remove_expired_events(candidates, reference_date)
+
+
 def run_update():
-    fetched_at = datetime.now().astimezone().isoformat(timespec="seconds")
+    from bs4 import BeautifulSoup
+
+    fetched_at = datetime.now(ZoneInfo("Asia/Tokyo")).isoformat(timespec="seconds")
     schedule_candidates = []
     event_candidates = []
     errors = []
+    expired_event_count = 0
+    article_links = []
+    seen_links = set()
 
-    try:
-        index_html = fetch_html(OFFICIAL_NEWS_URL)
-        article_links = extract_article_links(index_html)
-    except Exception as error:
-        article_links = []
+    for index_url in OFFICIAL_INDEX_URLS:
+        try:
+            index_html = fetch_html(index_url)
+            for article_url in extract_article_links(index_html):
+                if article_url in seen_links:
+                    continue
+                seen_links.add(article_url)
+                article_links.append(article_url)
+                if len(article_links) >= ARTICLE_LIMIT:
+                    break
+        except Exception as error:
+            errors.append({
+                "source_url": index_url,
+                "reason": str(error),
+                "fetched_at": fetched_at,
+            })
+        if len(article_links) >= ARTICLE_LIMIT:
+            break
+
+    if not article_links:
         errors.append({
             "source_url": OFFICIAL_NEWS_URL,
-            "reason": str(error),
+            "reason": (
+                "公式ページから記事リンクを1件も抽出できませんでした。"
+                "HTML構造またはアクセス制限を確認してください。"
+            ),
             "fetched_at": fetched_at,
         })
 
@@ -255,9 +588,15 @@ def run_update():
             if schedule:
                 schedule_candidates.append(schedule)
 
-            event = extract_event(title, text, article_url, fetched_at)
-            if event:
-                event_candidates.append(event)
+            article_events, article_expired_count = extract_event_candidates(
+                title=title,
+                text=text,
+                sections=extract_sections(soup),
+                source_url=article_url,
+                fetched_at=fetched_at,
+            )
+            event_candidates.extend(article_events)
+            expired_event_count += article_expired_count
         except Exception as error:
             errors.append({
                 "source_url": article_url,
@@ -274,24 +613,19 @@ def run_update():
         ("name", "start_date", "end_date"),
     )
 
+    status = {
+        "fetched_at": fetched_at,
+        "article_count": len(article_links),
+        "schedule_candidate_count": len(schedule_candidates),
+        "event_candidate_count": len(event_candidates),
+        "expired_event_count": expired_event_count,
+        "error_count": len(errors),
+    }
     save_json("schedule_candidates.json", schedule_candidates)
     save_json("event_candidates.json", event_candidates)
     save_json("fetch_errors.json", errors)
-    save_json("fetch_status.json", [{
-        "fetched_at": fetched_at,
-        "article_count": len(article_links),
-        "schedule_candidate_count": len(schedule_candidates),
-        "event_candidate_count": len(event_candidates),
-        "error_count": len(errors),
-    }])
-
-    return {
-        "fetched_at": fetched_at,
-        "article_count": len(article_links),
-        "schedule_candidate_count": len(schedule_candidates),
-        "event_candidate_count": len(event_candidates),
-        "error_count": len(errors),
-    }
+    save_json("fetch_status.json", [status])
+    return status
 
 
 if __name__ == "__main__":
