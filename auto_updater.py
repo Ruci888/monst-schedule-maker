@@ -12,6 +12,7 @@ OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
+UPDATER_VERSION = "1.1.4"
 ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
 ARTICLE_URL_PATTERN = re.compile(
     r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
@@ -512,6 +513,19 @@ def deduplicate(items, fields):
     return results
 
 
+def normalize_known_event_name(event):
+    normalized = dict(event)
+    name = normalize_space(normalized.get("name", ""))
+
+    # 同じガチャが記事タイトルと記事内見出しから異なる名称で取得されても、
+    # 保存前に公式の短い名称へそろえて重複判定できるようにする。
+    if "アゲインガチャ" in name:
+        normalized["name"] = "アゲインガチャ"
+        normalized["short_name"] = "アゲインガチャ"
+
+    return normalized
+
+
 def japan_today():
     return datetime.now(ZoneInfo("Asia/Tokyo")).date()
 
@@ -536,9 +550,24 @@ def extract_event_candidates(
     fetched_at,
     reference_date=None,
 ):
-    candidates = extract_section_events(sections, source_url, fetched_at)
+    candidates = [
+        normalize_known_event_name(candidate)
+        for candidate in extract_section_events(sections, source_url, fetched_at)
+    ]
     primary = extract_primary_event(title, text, source_url, fetched_at)
     if primary:
+        primary = normalize_known_event_name(primary)
+        # 同じ記事の見出しと記事全体から同一イベントを二重取得した場合は、
+        # 短く整形済みのprimary候補を優先する。
+        candidates = [
+            candidate
+            for candidate in candidates
+            if not (
+                candidate["category"] == primary["category"]
+                and candidate["start_date"] == primary["start_date"]
+                and candidate["end_date"] == primary["end_date"]
+            )
+        ]
         candidates.append(primary)
     candidates = deduplicate(candidates, ("name", "start_date", "end_date"))
     return remove_expired_events(candidates, reference_date)
@@ -618,12 +647,17 @@ def run_update():
         schedule_candidates,
         ("year", "date", "start_time", "name"),
     )
+    event_candidates = [
+        normalize_known_event_name(event)
+        for event in event_candidates
+    ]
     event_candidates = deduplicate(
         event_candidates,
         ("name", "start_date", "end_date"),
     )
 
     status = {
+        "updater_version": UPDATER_VERSION,
         "fetched_at": fetched_at,
         "article_count": len(article_links),
         "schedule_candidate_count": len(schedule_candidates),
