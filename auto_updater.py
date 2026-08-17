@@ -12,7 +12,7 @@ OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
-UPDATER_VERSION = "1.1.7"
+UPDATER_VERSION = "1.1.8"
 ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
 ARTICLE_URL_PATTERN = re.compile(
     r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
@@ -239,6 +239,7 @@ def build_event_candidate(
     fetched_at,
     period_label,
     review_reason,
+    daily_labels="",
 ):
     return {
         "name": normalize_space(name),
@@ -246,6 +247,9 @@ def build_event_candidate(
         "category": category,
         "start_date": start.date().isoformat(),
         "end_date": end.date().isoformat(),
+        "start_time": start.strftime("%H:%M"),
+        "end_time": end.strftime("%H:%M"),
+        "daily_labels": daily_labels,
         "description": "",
         "source_type": "official",
         "source_url": source_url,
@@ -322,7 +326,7 @@ def section_definition(heading, text):
     return None
 
 
-def library_campaign_short_name(section_text):
+def library_campaign_attributes(section_text):
     target_position = section_text.find("対象クエスト")
     target_text = (
         section_text[target_position:]
@@ -336,9 +340,14 @@ def library_campaign_short_name(section_text):
         if attribute not in ordered_attributes:
             ordered_attributes.append(attribute)
 
-    if not ordered_attributes:
+    return ordered_attributes
+
+
+def library_campaign_short_name(section_text):
+    attributes = library_campaign_attributes(section_text)
+    if not attributes:
         return "書庫卵2倍CP"
-    attribute_order = "・".join(ordered_attributes)
+    attribute_order = "・".join(attributes)
     return f"書庫卵2倍CP({attribute_order})"
 
 
@@ -350,8 +359,12 @@ def extract_section_events(sections, source_url, fetched_at):
             continue
 
         name, short_name, category = definition
+        daily_labels = ""
         if name == "追憶の書庫 金卵排出率2倍":
             short_name = library_campaign_short_name(section_text)
+            daily_labels = "・".join(
+                library_campaign_attributes(section_text)
+            )
         ranges = parse_all_datetime_ranges(section_text)
         for interval_number, (start, end) in enumerate(ranges, start=1):
             interval_name = name
@@ -367,6 +380,7 @@ def extract_section_events(sections, source_url, fetched_at):
                 fetched_at=fetched_at,
                 period_label="記事内項目",
                 review_reason="記事内のキャンペーン項目から個別抽出しました。",
+                daily_labels=daily_labels,
             ))
     return candidates
 

@@ -167,6 +167,9 @@ def event_rows_from_editor(editor_data):
         category = normalize_text(row.get("category"))
         start_date = normalize_text(row.get("start_date"))
         end_date = normalize_text(row.get("end_date"))
+        start_time = normalize_text(row.get("start_time"))
+        end_time = normalize_text(row.get("end_time"))
+        daily_labels = normalize_text(row.get("daily_labels"))
         description = normalize_text(row.get("description"))
         source_type = normalize_text(row.get("source_type")) or "manual"
         source_url = normalize_text(row.get("source_url"))
@@ -182,6 +185,10 @@ def event_rows_from_editor(editor_data):
             errors.append(f"イベントデータ{row_number}行目：日付はYYYY-MM-DD形式で入力してください。")
         elif start_date > end_date:
             errors.append(f"イベントデータ{row_number}行目：終了日が開始日より前です。")
+        if start_time and not validate_time(start_time):
+            errors.append(f"イベントデータ{row_number}行目：開始時刻はHH:MM形式で入力してください。")
+        if end_time and not validate_time(end_time):
+            errors.append(f"イベントデータ{row_number}行目：終了時刻はHH:MM形式で入力してください。")
 
         rows.append({
             "name": name,
@@ -189,6 +196,9 @@ def event_rows_from_editor(editor_data):
             "category": category,
             "start_date": start_date,
             "end_date": end_date,
+            "start_time": start_time,
+            "end_time": end_time,
+            "daily_labels": daily_labels,
             "description": description,
             "source_type": source_type,
             "source_url": source_url,
@@ -212,6 +222,9 @@ def ensure_schedule_columns(schedules):
 
 def ensure_event_columns(events):
     defaults = {
+        "start_time": "",
+        "end_time": "",
+        "daily_labels": "",
         "description": "",
         "source_type": "manual",
         "source_url": "",
@@ -354,6 +367,9 @@ def review_event_candidates():
             "category": candidate.get("category", ""),
             "start_date": candidate.get("start_date", ""),
             "end_date": candidate.get("end_date", ""),
+            "start_time": candidate.get("start_time", ""),
+            "end_time": candidate.get("end_time", ""),
+            "daily_labels": candidate.get("daily_labels", ""),
             "description": candidate.get("description", ""),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
@@ -371,6 +387,12 @@ def review_event_candidates():
             "approve": st.column_config.CheckboxColumn("承認"),
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=EVENT_CATEGORIES
+            ),
+            "start_time": st.column_config.TextColumn("開始時刻"),
+            "end_time": st.column_config.TextColumn("終了時刻"),
+            "daily_labels": st.column_config.TextColumn(
+                "日別表示",
+                help="開始日から順に、闇・木・光のように区切って入力します。",
             ),
             "source_url": st.column_config.LinkColumn("公式記事"),
             "review_reason": st.column_config.TextColumn(
@@ -507,6 +529,12 @@ with event_tab:
         column_config={
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=EVENT_CATEGORIES
+            ),
+            "start_time": st.column_config.TextColumn("開始時刻"),
+            "end_time": st.column_config.TextColumn("終了時刻"),
+            "daily_labels": st.column_config.TextColumn(
+                "日別表示",
+                help="開始日から順に、闇・木・光のように区切って入力します。",
             ),
             "source_type": st.column_config.SelectboxColumn(
                 "情報源種別",

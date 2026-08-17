@@ -7,7 +7,7 @@ from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
 
 
-APP_VERSION = "v1.1.0-beta.3"
+APP_VERSION = "v1.1.0-beta.4"
 
 
 st.set_page_config(
@@ -252,7 +252,7 @@ with event_tab:
         selected_categories = st.pills(
             "掲載カテゴリ",
             options=available_categories,
-            default=available_categories,
+            default=[],
             selection_mode="multi",
             format_func=lambda category: EVENT_CATEGORY_LABELS.get(
                 category,
@@ -277,16 +277,20 @@ with event_tab:
                 if key in valid_event_keys
             ]
 
-        with st.expander("個別に掲載から外す", expanded=False):
-            st.caption("カテゴリ内の一部だけ掲載しない場合に選択してください。")
-            excluded_event_keys = st.multiselect(
-                "掲載しないイベント",
-                options=list(event_map),
-                default=[],
-                format_func=lambda key: event_adjustment_label(event_map[key]),
-                key=excluded_state_key,
-                placeholder="除外するイベントを選択",
-            )
+        if event_map:
+            with st.expander("個別に選択を調整", expanded=False):
+                st.caption("選択したカテゴリ内で、掲載しないイベントを指定できます。")
+                excluded_event_keys = st.multiselect(
+                    "掲載しないイベント",
+                    options=list(event_map),
+                    default=[],
+                    format_func=lambda key: event_adjustment_label(event_map[key]),
+                    key=excluded_state_key,
+                    placeholder="除外するイベントを選択",
+                )
+        else:
+            excluded_event_keys = []
+            st.info("掲載したいカテゴリを1つ以上選択してください。")
 
         selected_events = [
             event

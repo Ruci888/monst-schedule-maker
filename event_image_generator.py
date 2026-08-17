@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, time, timedelta
 from io import BytesIO
 
 from PIL import Image, ImageDraw
@@ -78,11 +79,101 @@ def parse_date(value):
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def overlap(event, week_start, week_end):
-    return (
-        parse_date(event["start_date"]) <= week_end
-        and parse_date(event["end_date"]) >= week_start
+def parse_time(value, fallback):
+    try:
+        return datetime.strptime(value, "%H:%M").time()
+    except (TypeError, ValueError):
+        return fallback
+
+
+def event_datetimes(event):
+    start_date = parse_date(event["start_date"])
+    end_date = parse_date(event["end_date"])
+    start_value = event.get("start_time", "")
+    end_value = event.get("end_time", "")
+
+    start_datetime = datetime.combine(
+        start_date,
+        parse_time(start_value, time.min),
     )
+    if end_value:
+        end_datetime = datetime.combine(
+            end_date,
+            parse_time(end_value, time.max.replace(microsecond=0)),
+        )
+    else:
+        # 時刻がない既存データは終了日いっぱいまで開催として扱う。
+        end_datetime = datetime.combine(end_date + timedelta(days=1), time.min)
+
+    if end_datetime < start_datetime:
+        end_datetime = start_datetime
+    return start_datetime, end_datetime
+
+
+def overlap(event, week_start, week_end):
+    start_datetime, end_datetime = event_datetimes(event)
+    week_start_datetime = datetime.combine(week_start, time.min)
+    week_end_datetime = datetime.combine(week_end + timedelta(days=1), time.min)
+    if start_datetime == end_datetime:
+        return week_start_datetime <= start_datetime < week_end_datetime
+    return start_datetime < week_end_datetime and end_datetime > week_start_datetime
+
+
+def display_event_name(event):
+    label = event.get("short_name") or event["name"]
+    if label.startswith("書庫卵2倍CP"):
+        return re.sub(r"\([火水木光闇・]+\)$", "", label)
+    return label
+
+
+def event_time_text(event):
+    start_time = event.get("start_time", "")
+    end_time = event.get("end_time", "")
+    if not start_time and not end_time:
+        return "終日"
+
+    start_date = parse_date(event["start_date"])
+    end_date = parse_date(event["end_date"])
+    start_text = start_time or "0:00"
+    end_text = end_time or "23:59"
+    if start_date == end_date:
+        return f"{start_text}～{end_text}"
+    return (
+        f"{start_date.month}/{start_date.day} {start_text}～"
+        f"{end_date.month}/{end_date.day} {end_text}"
+    )
+
+
+def event_daily_labels(event):
+    value = event.get("daily_labels", "")
+    start_date = parse_date(event["start_date"])
+
+    if isinstance(value, dict):
+        return {
+            parse_date(date_value): str(label)
+            for date_value, label in value.items()
+        }
+
+    if isinstance(value, list):
+        labels = [str(label).strip() for label in value if str(label).strip()]
+    else:
+        labels = [
+            label
+            for label in re.split(r"[・,、/\s]+", str(value).strip())
+            if label
+        ]
+
+    # 旧データでは属性順がshort_nameの括弧内に保存されている。
+    if not labels:
+        short_name = event.get("short_name", "")
+        match = re.search(r"書庫卵2倍CP\(([火水木光闇・]+)\)$", short_name)
+        if match:
+            labels = match.group(1).split("・")
+
+    return {
+        start_date + timedelta(days=offset): label
+        for offset, label in enumerate(labels)
+    }
 
 
 def category_sort_key(event):
@@ -153,7 +244,7 @@ def draw_week(draw, events, week_start, top, theme):
     right = 1042
     timeline_left = 365
     date_header_height = 58
-    row_height = 52
+    row_height = 64
     column_width = (right - timeline_left) / 7
     week_end = week_start + timedelta(days=6)
     week_events = sorted(
@@ -176,7 +267,7 @@ def draw_week(draw, events, week_start, top, theme):
     )
 
     weekday_names = "月火水木金土日"
-    date_font = load_font(18)
+    date_font = load_font(19)
     for offset in range(7):
         day = week_start + timedelta(days=offset)
         cell_left = timeline_left + offset * column_width
@@ -232,9 +323,9 @@ def draw_week(draw, events, week_start, top, theme):
             ("#94A3B8", "その他"),
         )
         badge_left = left + 10
-        badge_top = row_top + 12
-        badge_width = 86
-        badge_bottom = badge_top + 25
+        badge_top = row_top + 18
+        badge_width = 92
+        badge_bottom = badge_top + 28
         badge_fill = mix_color(category_color, row_fill, 0.27)
         draw.rounded_rectangle(
             (badge_left, badge_top, badge_left + badge_width, badge_bottom),
@@ -245,8 +336,8 @@ def draw_week(draw, events, week_start, top, theme):
         )
         badge_font = fit_font(
             category_label,
-            maximum_size=13,
-            minimum_size=10,
+            maximum_size=14,
+            minimum_size=11,
             maximum_width=badge_width - 10,
             draw=draw,
         )
@@ -258,29 +349,57 @@ def draw_week(draw, events, week_start, top, theme):
             category_color,
         )
 
-        label = event.get("short_name") or event["name"]
+        label = display_event_name(event)
         label_font = fit_font(
             label,
-            maximum_size=20,
-            minimum_size=13,
+            maximum_size=22,
+            minimum_size=14,
             maximum_width=timeline_left - (badge_left + badge_width) - 34,
             draw=draw,
         )
+        label_x = badge_left + badge_width + 12
         draw.text(
-            (badge_left + badge_width + 12, row_top + 13),
+            (label_x, row_top + 7),
             label,
             font=label_font,
             fill=theme["text"],
+            stroke_width=1,
+            stroke_fill=theme["text"],
+        )
+        time_text = event_time_text(event)
+        time_font = fit_font(
+            time_text,
+            maximum_size=14,
+            minimum_size=11,
+            maximum_width=timeline_left - label_x - 22,
+            draw=draw,
+        )
+        draw.text(
+            (label_x, row_top + 37),
+            time_text,
+            font=time_font,
+            fill=theme["sub_text"],
         )
 
-        event_start = max(parse_date(event["start_date"]), week_start)
-        event_end = min(parse_date(event["end_date"]), week_end)
-        start_offset = (event_start - week_start).days
-        end_offset = (event_end - week_start).days
-        bar_left = timeline_left + start_offset * column_width + 7
-        bar_right = timeline_left + (end_offset + 1) * column_width - 7
-        bar_top = row_top + 16
-        bar_bottom = row_top + 34
+        week_start_datetime = datetime.combine(week_start, time.min)
+        week_end_datetime = week_start_datetime + timedelta(days=7)
+        event_start, event_end = event_datetimes(event)
+        visible_start = max(event_start, week_start_datetime)
+        visible_end = min(event_end, week_end_datetime)
+        timeline_width = right - timeline_left
+        week_seconds = 7 * 24 * 60 * 60
+        start_ratio = (
+            visible_start - week_start_datetime
+        ).total_seconds() / week_seconds
+        end_ratio = (
+            visible_end - week_start_datetime
+        ).total_seconds() / week_seconds
+        bar_left = timeline_left + start_ratio * timeline_width
+        bar_right = timeline_left + end_ratio * timeline_width
+        if bar_right - bar_left < 14:
+            bar_right = min(right, bar_left + 14)
+        bar_top = row_top + 18
+        bar_bottom = row_top + 46
 
         draw.rounded_rectangle(
             (bar_left + 1, bar_top + 3, bar_right + 1, bar_bottom + 3),
@@ -303,6 +422,27 @@ def draw_week(draw, events, week_start, top, theme):
                 width=1,
             )
 
+        daily_labels = event_daily_labels(event)
+        daily_label_font = load_font(15)
+        for offset in range(7):
+            day = week_start + timedelta(days=offset)
+            day_label = daily_labels.get(day)
+            if not day_label:
+                continue
+            day_left = timeline_left + offset * column_width
+            day_right = day_left + column_width
+            label_left = max(bar_left, day_left) + 2
+            label_right = min(bar_right, day_right) - 2
+            if label_right - label_left < 18:
+                continue
+            draw_centered_text(
+                draw,
+                (label_left, bar_top, label_right, bar_bottom),
+                day_label,
+                daily_label_font,
+                "#FFFFFF",
+            )
+
         row_top += row_height
 
     return row_top
@@ -322,7 +462,7 @@ def generate_event_image(events, design, start_date):
     )
 
     width = 1080
-    height = max(1350, 275 + (first_count + second_count) * 52 + 215)
+    height = max(1350, 275 + (first_count + second_count) * 64 + 215)
     image = Image.new("RGB", (width, height), theme["background"])
     draw = ImageDraw.Draw(image)
 
