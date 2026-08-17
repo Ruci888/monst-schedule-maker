@@ -7,6 +7,9 @@ from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
 
 
+APP_VERSION = "v1.1.0-beta.3"
+
+
 st.set_page_config(
     page_title="モンスト スケジュールメーカー",
     page_icon="📅",
@@ -46,6 +49,49 @@ def event_label(event):
         f"{start_date.month}/{start_date.day}～{end_date.month}/{end_date.day}｜"
         f"{event['name']}｜{event['category']}"
     )
+
+
+EVENT_CATEGORY_LABELS = {
+    "定期コンテンツ": "定期コンテンツ",
+    "コラボ・期間限定": "コラボ・期間限定",
+    "コラボガチャ": "コラボガチャ",
+    "コラボミッション": "コラボミッション",
+    "ガチャ": "ガチャ",
+    "育成キャンペーン": "育成キャンペーン",
+    "ゲーム内キャンペーン": "ゲーム内CP",
+    "マルチキャンペーン": "マルチCP",
+    "ミッション": "ミッション",
+    "周年CP": "周年CP",
+    "獣神化情報": "獣神化情報",
+}
+
+
+EVENT_CATEGORY_ORDER = list(EVENT_CATEGORY_LABELS)
+
+
+def event_category_sort_key(category):
+    try:
+        return EVENT_CATEGORY_ORDER.index(category)
+    except ValueError:
+        return len(EVENT_CATEGORY_ORDER)
+
+
+def event_key(event):
+    return "\x1f".join([
+        event.get("name", ""),
+        event.get("category", ""),
+        event.get("start_date", ""),
+        event.get("end_date", ""),
+        event.get("source_url", ""),
+    ])
+
+
+def event_adjustment_label(event):
+    start_date = parse_event_date(event["start_date"])
+    end_date = parse_event_date(event["end_date"])
+    name = event.get("short_name") or event["name"]
+    period = f"{start_date.month}/{start_date.day}～{end_date.month}/{end_date.day}"
+    return f"{name}（{period}）"
 
 
 def latest_confirmation(items):
@@ -108,7 +154,10 @@ def render_schedule_preview(selected_schedules):
 
 
 st.title("モンスト スケジュールメーカー")
-st.caption("予定を選ぶだけで、スマホ向けのスケジュール画像を生成できます。")
+st.caption(
+    "予定を選ぶだけで、スマホ向けのスケジュール画像を生成できます。"
+    f"　｜　{APP_VERSION}"
+)
 
 schedule_tab, event_tab = st.tabs([
     "降臨スケジュール",
@@ -195,22 +244,65 @@ with event_tab:
     elif not available_events:
         st.info("選択した14日間に掲載できるイベントはありません。")
     else:
-        selected_event_indexes = st.multiselect(
-            "掲載するイベント",
-            options=range(len(available_events)),
-            default=range(len(available_events)),
-            format_func=lambda index: event_label(available_events[index]),
+        available_categories = sorted(
+            {event["category"] for event in available_events},
+            key=event_category_sort_key,
         )
 
+        selected_categories = st.pills(
+            "掲載カテゴリ",
+            options=available_categories,
+            default=available_categories,
+            selection_mode="multi",
+            format_func=lambda category: EVENT_CATEGORY_LABELS.get(
+                category,
+                category,
+            ),
+            key=f"event_categories_{start_date.isoformat()}",
+        )
+
+        category_events = [
+            event
+            for event in available_events
+            if event["category"] in (selected_categories or [])
+        ]
+        event_map = {event_key(event): event for event in category_events}
+        valid_event_keys = set(event_map)
+
+        excluded_state_key = f"event_excluded_{start_date.isoformat()}"
+        if excluded_state_key in st.session_state:
+            st.session_state[excluded_state_key] = [
+                key
+                for key in st.session_state[excluded_state_key]
+                if key in valid_event_keys
+            ]
+
+        with st.expander("個別に掲載から外す", expanded=False):
+            st.caption("カテゴリ内の一部だけ掲載しない場合に選択してください。")
+            excluded_event_keys = st.multiselect(
+                "掲載しないイベント",
+                options=list(event_map),
+                default=[],
+                format_func=lambda key: event_adjustment_label(event_map[key]),
+                key=excluded_state_key,
+                placeholder="除外するイベントを選択",
+            )
 
         selected_events = [
-            available_events[index]
-            for index in selected_event_indexes
+            event
+            for key, event in event_map.items()
+            if key not in excluded_event_keys
         ]
 
-        event_design = st.selectbox(
+        st.caption(
+            f"選択中：{len(selected_events)}件／"
+            f"この期間の掲載候補：{len(available_events)}件"
+        )
+
+        event_design = st.radio(
             "デザイン",
             options=["ブルー", "ダーク", "シンプル"],
+            horizontal=True,
             key="event_design",
         )
 
