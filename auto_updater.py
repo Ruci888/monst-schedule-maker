@@ -261,22 +261,32 @@ def section_definition(heading, text):
     if any(word in combined for word in EXCLUDED_SECTION_WORDS):
         return None
 
-    if "英雄の神殿" in combined or (
-        "わくわくの実" in combined and "2個" in combined
+    if "ガチャ" in heading and any(word in heading for word in ("開催", "登場")):
+        gacha_name = quoted_name(heading)
+        if not gacha_name:
+            gacha_name = re.sub(r"^.*?ガチャ", "", heading)
+            gacha_name = re.sub(r"(?:開催|登場).*$", "", gacha_name)
+            gacha_name = normalize_space(gacha_name).strip("!！『』「」 ")
+        if not gacha_name:
+            gacha_name = "期間限定"
+        return f"{gacha_name}ガチャ", f"{gacha_name}ガチャ", "ガチャ"
+
+    if "英雄の神殿" in heading or (
+        "わくわくの実" in heading and "2個" in heading
     ):
         return "英雄の神殿 わくわくの実2個", "神殿CP", "育成キャンペーン"
-    if "追憶の書庫" in combined and any(
-        word in combined for word in ("金卵", "金の卵", "排出率", "2倍")
+    if "追憶の書庫" in heading and any(
+        word in heading for word in ("金卵", "金の卵", "排出率", "2倍")
     ):
         return "追憶の書庫 金卵排出率2倍", "書庫CP", "育成キャンペーン"
-    if "追憶の書庫" in combined:
+    if "追憶の書庫" in heading:
         return "追憶の書庫キャンペーン", "書庫CP", "育成キャンペーン"
-    if "クエストサーチ" in combined:
-        return "クエストサーチミッション", "サーチ任務", "ミッション"
-    if "タイムシフト" in combined:
-        return "タイムシフトミッション", "時差任務", "ミッション"
-    if "スタミナ" in combined and any(
-        word in combined for word in ("バック", "返却", "消費")
+    if "クエストサーチ" in heading:
+        return "クエストサーチミッション", "サーチミッション", "ミッション"
+    if "タイムシフト" in heading:
+        return "タイムシフトミッション", "タイムシフトミッション", "ミッション"
+    if "スタミナ" in heading and any(
+        word in heading for word in ("バック", "返却", "消費", "回復")
     ):
         return "消費スタミナバック", "スタミナ還元", "ゲーム内キャンペーン"
     if "ミッション" in heading:
