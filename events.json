@@ -1,66 +1,122 @@
 [
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "ブルーロックコラボ",
         "short_name": "ブルーロック",
         "category": "コラボ・期間限定",
         "start_date": "2026-08-16",
-        "end_date": "2026-08-31",
-        "published": true
+        "end_date": "2026-08-31"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "モンスト夏休み2026",
         "short_name": "夏休み2026",
         "category": "コラボ・期間限定",
         "start_date": "2026-08-02",
-        "end_date": "2026-08-31",
-        "published": true
+        "end_date": "2026-08-31"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "天魔の孤城",
         "short_name": "天魔の孤城",
         "category": "定期コンテンツ",
         "start_date": "2026-08-01",
-        "end_date": "2026-08-31",
-        "published": true
+        "end_date": "2026-08-31"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "破界の星墓",
         "short_name": "破界の星墓",
         "category": "定期コンテンツ",
         "start_date": "2026-08-27",
-        "end_date": "2026-09-20",
-        "published": true
+        "end_date": "2026-09-20"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "英雄の神殿 わくわくの実キャンペーン",
         "short_name": "神殿CP",
         "category": "育成キャンペーン",
         "start_date": "2026-08-18",
-        "end_date": "2026-08-22",
-        "published": true
+        "end_date": "2026-08-22"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "追憶の書庫キャンペーン",
         "short_name": "書庫CP",
         "category": "育成キャンペーン",
         "start_date": "2026-08-21",
-        "end_date": "2026-08-25",
-        "published": true
+        "end_date": "2026-08-25"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "激・獣神祭",
         "short_name": "激・獣神祭",
         "category": "ガチャ",
         "start_date": "2026-08-16",
-        "end_date": "2026-08-19",
-        "published": true
+        "end_date": "2026-08-19"
     },
     {
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true,
         "name": "獣神化・改 解禁",
         "short_name": "獣神化・改",
         "category": "獣神化情報",
         "start_date": "2026-08-25",
+        "end_date": "2026-08-25"
+    },
+    {
+        "name": "未開の幻洞",
+        "short_name": "未開の幻洞",
+        "category": "定期コンテンツ",
+        "start_date": "2026-08-14",
+        "end_date": "2026-08-29",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260806_7.html",
+        "confirmed_at": "2026-08-17T05:30:49+00:00",
+        "published": true
+    },
+    {
+        "name": "覇者の塔",
+        "short_name": "覇者の塔",
+        "category": "定期コンテンツ",
+        "start_date": "2026-08-07",
         "end_date": "2026-08-25",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260805_1.html",
+        "confirmed_at": "2026-08-17T05:30:49+00:00",
         "published": true
     }
 ]
