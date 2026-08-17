@@ -27,9 +27,15 @@ def parse_event_date(value):
 
 
 def schedule_label(schedule):
+    quest_text = (
+        f"｜クエスト：{schedule['quest_name']}"
+        if schedule.get("quest_name")
+        else ""
+    )
     return (
         f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
-        f"{schedule['name']}｜{schedule['attribute']}｜{schedule['difficulty']}"
+        f"{schedule['name']}{quest_text}｜"
+        f"{schedule['attribute']}｜{schedule['difficulty']}"
     )
 
 
@@ -40,6 +46,21 @@ def event_label(event):
         f"{start_date.month}/{start_date.day}～{end_date.month}/{end_date.day}｜"
         f"{event['name']}｜{event['category']}"
     )
+
+
+def latest_confirmation(items):
+    values = [
+        item.get("confirmed_at", "")
+        for item in items
+        if item.get("confirmed_at")
+    ]
+    if not values:
+        return None
+    try:
+        latest = max(datetime.fromisoformat(value) for value in values)
+        return latest.strftime("%Y/%m/%d %H:%M")
+    except ValueError:
+        return None
 
 
 def render_schedule_preview(selected_schedules):
@@ -60,9 +81,14 @@ def render_schedule_preview(selected_schedules):
         if not event_schedules:
             st.caption("選択なし")
         for schedule in event_schedules:
+            quest_text = (
+                f"｜{schedule['quest_name']}"
+                if schedule.get("quest_name")
+                else ""
+            )
             st.write(
                 f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
-                f"{schedule['name']}｜{schedule['difficulty']}"
+                f"{schedule['name']}{quest_text}｜{schedule['difficulty']}"
             )
 
     with high_column:
@@ -70,24 +96,19 @@ def render_schedule_preview(selected_schedules):
         if not high_difficulty_schedules:
             st.caption("選択なし")
         for schedule in high_difficulty_schedules:
+            quest_text = (
+                f"｜{schedule['quest_name']}"
+                if schedule.get("quest_name")
+                else ""
+            )
             st.write(
                 f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
-                f"{schedule['name']}｜{schedule['difficulty']}"
+                f"{schedule['name']}{quest_text}｜{schedule['difficulty']}"
             )
 
 
 st.title("モンスト スケジュールメーカー")
 st.caption("予定を選ぶだけで、スマホ向けのスケジュール画像を生成できます。")
-
-st.info(
-    "このアプリは非公式のファンツールです。"
-    "株式会社MIXIおよび「モンスターストライク」とは関係ありません。"
-)
-
-st.warning(
-    "現在の掲載情報は開発用サンプルです。"
-    "実際の開催内容は公式サイト・ゲーム内情報をご確認ください。"
-)
 
 schedule_tab, event_tab = st.tabs([
     "降臨スケジュール",
@@ -96,11 +117,19 @@ schedule_tab, event_tab = st.tabs([
 
 
 with schedule_tab:
-    schedules = load_schedules()
+    schedules = [
+        schedule
+        for schedule in load_schedules()
+        if schedule.get("published", True)
+    ]
 
     if not schedules:
         st.error("降臨データを読み込めませんでした。")
     else:
+        confirmed_at = latest_confirmation(schedules)
+        if confirmed_at:
+            st.caption(f"掲載データ最終確認：{confirmed_at}")
+
         selected_schedule_indexes = st.multiselect(
             "掲載する降臨",
             options=range(len(schedules)),
@@ -143,6 +172,10 @@ with schedule_tab:
 
 with event_tab:
     events = [event for event in load_events() if event.get("published", True)]
+    confirmed_at = latest_confirmation(events)
+    if confirmed_at:
+        st.caption(f"掲載データ最終確認：{confirmed_at}")
+
     start_date = st.date_input(
         "表示開始日（14日間）",
         value=date.today(),
