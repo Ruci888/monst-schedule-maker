@@ -54,10 +54,16 @@ def schedule_end_datetime(schedule):
     if availability_type == AVAILABILITY_PERIOD:
         period_end_date = schedule.get("period_end_date", "")
         if period_end_date:
-            return datetime.strptime(
+            end = datetime.strptime(
                 f"{period_end_date} {schedule['end_time']}",
                 "%Y-%m-%d %H:%M",
             )
+            # period_end_dateは実際のカレンダー終了日ではなく、
+            # 画像で最後に掲載したい「12:00開始の日付」を表す。
+            # 11:59など正午より前の終了時刻は翌日の時刻になる。
+            if end.time() < time(12, 0):
+                end += timedelta(days=1)
+            return end
 
     end = datetime.combine(
         start.date(),
@@ -117,6 +123,14 @@ def schedule_period_text(schedule):
         schedule.get("availability_type")
     )
     if availability_type == AVAILABILITY_PERIOD:
+        last_day = schedule.get("period_end_date", "")
+        if last_day:
+            last_day_value = datetime.strptime(last_day, "%Y-%m-%d").date()
+            return (
+                f"{start.month}/{start.day} {start.strftime('%H:%M')}～"
+                f"{last_day_value.month}/{last_day_value.day} "
+                f"（翌{end.strftime('%H:%M')}終了）"
+            )
         return (
             f"{start.month}/{start.day} {start.strftime('%H:%M')}～"
             f"{end.month}/{end.day} {end.strftime('%H:%M')}"

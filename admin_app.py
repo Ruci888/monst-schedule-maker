@@ -156,7 +156,7 @@ def schedule_rows_from_editor(editor_data):
             if not validate_date(period_end_date):
                 errors.append(
                     f"降臨データ{row_number}行目："
-                    "期間終了日はYYYY-MM-DD形式で入力してください。"
+                    "最終掲載日はYYYY-MM-DD形式で入力してください。"
                 )
             else:
                 try:
@@ -169,7 +169,7 @@ def schedule_rows_from_editor(editor_data):
                     if end_date < start_date:
                         errors.append(
                             f"降臨データ{row_number}行目："
-                            "期間終了日が開始日より前です。"
+                            "最終掲載日が開始日より前です。"
                         )
                 except ValueError:
                     pass
@@ -378,8 +378,11 @@ def review_schedule_candidates():
                 "開催方式", options=AVAILABILITY_TYPES
             ),
             "period_end_date": st.column_config.TextColumn(
-                "期間終了日",
-                help="期間中常設の場合のみ、YYYY-MM-DD形式で入力します。",
+                "最終掲載日",
+                help=(
+                    "期間中常設の場合のみ入力します。"
+                    "2026-08-19なら、8/19 12:00～翌11:59の行まで掲載します。"
+                ),
             ),
             "source_url": st.column_config.LinkColumn("公式記事"),
             "review_reason": st.column_config.TextColumn(
@@ -550,8 +553,11 @@ with schedule_tab:
                 "開催方式", options=AVAILABILITY_TYPES
             ),
             "period_end_date": st.column_config.TextColumn(
-                "期間終了日",
-                help="期間中常設の場合のみ、YYYY-MM-DD形式で入力します。",
+                "最終掲載日",
+                help=(
+                    "期間中常設の場合のみ入力します。"
+                    "2026-08-19なら、8/19 12:00～翌11:59の行まで掲載します。"
+                ),
             ),
             "source_type": st.column_config.SelectboxColumn(
                 "情報源種別",
