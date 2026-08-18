@@ -558,6 +558,7 @@ def extract_high_difficulty(title, text, source_url, fetched_at):
         "attribute": attribute_match.group(1) if attribute_match else "",
         "difficulty": difficulty_match.group(1),
         "category": "high_difficulty",
+        "group_name": "",
         "source_type": "official",
         "source_url": source_url,
         "fetched_at": fetched_at,

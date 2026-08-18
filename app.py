@@ -7,7 +7,7 @@ from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
 
 
-APP_VERSION = "v1.1.0-beta.4"
+APP_VERSION = "v1.1.0-beta.5"
 
 
 st.set_page_config(
@@ -34,6 +34,65 @@ def schedule_label(schedule):
         f"｜クエスト：{schedule['quest_name']}"
         if schedule.get("quest_name")
         else ""
+    )
+
+
+SCHEDULE_DIFFICULTY_ORDER = [
+    "黎絶",
+    "轟絶",
+    "超究極",
+    "超究極・兵",
+    "爆絶",
+    "超絶",
+    "激究極",
+    "究極",
+    "星5制限",
+    "極",
+]
+
+
+def schedule_key(schedule):
+    return "\x1f".join([
+        str(schedule.get("year", "")),
+        schedule.get("date", ""),
+        schedule.get("start_time", ""),
+        schedule.get("end_time", ""),
+        schedule.get("name", ""),
+        schedule.get("difficulty", ""),
+    ])
+
+
+def schedule_group_name(schedule):
+    return schedule.get("group_name") or "イベント・期間限定"
+
+
+def schedule_selection_key(schedule):
+    if schedule.get("category", "high_difficulty") == "event":
+        return f"group:{schedule_group_name(schedule)}"
+    return f"difficulty:{schedule.get('difficulty', 'その他')}"
+
+
+def schedule_selection_label(selection_key):
+    return selection_key.split(":", 1)[-1]
+
+
+def schedule_selection_sort_key(selection_key):
+    kind, label = selection_key.split(":", 1)
+    if kind == "group":
+        return (0, label)
+    try:
+        return (1, SCHEDULE_DIFFICULTY_ORDER.index(label))
+    except ValueError:
+        return (1, len(SCHEDULE_DIFFICULTY_ORDER))
+
+
+def schedule_adjustment_label(schedule):
+    group_text = ""
+    if schedule.get("category") == "event":
+        group_text = f"｜{schedule_group_name(schedule)}"
+    return (
+        f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
+        f"{schedule['name']}｜{schedule['difficulty']}{group_text}"
     )
     return (
         f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
@@ -179,21 +238,97 @@ with schedule_tab:
         if confirmed_at:
             st.caption(f"掲載データ最終確認：{confirmed_at}")
 
-        selected_schedule_indexes = st.multiselect(
-            "掲載する降臨",
-            options=range(len(schedules)),
-            default=range(len(schedules)),
-            format_func=lambda index: schedule_label(schedules[index]),
+        schedule_start_date = st.date_input(
+            "表示開始日（7日間）",
+            value=date.today(),
+            key="schedule_start_date",
         )
+        schedule_end_date = schedule_start_date + timedelta(days=6)
 
-        selected_schedules = [
-            schedules[index]
-            for index in selected_schedule_indexes
+        available_schedules = [
+            schedule
+            for schedule in schedules
+            if schedule_start_date
+            <= parse_schedule_datetime(schedule).date()
+            <= schedule_end_date
         ]
 
-        schedule_design = st.selectbox(
+        if not available_schedules:
+            st.info("選択した7日間に掲載できる降臨はありません。")
+            selected_schedules = []
+        else:
+            selection_options = sorted(
+                {
+                    schedule_selection_key(schedule)
+                    for schedule in available_schedules
+                },
+                key=schedule_selection_sort_key,
+            )
+            selected_options = st.pills(
+                "掲載内容",
+                options=selection_options,
+                default=[],
+                selection_mode="multi",
+                format_func=schedule_selection_label,
+                key=f"schedule_categories_{schedule_start_date.isoformat()}",
+            )
+
+            selected_option_set = set(selected_options or [])
+            category_schedules = [
+                schedule
+                for schedule in available_schedules
+                if schedule_selection_key(schedule) in selected_option_set
+            ]
+            schedule_map = {
+                schedule_key(schedule): schedule
+                for schedule in category_schedules
+            }
+            valid_schedule_keys = set(schedule_map)
+            excluded_state_key = (
+                f"schedule_excluded_{schedule_start_date.isoformat()}"
+            )
+            if excluded_state_key in st.session_state:
+                st.session_state[excluded_state_key] = [
+                    key
+                    for key in st.session_state[excluded_state_key]
+                    if key in valid_schedule_keys
+                ]
+
+            if schedule_map:
+                with st.expander("個別に選択を調整", expanded=False):
+                    st.caption(
+                        "選択したコラボ・難易度の中から、"
+                        "掲載しない降臨を指定できます。"
+                    )
+                    excluded_schedule_keys = st.multiselect(
+                        "掲載しない降臨",
+                        options=list(schedule_map),
+                        default=[],
+                        format_func=lambda key: schedule_adjustment_label(
+                            schedule_map[key]
+                        ),
+                        key=excluded_state_key,
+                        placeholder="除外する降臨を選択",
+                    )
+            else:
+                excluded_schedule_keys = []
+                st.info("掲載したいコラボ・難易度を1つ以上選択してください。")
+
+            selected_schedules = [
+                schedule
+                for key, schedule in schedule_map.items()
+                if key not in excluded_schedule_keys
+            ]
+
+            st.caption(
+                f"選択中：{len(selected_schedules)}件／"
+                f"この期間の掲載候補：{len(available_schedules)}件"
+            )
+
+        schedule_design = st.radio(
             "デザイン",
             options=["ブルー", "ダーク", "シンプル"],
+            horizontal=True,
             key="schedule_design",
         )
 
@@ -208,6 +343,7 @@ with schedule_tab:
                 schedule_image = generate_schedule_image(
                     selected_schedules,
                     schedule_design,
+                    schedule_start_date,
                 )
 
                 st.image(schedule_image, caption="生成した降臨スケジュール")

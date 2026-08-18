@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
-from importlib.metadata import distribution
 from io import BytesIO
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
-
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -16,17 +14,17 @@ def load_font(size):
         Path("C:/Windows/Fonts/meiryo.ttc"),
         Path("C:/Windows/Fonts/YuGothM.ttc"),
         Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
     ]
 
     try:
-        ipa_font_path = Path(
-            distribution("japanize-matplotlib").locate_file(
-                "japanize_matplotlib/fonts/ipaexg.ttf"
-        )
-    )
-        candidates.insert(0, ipa_font_path)
+        import japanize_matplotlib
 
-    except Exception:
+        candidates.insert(
+            0,
+            Path(japanize_matplotlib.__file__).resolve().parent / "fonts" / "ipaexg.ttf",
+        )
+    except ImportError:
         pass
 
     for font_path in candidates:
@@ -159,10 +157,10 @@ def draw_schedule_item(draw, schedule, x, y, column_right, theme):
     )
 
 
-def generate_schedule_image(schedules, design):
+def generate_schedule_image(schedules, design, start_date=None):
     theme = get_theme(design)
     schedules = sorted(schedules, key=parse_schedule_datetime)
-    first_day = parse_schedule_datetime(schedules[0]).date()
+    first_day = start_date or parse_schedule_datetime(schedules[0]).date()
     days = [first_day + timedelta(days=offset) for offset in range(7)]
 
     schedule_by_date = {
@@ -223,7 +221,7 @@ def generate_schedule_image(schedules, design):
     heading_font = load_font(25)
     draw_centered_text(draw, (left_edge, heading_top, date_right, heading_bottom), "日程", heading_font, theme["text"])
     draw_centered_text(draw, (date_right, heading_top, event_right, heading_bottom), "イベント・期間限定", heading_font, theme["text"])
-    draw_centered_text(draw, (event_right, heading_top, right_edge, heading_bottom), "高難易度降臨", heading_font, theme["text"])
+    draw_centered_text(draw, (event_right, heading_top, right_edge, heading_bottom), "高難易度・注目", heading_font, theme["text"])
 
     for line_x in (date_right, event_right):
         draw.line((line_x, heading_top, line_x, heading_bottom), fill=theme["line"], width=3)

@@ -118,6 +118,7 @@ def schedule_rows_from_editor(editor_data):
         attribute = normalize_text(row.get("attribute"))
         difficulty = normalize_text(row.get("difficulty"))
         category = normalize_text(row.get("category"))
+        group_name = normalize_text(row.get("group_name"))
         source_type = normalize_text(row.get("source_type")) or "manual"
         source_url = normalize_text(row.get("source_url"))
         published = bool(row.get("published", True))
@@ -148,6 +149,7 @@ def schedule_rows_from_editor(editor_data):
             "attribute": attribute,
             "difficulty": difficulty,
             "category": category,
+            "group_name": group_name,
             "source_type": source_type,
             "source_url": source_url,
             "confirmed_at": normalize_text(row.get("confirmed_at")),
@@ -212,6 +214,7 @@ def event_rows_from_editor(editor_data):
 def ensure_schedule_columns(schedules):
     defaults = {
         "quest_name": "",
+        "group_name": "",
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
@@ -294,6 +297,7 @@ def review_schedule_candidates():
             "attribute": candidate.get("attribute", ""),
             "difficulty": candidate.get("difficulty", ""),
             "category": candidate.get("category", "high_difficulty"),
+            "group_name": candidate.get("group_name", ""),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
             "review_reason": candidate.get("review_reason", ""),
@@ -312,6 +316,10 @@ def review_schedule_candidates():
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=SCHEDULE_CATEGORIES
+            ),
+            "group_name": st.column_config.TextColumn(
+                "掲載グループ",
+                help="例：ブルーロックコラボ、モンスト夏休み2026",
             ),
             "source_url": st.column_config.LinkColumn("公式記事"),
             "review_reason": st.column_config.TextColumn(
@@ -473,6 +481,10 @@ with schedule_tab:
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=SCHEDULE_CATEGORIES
+            ),
+            "group_name": st.column_config.TextColumn(
+                "掲載グループ",
+                help="同じコラボ・期間限定降臨をまとめる名前です。",
             ),
             "source_type": st.column_config.SelectboxColumn(
                 "情報源種別",
