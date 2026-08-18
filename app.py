@@ -5,9 +5,18 @@ import streamlit as st
 from data_manager import load_events, load_schedules
 from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
+from schedule_utils import (
+    CATEGORY_COLLABORATION,
+    CATEGORY_FEATURED,
+    CATEGORY_LIMITED_EVENT,
+    normalize_schedule_category,
+    schedule_overlaps_game_days,
+    schedule_period_text,
+    schedule_start_datetime,
+)
 
 
-APP_VERSION = "v1.1.0-beta.5"
+APP_VERSION = "v1.1.0-beta.6"
 
 
 st.set_page_config(
@@ -18,11 +27,7 @@ st.set_page_config(
 
 
 def parse_schedule_datetime(schedule):
-    value = (
-        f"{schedule['year']}/{schedule['date']} "
-        f"{schedule['start_time']}"
-    )
-    return datetime.strptime(value, "%Y/%m/%d %H:%M")
+    return schedule_start_datetime(schedule)
 
 
 def parse_event_date(value):
@@ -67,8 +72,9 @@ def schedule_group_name(schedule):
 
 
 def schedule_selection_key(schedule):
-    if schedule.get("category", "high_difficulty") == "event":
-        return f"group:{schedule_group_name(schedule)}"
+    category = normalize_schedule_category(schedule.get("category"))
+    if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
+        return f"category:{category}"
     return f"difficulty:{schedule.get('difficulty', 'その他')}"
 
 
@@ -78,8 +84,9 @@ def schedule_selection_label(selection_key):
 
 def schedule_selection_sort_key(selection_key):
     kind, label = selection_key.split(":", 1)
-    if kind == "group":
-        return (0, label)
+    if kind == "category":
+        category_order = [CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT]
+        return (0, category_order.index(label))
     try:
         return (1, SCHEDULE_DIFFICULTY_ORDER.index(label))
     except ValueError:
@@ -88,10 +95,14 @@ def schedule_selection_sort_key(selection_key):
 
 def schedule_adjustment_label(schedule):
     group_text = ""
-    if schedule.get("category") == "event":
+    if (
+        normalize_schedule_category(schedule.get("category"))
+        in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+        and schedule.get("group_name")
+    ):
         group_text = f"｜{schedule_group_name(schedule)}"
     return (
-        f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
+        f"{schedule_period_text(schedule)}｜"
         f"{schedule['name']}｜{schedule['difficulty']}{group_text}"
     )
     return (
@@ -173,16 +184,16 @@ def render_schedule_preview(selected_schedules):
     high_difficulty_schedules = []
 
     for schedule in selected_schedules:
-        category = schedule.get("category", "high_difficulty")
-        if category == "event":
+        category = normalize_schedule_category(schedule.get("category"))
+        if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
             event_schedules.append(schedule)
-        elif category == "high_difficulty":
+        elif category == CATEGORY_FEATURED:
             high_difficulty_schedules.append(schedule)
 
     event_column, high_column = st.columns(2)
 
     with event_column:
-        st.markdown("#### イベント・期間限定")
+        st.markdown("#### コラボ・期間限定")
         if not event_schedules:
             st.caption("選択なし")
         for schedule in event_schedules:
@@ -192,8 +203,10 @@ def render_schedule_preview(selected_schedules):
                 else ""
             )
             st.write(
-                f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
-                f"{schedule['name']}{quest_text}｜{schedule['difficulty']}"
+                f"{schedule_period_text(schedule)}｜"
+                f"{schedule['name']}{quest_text}｜"
+                f"{normalize_schedule_category(schedule.get('category'))}｜"
+                f"{schedule['difficulty']}"
             )
 
     with high_column:
@@ -207,7 +220,7 @@ def render_schedule_preview(selected_schedules):
                 else ""
             )
             st.write(
-                f"{schedule['date']} {schedule['start_time']}～{schedule['end_time']}｜"
+                f"{schedule_period_text(schedule)}｜"
                 f"{schedule['name']}{quest_text}｜{schedule['difficulty']}"
             )
 
@@ -248,36 +261,47 @@ with schedule_tab:
         available_schedules = [
             schedule
             for schedule in schedules
-            if schedule_start_date
-            <= parse_schedule_datetime(schedule).date()
-            <= schedule_end_date
+            if schedule_overlaps_game_days(
+                schedule,
+                schedule_start_date,
+                schedule_end_date,
+            )
         ]
 
         if not available_schedules:
             st.info("選択した7日間に掲載できる降臨はありません。")
             selected_schedules = []
         else:
-            selection_options = sorted(
-                {
-                    schedule_selection_key(schedule)
-                    for schedule in available_schedules
-                },
-                key=schedule_selection_sort_key,
-            )
-            selected_options = st.pills(
-                "掲載内容",
-                options=selection_options,
+            selected_categories = st.pills(
+                "掲載カテゴリ",
+                options=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
                 default=[],
                 selection_mode="multi",
-                format_func=schedule_selection_label,
-                key=f"schedule_categories_{schedule_start_date.isoformat()}",
+                key=f"schedule_main_categories_{schedule_start_date.isoformat()}",
+            )
+            selected_difficulties = st.pills(
+                "掲載する難易度・シリーズ",
+                options=SCHEDULE_DIFFICULTY_ORDER,
+                default=[],
+                selection_mode="multi",
+                key=f"schedule_difficulties_{schedule_start_date.isoformat()}",
             )
 
-            selected_option_set = set(selected_options or [])
+            selected_category_set = set(selected_categories or [])
+            selected_difficulty_set = set(selected_difficulties or [])
             category_schedules = [
                 schedule
                 for schedule in available_schedules
-                if schedule_selection_key(schedule) in selected_option_set
+                if (
+                    normalize_schedule_category(schedule.get("category"))
+                    in selected_category_set
+                    or (
+                        normalize_schedule_category(schedule.get("category"))
+                        == CATEGORY_FEATURED
+                        and schedule.get("difficulty")
+                        in selected_difficulty_set
+                    )
+                )
             ]
             schedule_map = {
                 schedule_key(schedule): schedule
@@ -312,7 +336,7 @@ with schedule_tab:
                     )
             else:
                 excluded_schedule_keys = []
-                st.info("掲載したいコラボ・難易度を1つ以上選択してください。")
+                st.info("掲載したいカテゴリ・難易度を1つ以上選択してください。")
 
             selected_schedules = [
                 schedule

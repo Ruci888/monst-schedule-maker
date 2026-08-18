@@ -4,6 +4,7 @@ from urllib.parse import urljoin, urlparse
 from zoneinfo import ZoneInfo
 
 from data_manager import save_json
+from schedule_utils import AVAILABILITY_SCHEDULED, CATEGORY_FEATURED
 
 
 OFFICIAL_NEWS_URL = "https://www.monster-strike.com/news/"
@@ -557,8 +558,10 @@ def extract_high_difficulty(title, text, source_url, fetched_at):
         "quest_name": quest_match.group(1).strip() if quest_match else "",
         "attribute": attribute_match.group(1) if attribute_match else "",
         "difficulty": difficulty_match.group(1),
-        "category": "high_difficulty",
+        "category": CATEGORY_FEATURED,
         "group_name": "",
+        "availability_type": AVAILABILITY_SCHEDULED,
+        "period_end_date": "",
         "source_type": "official",
         "source_url": source_url,
         "fetched_at": fetched_at,

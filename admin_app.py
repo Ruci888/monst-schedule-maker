@@ -19,6 +19,14 @@ from github_storage import (
     load_remote_json,
     save_remote_json,
 )
+from schedule_utils import (
+    AVAILABILITY_PERIOD,
+    AVAILABILITY_SCHEDULED,
+    AVAILABILITY_TYPES,
+    SCHEDULE_CATEGORIES,
+    normalize_availability_type,
+    normalize_schedule_category,
+)
 
 
 st.set_page_config(
@@ -41,7 +49,6 @@ DIFFICULTIES = [
     "星5制限",
     "極",
 ]
-SCHEDULE_CATEGORIES = ["event", "high_difficulty"]
 EVENT_CATEGORIES = [
     "定期コンテンツ",
     "コラボ・期間限定",
@@ -118,7 +125,12 @@ def schedule_rows_from_editor(editor_data):
         attribute = normalize_text(row.get("attribute"))
         difficulty = normalize_text(row.get("difficulty"))
         category = normalize_text(row.get("category"))
+        category = normalize_schedule_category(category)
         group_name = normalize_text(row.get("group_name"))
+        availability_type = normalize_availability_type(
+            normalize_text(row.get("availability_type"))
+        )
+        period_end_date = normalize_text(row.get("period_end_date"))
         source_type = normalize_text(row.get("source_type")) or "manual"
         source_url = normalize_text(row.get("source_url"))
         published = bool(row.get("published", True))
@@ -138,6 +150,29 @@ def schedule_rows_from_editor(editor_data):
             errors.append(f"降臨データ{row_number}行目：難易度が不正です。")
         if category not in SCHEDULE_CATEGORIES:
             errors.append(f"降臨データ{row_number}行目：カテゴリが不正です。")
+        if availability_type not in AVAILABILITY_TYPES:
+            errors.append(f"降臨データ{row_number}行目：開催方式が不正です。")
+        if availability_type == AVAILABILITY_PERIOD:
+            if not validate_date(period_end_date):
+                errors.append(
+                    f"降臨データ{row_number}行目："
+                    "期間終了日はYYYY-MM-DD形式で入力してください。"
+                )
+            else:
+                try:
+                    start_date = datetime.strptime(
+                        f"{year}/{date_value}", "%Y/%m/%d"
+                    ).date()
+                    end_date = datetime.strptime(
+                        period_end_date, "%Y-%m-%d"
+                    ).date()
+                    if end_date < start_date:
+                        errors.append(
+                            f"降臨データ{row_number}行目："
+                            "期間終了日が開始日より前です。"
+                        )
+                except ValueError:
+                    pass
 
         rows.append({
             "year": year,
@@ -150,6 +185,8 @@ def schedule_rows_from_editor(editor_data):
             "difficulty": difficulty,
             "category": category,
             "group_name": group_name,
+            "availability_type": availability_type,
+            "period_end_date": period_end_date,
             "source_type": source_type,
             "source_url": source_url,
             "confirmed_at": normalize_text(row.get("confirmed_at")),
@@ -215,12 +252,24 @@ def ensure_schedule_columns(schedules):
     defaults = {
         "quest_name": "",
         "group_name": "",
+        "availability_type": AVAILABILITY_SCHEDULED,
+        "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
         "published": True,
     }
-    return [{**defaults, **schedule} for schedule in schedules]
+    results = []
+    for schedule in schedules:
+        normalized = {**defaults, **schedule}
+        normalized["category"] = normalize_schedule_category(
+            normalized.get("category")
+        )
+        normalized["availability_type"] = normalize_availability_type(
+            normalized.get("availability_type")
+        )
+        results.append(normalized)
+    return results
 
 
 def ensure_event_columns(events):
@@ -298,6 +347,10 @@ def review_schedule_candidates():
             "difficulty": candidate.get("difficulty", ""),
             "category": candidate.get("category", "high_difficulty"),
             "group_name": candidate.get("group_name", ""),
+            "availability_type": normalize_availability_type(
+                candidate.get("availability_type")
+            ),
+            "period_end_date": candidate.get("period_end_date", ""),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
             "review_reason": candidate.get("review_reason", ""),
@@ -320,6 +373,13 @@ def review_schedule_candidates():
             "group_name": st.column_config.TextColumn(
                 "掲載グループ",
                 help="例：ブルーロックコラボ、モンスト夏休み2026",
+            ),
+            "availability_type": st.column_config.SelectboxColumn(
+                "開催方式", options=AVAILABILITY_TYPES
+            ),
+            "period_end_date": st.column_config.TextColumn(
+                "期間終了日",
+                help="期間中常設の場合のみ、YYYY-MM-DD形式で入力します。",
             ),
             "source_url": st.column_config.LinkColumn("公式記事"),
             "review_reason": st.column_config.TextColumn(
@@ -485,6 +545,13 @@ with schedule_tab:
             "group_name": st.column_config.TextColumn(
                 "掲載グループ",
                 help="同じコラボ・期間限定降臨をまとめる名前です。",
+            ),
+            "availability_type": st.column_config.SelectboxColumn(
+                "開催方式", options=AVAILABILITY_TYPES
+            ),
+            "period_end_date": st.column_config.TextColumn(
+                "期間終了日",
+                help="期間中常設の場合のみ、YYYY-MM-DD形式で入力します。",
             ),
             "source_type": st.column_config.SelectboxColumn(
                 "情報源種別",

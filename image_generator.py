@@ -4,6 +4,17 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from schedule_utils import (
+    CATEGORY_COLLABORATION,
+    CATEGORY_FEATURED,
+    CATEGORY_LIMITED_EVENT,
+    normalize_schedule_category,
+    schedule_active_on_game_day,
+    schedule_game_day,
+    schedule_start_datetime,
+    schedule_time_text_for_day,
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -90,10 +101,7 @@ def get_difficulty_color(difficulty):
 
 
 def parse_schedule_datetime(schedule):
-    return datetime.strptime(
-        f"{schedule['year']}/{schedule['date']} {schedule['start_time']}",
-        "%Y/%m/%d %H:%M",
-    )
+    return schedule_start_datetime(schedule)
 
 
 def fit_font(text, maximum_size, minimum_size, maximum_width, draw):
@@ -121,14 +129,48 @@ def draw_centered_text(draw, area, text, font, fill):
     )
 
 
-def draw_schedule_item(draw, schedule, x, y, column_right, theme):
+def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     information_font = load_font(20)
     label_font = fit_font(
         schedule["difficulty"], 17, 13, 92, draw
     )
 
-    time_text = f"{schedule['start_time']}～{schedule['end_time']}"
+    time_text = schedule_time_text_for_day(schedule, display_day)
     draw.text((x, y), time_text, font=information_font, fill=theme["sub_text"])
+
+    category = normalize_schedule_category(schedule.get("category"))
+    category_labels = {
+        CATEGORY_COLLABORATION: ("コラボ", "#B91C1C"),
+        CATEGORY_LIMITED_EVENT: ("期間限定", "#A16207"),
+    }
+    category_label = category_labels.get(category)
+    if category_label:
+        category_text, category_color = category_label
+        category_width = 82
+        category_height = 28
+        category_x = column_right - category_width - 18
+        draw.rounded_rectangle(
+            (
+                category_x,
+                y,
+                category_x + category_width,
+                y + category_height,
+            ),
+            radius=10,
+            fill=category_color,
+        )
+        draw_centered_text(
+            draw,
+            (
+                category_x,
+                y,
+                category_x + category_width,
+                y + category_height,
+            ),
+            category_text,
+            load_font(14),
+            "#FFFFFF",
+        )
 
     label_width = 112
     label_height = 42
@@ -160,7 +202,7 @@ def draw_schedule_item(draw, schedule, x, y, column_right, theme):
 def generate_schedule_image(schedules, design, start_date=None):
     theme = get_theme(design)
     schedules = sorted(schedules, key=parse_schedule_datetime)
-    first_day = start_date or parse_schedule_datetime(schedules[0]).date()
+    first_day = start_date or schedule_game_day(schedules[0])
     days = [first_day + timedelta(days=offset) for offset in range(7)]
 
     schedule_by_date = {
@@ -169,12 +211,15 @@ def generate_schedule_image(schedules, design, start_date=None):
     }
 
     for schedule in schedules:
-        schedule_day = parse_schedule_datetime(schedule).date()
-        if schedule_day not in schedule_by_date:
-            continue
-        category = schedule.get("category", "high_difficulty")
-        if category in schedule_by_date[schedule_day]:
-            schedule_by_date[schedule_day][category].append(schedule)
+        category = normalize_schedule_category(schedule.get("category"))
+        column_name = (
+            "event"
+            if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+            else "high_difficulty"
+        )
+        for day in days:
+            if schedule_active_on_game_day(schedule, day):
+                schedule_by_date[day][column_name].append(schedule)
 
     row_heights = []
     for date_data in schedule_by_date.values():
@@ -220,7 +265,7 @@ def generate_schedule_image(schedules, design, start_date=None):
 
     heading_font = load_font(25)
     draw_centered_text(draw, (left_edge, heading_top, date_right, heading_bottom), "日程", heading_font, theme["text"])
-    draw_centered_text(draw, (date_right, heading_top, event_right, heading_bottom), "イベント・期間限定", heading_font, theme["text"])
+    draw_centered_text(draw, (date_right, heading_top, event_right, heading_bottom), "コラボ・期間限定", heading_font, theme["text"])
     draw_centered_text(draw, (event_right, heading_top, right_edge, heading_bottom), "高難易度・注目", heading_font, theme["text"])
 
     for line_x in (date_right, event_right):
@@ -250,12 +295,12 @@ def generate_schedule_image(schedules, design, start_date=None):
 
         item_y = y + 15
         for schedule in date_data["event"]:
-            draw_schedule_item(draw, schedule, date_right + 18, item_y, event_right, theme)
+            draw_schedule_item(draw, schedule, day, date_right + 18, item_y, event_right, theme)
             item_y += 92
 
         item_y = y + 15
         for schedule in date_data["high_difficulty"]:
-            draw_schedule_item(draw, schedule, event_right + 18, item_y, right_edge, theme)
+            draw_schedule_item(draw, schedule, day, event_right + 18, item_y, right_edge, theme)
             item_y += 92
 
         y += row_height + 10
