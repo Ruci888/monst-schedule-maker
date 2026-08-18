@@ -16,7 +16,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9"
+APP_VERSION = "v1.1.0-beta.9.1"
 
 
 st.set_page_config(

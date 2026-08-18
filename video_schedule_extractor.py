@@ -56,6 +56,11 @@ IGNORED_NAME_WORDS = (
     "スケジュール",
     "繰り返し予約",
 )
+JAPANESE_PATTERN = re.compile(r"[ぁ-んァ-ヶー一-龠々〆ヵヶ]")
+JAPANESE_NAME_PATTERN = re.compile(
+    r"[ぁ-んァ-ヶー一-龠々〆ヵヶ]+"
+    r"(?:[・･\s]+[ぁ-んァ-ヶー一-龠々〆ヵヶ]+)*"
+)
 
 
 class VideoScheduleError(RuntimeError):
@@ -154,6 +159,40 @@ def _clean_name_line(line):
     return text.strip()
 
 
+def japanese_ratio(text):
+    compact = re.sub(r"[\s・･\-ー]", "", normalize_ocr_text(text))
+    if not compact:
+        return 0.0
+    return len(JAPANESE_PATTERN.findall(compact)) / len(compact)
+
+
+def clean_ocr_character_name(text):
+    """OCR文字列から英数字やUI断片を除き、日本語の名前部分だけを返す。"""
+    normalized = normalize_ocr_text(text)
+    matches = [match.group(0).strip() for match in JAPANESE_NAME_PATTERN.finditer(normalized)]
+    matches = [
+        match
+        for match in matches
+        if len(normalize_identity_name(match)) >= 2
+        and not any(word in match for word in IGNORED_NAME_WORDS)
+        and not find_difficulty(match)
+    ]
+    if not matches:
+        return ""
+    best = max(matches, key=lambda value: len(normalize_identity_name(value)))
+    parts = best.split()
+    # 「w 竜 オーポレン BRE」のような1文字の誤認識を名前の前から除く。
+    if len(parts) >= 2 and len(parts[0]) == 1 and len("".join(parts[1:])) >= 3:
+        best = " ".join(parts[1:])
+    return best.strip()
+
+
+def is_plausible_character_name(value):
+    name = clean_ocr_character_name(value)
+    length = len(normalize_identity_name(name))
+    return bool(name) and 2 <= length <= 30 and japanese_ratio(name) >= 0.75
+
+
 def find_character_name(text):
     candidates = []
     for raw_line in str(text or "").splitlines():
@@ -173,10 +212,22 @@ def find_character_name(text):
     return candidates[-1] if candidates else ""
 
 
-def candidate_from_card_text(text, year, attribute="", confidence=0.0):
+def candidate_from_card_text(
+    text,
+    year,
+    attribute="",
+    confidence=0.0,
+    recognized_name=None,
+    raw_name_text="",
+    ocr_status="",
+):
     date_time = find_date_time(text)
     difficulty = find_difficulty(text)
-    name = find_character_name(text)
+    name = (
+        clean_ocr_character_name(recognized_name)
+        if recognized_name is not None
+        else clean_ocr_character_name(find_character_name(text))
+    )
     if not date_time or not difficulty or not name:
         return None
     return {
@@ -197,6 +248,9 @@ def candidate_from_card_text(text, year, attribute="", confidence=0.0):
             "キャラ名・属性・難易度・日時を確認してください。"
         ),
         "ocr_confidence": round(float(confidence), 1),
+        "ocr_raw_name": normalize_ocr_text(raw_name_text),
+        "ocr_status": ocr_status or "要確認",
+        "ocr_votes": 1,
         "confirmed_at": "",
         "published": False,
     }
@@ -212,7 +266,7 @@ def _similar_candidate(left, right):
         return False
     left_name = normalize_identity_name(left.get("name"))
     right_name = normalize_identity_name(right.get("name"))
-    return SequenceMatcher(None, left_name, right_name).ratio() >= 0.92
+    return SequenceMatcher(None, left_name, right_name).ratio() >= 0.82
 
 
 def deduplicate_video_candidates(candidates):
@@ -231,10 +285,19 @@ def deduplicate_video_candidates(candidates):
             unique.append(candidate)
             continue
         duplicate_count += 1
-        if candidate.get("ocr_confidence", 0) > unique[matching_index].get(
+        current = unique[matching_index]
+        votes = int(current.get("ocr_votes", 1)) + int(
+            candidate.get("ocr_votes", 1)
+        )
+        if candidate.get("ocr_confidence", 0) > current.get(
             "ocr_confidence", 0
         ):
+            candidate["ocr_votes"] = votes
+            candidate["ocr_status"] = "複数フレーム一致"
             unique[matching_index] = candidate
+        else:
+            current["ocr_votes"] = votes
+            current["ocr_status"] = "複数フレーム一致"
     return unique, duplicate_count
 
 
@@ -303,6 +366,158 @@ def _prepare_ocr_image(cv2, image):
     if binary.mean() < 127:
         binary = cv2.bitwise_not(binary)
     return binary
+
+
+def _enlarge_name_image(cv2, image):
+    return cv2.resize(
+        image,
+        None,
+        fx=4.0,
+        fy=4.0,
+        interpolation=cv2.INTER_CUBIC,
+    )
+
+
+def _name_color_mask(cv2, image, attribute=""):
+    """暗い背景を消し、属性色のキャラ名を黒文字・白背景にする。"""
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    ranges = {
+        "火": ((0, 12), (170, 179)),
+        "光": ((12, 35),),
+        "木": ((35, 88),),
+        "水": ((88, 122),),
+        "闇": ((122, 170),),
+    }
+    selected_ranges = ranges.get(attribute, ((0, 179),))
+    mask = None
+    for minimum_hue, maximum_hue in selected_ranges:
+        current = cv2.inRange(
+            hsv,
+            (minimum_hue, 65, 75),
+            (maximum_hue, 255, 255),
+        )
+        mask = current if mask is None else cv2.bitwise_or(mask, current)
+    mask = cv2.morphologyEx(
+        mask,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)),
+    )
+    # Tesseractが読みやすい白背景・黒文字へ変換する。
+    return cv2.bitwise_not(mask)
+
+
+def _ocr_name_variant(pytesseract, image):
+    data = pytesseract.image_to_data(
+        image,
+        lang="jpn+eng",
+        config="--psm 7 -c preserve_interword_spaces=1",
+        output_type=pytesseract.Output.DICT,
+    )
+    words = []
+    confidences = []
+    for text, confidence in zip(data.get("text", []), data.get("conf", [])):
+        text = normalize_ocr_text(text)
+        if not text:
+            continue
+        words.append(text)
+        try:
+            value = float(confidence)
+            if value >= 0:
+                confidences.append(value)
+        except (TypeError, ValueError):
+            pass
+    raw_text = " ".join(words)
+    name = clean_ocr_character_name(raw_text)
+    confidence = (
+        sum(confidences) / len(confidences)
+        if confidences
+        else 0.0
+    )
+    return {
+        "raw": raw_text,
+        "name": name if is_plausible_character_name(name) else "",
+        "confidence": confidence,
+    }
+
+
+def _extract_character_name(cv2, pytesseract, card, attribute):
+    height, width = card.shape[:2]
+    name_region = card[
+        int(height * 0.38): int(height * 0.80),
+        int(width * 0.15): int(width * 0.77),
+    ]
+    if name_region.size == 0:
+        return "", "", 0.0, "名前認識失敗"
+
+    enlarged_color = _enlarge_name_image(cv2, name_region)
+    enlarged_gray = cv2.cvtColor(enlarged_color, cv2.COLOR_BGR2GRAY)
+    enlarged_gray = cv2.createCLAHE(
+        clipLimit=2.5,
+        tileGridSize=(8, 8),
+    ).apply(enlarged_gray)
+    _, threshold_image = cv2.threshold(
+        enlarged_gray,
+        0,
+        255,
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU,
+    )
+    if threshold_image.mean() < 127:
+        threshold_image = cv2.bitwise_not(threshold_image)
+
+    variants = [
+        _ocr_name_variant(pytesseract, enlarged_color),
+        _ocr_name_variant(pytesseract, threshold_image),
+        _ocr_name_variant(
+            pytesseract,
+            _enlarge_name_image(
+                cv2,
+                _name_color_mask(cv2, name_region, attribute),
+            ),
+        ),
+        _ocr_name_variant(
+            pytesseract,
+            _enlarge_name_image(
+                cv2,
+                _name_color_mask(cv2, name_region),
+            ),
+        ),
+    ]
+    valid = [variant for variant in variants if variant["name"]]
+    raw_names = []
+    for variant in variants:
+        if variant["raw"] and variant["raw"] not in raw_names:
+            raw_names.append(variant["raw"])
+    raw_text = " / ".join(raw_names)
+    if not valid:
+        return "", raw_text, 0.0, "名前認識失敗"
+
+    for variant in valid:
+        agreement = sum(
+            SequenceMatcher(
+                None,
+                normalize_identity_name(variant["name"]),
+                normalize_identity_name(other["name"]),
+            ).ratio() >= 0.82
+            for other in valid
+        )
+        variant["score"] = (
+            variant["confidence"]
+            + agreement * 12
+            + len(normalize_identity_name(variant["name"]))
+        )
+        variant["agreement"] = agreement
+    selected = max(valid, key=lambda variant: variant["score"])
+    status = (
+        "複数処理一致"
+        if selected["agreement"] >= 2 and selected["confidence"] >= 45
+        else "要確認"
+    )
+    return (
+        selected["name"],
+        raw_text,
+        selected["confidence"],
+        status,
+    )
 
 
 def _group_ocr_lines(data):
@@ -398,11 +613,21 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
         )
         # 日時行がカード再OCRで欠けた場合に、先に検出した行を補う。
         combined_text = f"{line['text']}\n{card_text}"
+        attribute = _infer_attribute(cv2, card)
+        name, raw_name, name_confidence, ocr_status = _extract_character_name(
+            cv2,
+            pytesseract,
+            card,
+            attribute,
+        )
         candidate = candidate_from_card_text(
             combined_text,
             year,
-            attribute=_infer_attribute(cv2, card),
-            confidence=line["confidence"],
+            attribute=attribute,
+            confidence=name_confidence,
+            recognized_name=name,
+            raw_name_text=raw_name,
+            ocr_status=ocr_status,
         )
         if candidate:
             candidates.append(candidate)

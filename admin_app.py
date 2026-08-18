@@ -451,6 +451,10 @@ def review_schedule_candidates():
             "period_end_date": candidate.get("period_end_date", ""),
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
+            "ocr_raw_name": candidate.get("ocr_raw_name", ""),
+            "ocr_confidence": candidate.get("ocr_confidence"),
+            "ocr_status": candidate.get("ocr_status", ""),
+            "ocr_votes": candidate.get("ocr_votes"),
             "review_reason": candidate.get("review_reason", ""),
             "confirmed_at": candidate.get("confirmed_at", ""),
             "published": True,
@@ -483,6 +487,25 @@ def review_schedule_candidates():
                 ),
             ),
             "source_url": st.column_config.LinkColumn("公式記事"),
+            "ocr_raw_name": st.column_config.TextColumn(
+                "OCR原文",
+                disabled=True,
+                help="キャラ名領域を複数の方法で読み取った元データです。",
+            ),
+            "ocr_confidence": st.column_config.NumberColumn(
+                "名前信頼度",
+                disabled=True,
+                format="%.1f",
+            ),
+            "ocr_status": st.column_config.TextColumn(
+                "OCR判定",
+                disabled=True,
+            ),
+            "ocr_votes": st.column_config.NumberColumn(
+                "一致回数",
+                disabled=True,
+                format="%d",
+            ),
             "review_reason": st.column_config.TextColumn(
                 "確認理由", disabled=True
             ),

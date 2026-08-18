@@ -2,6 +2,7 @@ import unittest
 
 from video_schedule_extractor import (
     candidate_from_card_text,
+    clean_ocr_character_name,
     deduplicate_video_candidates,
     filter_existing_candidates,
     find_date_time,
@@ -29,6 +30,24 @@ class VideoScheduleExtractorTests(unittest.TestCase):
     def test_normalizes_full_width_identity(self):
         self.assertEqual(normalize_identity_name("獅子吼・廻"), "獅子吼廻")
         self.assertEqual(normalize_identity_name(" 獅子吼 ･ 廻 "), "獅子吼廻")
+
+    def test_removes_english_noise_around_japanese_name(self):
+        self.assertEqual(
+            clean_ocr_character_name("w 竜 オーポレン BRE"),
+            "オーポレン",
+        )
+        self.assertEqual(clean_ocr_character_name("x ew. AO"), "")
+
+    def test_does_not_save_name_when_dedicated_name_ocr_failed(self):
+        text = "8/21(金) 12:00 ～ 8/22(土) 11:59\n超絶\nソーマ"
+        candidate = candidate_from_card_text(
+            text,
+            2026,
+            recognized_name="x ew. AO",
+            raw_name_text="x ew. AO",
+            ocr_status="名前認識失敗",
+        )
+        self.assertIsNone(candidate)
 
     def test_finds_date_and_difficulty(self):
         parsed = find_date_time("8/25(火)12:00〜8/26(水)11:59")
