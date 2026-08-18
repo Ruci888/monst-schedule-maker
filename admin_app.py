@@ -10,6 +10,7 @@ from data_manager import (
     load_json,
     load_schedules,
     save_events,
+    save_json,
     save_schedules,
 )
 from auto_updater import run_update
@@ -26,6 +27,10 @@ from schedule_utils import (
     SCHEDULE_CATEGORIES,
     normalize_availability_type,
     normalize_schedule_category,
+)
+from video_schedule_extractor import (
+    VideoScheduleError,
+    extract_video_schedule_candidates,
 )
 
 
@@ -325,6 +330,99 @@ def merge_unique(existing, additions, identity_function):
             positions[identity] = len(merged)
             merged.append(item)
     return merged
+
+
+def save_schedule_candidates(candidates):
+    return save_admin_json(
+        "schedule_candidates.json",
+        candidates,
+        lambda data: save_json("schedule_candidates.json", data),
+        "Add descent candidates from game recording",
+    )
+
+
+def show_video_extraction_result(result):
+    columns = st.columns(5)
+    values = (
+        ("認識", result.recognized_count),
+        ("公開済み重複", result.published_duplicate_count),
+        ("承認待ち重複", result.pending_duplicate_count),
+        ("新規候補", len(result.candidates)),
+        ("認識失敗", result.ocr_error_count),
+    )
+    for column, (label, value) in zip(columns, values):
+        column.metric(label, value)
+    st.caption(
+        f"確認フレーム {result.sampled_frame_count}枚／"
+        f"動画内重複 {result.video_duplicate_count}件／"
+        f"動画識別子 {result.video_fingerprint[:12]}…"
+    )
+
+
+def import_schedule_candidates_from_video():
+    st.markdown("#### アプリ画面録画から降臨候補を取得")
+    st.caption(
+        "MP4・MOV（100MB以下／3分以内）に対応します。"
+        "動画は処理中だけ一時保存し、処理後に削除します。"
+    )
+    left, right = st.columns([1, 3])
+    with left:
+        recording_year = st.number_input(
+            "録画内の日程の年",
+            min_value=2020,
+            max_value=2100,
+            value=date.today().year,
+            step=1,
+        )
+    with right:
+        uploaded_video = st.file_uploader(
+            "モンストアプリのスケジュール画面録画",
+            type=["mp4", "mov", "m4v"],
+            help="画面をゆっくり一方向にスクロールした録画を選択してください。",
+        )
+
+    if st.button(
+        "動画から降臨候補を抽出",
+        type="primary",
+        disabled=uploaded_video is None,
+    ):
+        try:
+            video_bytes = uploaded_video.getvalue()
+            published = ensure_schedule_columns(
+                load_admin_json("schedules.json", load_schedules)
+            )
+            pending = load_admin_json("schedule_candidates.json")
+            with st.spinner(
+                "動画を解析しています。録画時間によって1～2分ほどかかります..."
+            ):
+                result = extract_video_schedule_candidates(
+                    video_bytes=video_bytes,
+                    year=recording_year,
+                    published_schedules=published,
+                    pending_candidates=pending,
+                )
+                if result.candidates:
+                    merged = merge_unique(
+                        pending,
+                        result.candidates,
+                        schedule_identity,
+                    )
+                    message = save_schedule_candidates(merged)
+                    st.session_state.pop("schedule_candidate_editor", None)
+                    st.success(
+                        f"{message} 新規候補{len(result.candidates)}件を追加しました。"
+                    )
+                else:
+                    st.info("追加できる新規候補はありませんでした。")
+            st.session_state["video_extraction_result"] = result.as_dict()
+            show_video_extraction_result(result)
+        except (VideoScheduleError, GitHubStorageError) as error:
+            st.error(str(error))
+        except Exception as error:
+            st.error(
+                "動画を解析できませんでした。録画を短くして再度お試しください。"
+                f"（詳細：{error}）"
+            )
 
 
 def review_schedule_candidates():
@@ -660,6 +758,9 @@ with event_tab:
 
 with candidate_tab:
     st.subheader("自動取得候補")
+    import_schedule_candidates_from_video()
+    st.divider()
+    st.markdown("#### 公式ニュースから取得")
     if st.button("公式ニュースから候補を取得", type="primary"):
         with st.spinner("公式ニュースを確認しています..."):
             try:
