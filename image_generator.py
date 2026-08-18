@@ -199,7 +199,209 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     )
 
 
-def generate_schedule_image(schedules, design, start_date=None):
+def draw_normal_schedule_item(draw, schedule, x, y, column_right, theme):
+    label_width = 94
+    label_height = 34
+    label_x = column_right - label_width - 10
+    name_width = max(70, label_x - x - 10)
+    name_font = fit_font(schedule["name"], 25, 16, name_width, draw)
+    label_font = fit_font(
+        schedule["difficulty"], 15, 11, label_width - 10, draw
+    )
+    draw.text(
+        (x, y + 3),
+        schedule["name"],
+        font=name_font,
+        fill=get_attribute_color(schedule["attribute"]),
+    )
+    draw.rounded_rectangle(
+        (label_x, y, label_x + label_width, y + label_height),
+        radius=10,
+        fill=get_difficulty_color(schedule["difficulty"]),
+    )
+    draw_centered_text(
+        draw,
+        (label_x, y, label_x + label_width, y + label_height),
+        schedule["difficulty"],
+        label_font,
+        "#FFFFFF",
+    )
+
+
+def generate_normal_schedule_image(schedules, design, start_date=None):
+    theme = get_theme(design)
+    schedules = sorted(schedules, key=parse_schedule_datetime)
+    first_day = start_date or schedule_game_day(schedules[0])
+    days = [first_day + timedelta(days=offset) for offset in range(7)]
+    left_difficulties = {"爆絶", "超絶", "激究極"}
+    schedule_by_date = {
+        day: {"upper": [], "lower": []}
+        for day in days
+    }
+
+    for schedule in schedules:
+        column_name = (
+            "upper"
+            if schedule.get("difficulty") in left_difficulties
+            else "lower"
+        )
+        for day in days:
+            if schedule_active_on_game_day(schedule, day):
+                schedule_by_date[day][column_name].append(schedule)
+
+    row_heights = []
+    for date_data in schedule_by_date.values():
+        largest_count = max(
+            len(date_data["upper"]),
+            len(date_data["lower"]),
+            1,
+        )
+        row_heights.append(max(105, 20 + largest_count * 50))
+
+    width = 1080
+    header_height = 250
+    column_header_height = 72
+    content_height = sum(row_heights) + 6 * 10
+    height = max(
+        1350,
+        header_height + column_header_height + content_height + 50,
+    )
+    image = Image.new("RGB", (width, height), theme["background"])
+    draw = ImageDraw.Draw(image)
+
+    left_edge = 30
+    date_right = 190
+    group_right = 620
+    right_edge = 1050
+
+    draw.rectangle((0, 0, width, header_height), fill=theme["header"])
+    draw_centered_text(
+        draw,
+        (0, 25, width, 130),
+        "通常降臨スケジュール",
+        load_font(54),
+        theme["text"],
+    )
+    period_text = (
+        f"{days[0].year}/{days[0].month}/{days[0].day}～"
+        f"{days[-1].month}/{days[-1].day}　各日12:00～翌11:59"
+    )
+    draw_centered_text(
+        draw,
+        (0, 135, width, 215),
+        period_text,
+        load_font(25),
+        theme["sub_text"],
+    )
+
+    heading_top = header_height
+    heading_bottom = heading_top + column_header_height
+    draw.rounded_rectangle(
+        (left_edge, heading_top, right_edge, heading_bottom),
+        radius=16,
+        fill=theme["card"],
+    )
+    heading_font = load_font(23)
+    draw_centered_text(
+        draw,
+        (left_edge, heading_top, date_right, heading_bottom),
+        "日程",
+        heading_font,
+        theme["text"],
+    )
+    draw_centered_text(
+        draw,
+        (date_right, heading_top, group_right, heading_bottom),
+        "爆絶・超絶・激究極",
+        heading_font,
+        theme["text"],
+    )
+    draw_centered_text(
+        draw,
+        (group_right, heading_top, right_edge, heading_bottom),
+        "究極・極・星5制限",
+        heading_font,
+        theme["text"],
+    )
+    for line_x in (date_right, group_right):
+        draw.line(
+            (line_x, heading_top, line_x, heading_bottom),
+            fill=theme["line"],
+            width=3,
+        )
+
+    weekday_names = "月火水木金土日"
+    y = heading_bottom + 12
+    for (day, date_data), row_height in zip(
+        schedule_by_date.items(), row_heights
+    ):
+        draw.rounded_rectangle(
+            (left_edge, y, right_edge, y + row_height),
+            radius=18,
+            fill=theme["card"],
+        )
+        for line_x in (date_right, group_right):
+            draw.line(
+                (line_x, y, line_x, y + row_height),
+                fill=theme["line"],
+                width=3,
+            )
+        date_text = f"{day.month}/{day.day}\n({weekday_names[day.weekday()]})"
+        draw.multiline_text(
+            (left_edge + 80, y + row_height / 2),
+            date_text,
+            font=load_font(32),
+            fill=theme["text"],
+            anchor="mm",
+            align="center",
+            spacing=6,
+        )
+
+        item_y = y + 13
+        for schedule in date_data["upper"]:
+            draw_normal_schedule_item(
+                draw,
+                schedule,
+                date_right + 16,
+                item_y,
+                group_right,
+                theme,
+            )
+            item_y += 50
+
+        item_y = y + 13
+        for schedule in date_data["lower"]:
+            draw_normal_schedule_item(
+                draw,
+                schedule,
+                group_right + 16,
+                item_y,
+                right_edge,
+                theme,
+            )
+            item_y += 50
+
+        y += row_height + 10
+
+    image_buffer = BytesIO()
+    image.save(image_buffer, format="PNG")
+    image_buffer.seek(0)
+    return image_buffer
+
+
+def generate_schedule_image(
+    schedules,
+    design,
+    start_date=None,
+    schedule_mode="注目",
+):
+    if schedule_mode == "通常降臨・爆絶以下":
+        return generate_normal_schedule_image(
+            schedules,
+            design,
+            start_date,
+        )
+
     theme = get_theme(design)
     schedules = sorted(schedules, key=parse_schedule_datetime)
     first_day = start_date or schedule_game_day(schedules[0])

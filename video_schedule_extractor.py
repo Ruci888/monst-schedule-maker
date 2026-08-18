@@ -120,6 +120,17 @@ def schedule_identity(schedule):
     )
 
 
+def candidate_identity(schedule):
+    """未入力候補同士が同一扱いにならない承認待ち用の識別子。"""
+    complete = all(
+        schedule.get(field)
+        for field in ("name", "difficulty")
+    )
+    if not complete and schedule.get("candidate_id"):
+        return ("candidate", str(schedule["candidate_id"]))
+    return ("schedule", *schedule_identity(schedule))
+
+
 def find_difficulty(text):
     normalized = normalize_ocr_text(text)
     for difficulty, pattern in DIFFICULTY_PATTERNS:
@@ -220,17 +231,47 @@ def candidate_from_card_text(
     recognized_name=None,
     raw_name_text="",
     ocr_status="",
+    recognized_difficulty=None,
+    raw_difficulty_text="",
+    visual_signature="",
 ):
     date_time = find_date_time(text)
-    difficulty = find_difficulty(text)
+    difficulty = (
+        find_difficulty(recognized_difficulty)
+        if recognized_difficulty is not None
+        else find_difficulty(text)
+    )
     name = (
         clean_ocr_character_name(recognized_name)
         if recognized_name is not None
         else clean_ocr_character_name(find_character_name(text))
     )
-    if not date_time or not difficulty or not name:
+    if not date_time:
         return None
-    return {
+
+    missing_fields = []
+    if not name:
+        missing_fields.append("名前要入力")
+    if not attribute:
+        missing_fields.append("属性要確認")
+    if not difficulty:
+        missing_fields.append("難易度要確認")
+    status_parts = ["要目視確認"]
+    status_parts.extend(missing_fields)
+    if ocr_status and ocr_status not in status_parts:
+        status_parts.append(ocr_status)
+
+    identity_source = "|".join([
+        str(year),
+        date_time["date"],
+        date_time["start_time"],
+        normalize_identity_name(name),
+        visual_signature or normalize_ocr_text(raw_name_text),
+    ])
+    candidate = {
+        "candidate_id": hashlib.sha1(
+            identity_source.encode("utf-8")
+        ).hexdigest()[:20],
         "year": int(year),
         **date_time,
         "name": name,
@@ -249,11 +290,14 @@ def candidate_from_card_text(
         ),
         "ocr_confidence": round(float(confidence), 1),
         "ocr_raw_name": normalize_ocr_text(raw_name_text),
-        "ocr_status": ocr_status or "要確認",
+        "ocr_raw_difficulty": normalize_ocr_text(raw_difficulty_text),
+        "ocr_status": "・".join(status_parts),
         "ocr_votes": 1,
+        "visual_signature": visual_signature,
         "confirmed_at": "",
         "published": False,
     }
+    return candidate
 
 
 def _similar_candidate(left, right):
@@ -261,12 +305,44 @@ def _similar_candidate(left, right):
         int(left.get("year", 0)) != int(right.get("year", 0))
         or left.get("date") != right.get("date")
         or left.get("start_time") != right.get("start_time")
-        or left.get("difficulty") != right.get("difficulty")
     ):
         return False
     left_name = normalize_identity_name(left.get("name"))
     right_name = normalize_identity_name(right.get("name"))
+    if not left_name or not right_name:
+        left_signature = str(left.get("visual_signature", ""))
+        right_signature = str(right.get("visual_signature", ""))
+        if not left_signature or not right_signature:
+            return False
+        try:
+            distance = (
+                int(left_signature, 16) ^ int(right_signature, 16)
+            ).bit_count()
+            return distance <= 12
+        except ValueError:
+            return left_signature == right_signature
+    if (
+        left.get("difficulty")
+        and right.get("difficulty")
+        and left.get("difficulty") != right.get("difficulty")
+    ):
+        return False
     return SequenceMatcher(None, left_name, right_name).ratio() >= 0.82
+
+
+def candidate_review_status(candidate):
+    parts = ["要目視確認"]
+    field_labels = (
+        ("name", "名前要入力"),
+        ("attribute", "属性要確認"),
+        ("difficulty", "難易度要確認"),
+    )
+    parts.extend(
+        label
+        for field, label in field_labels
+        if not candidate.get(field)
+    )
+    return "・".join(parts)
 
 
 def deduplicate_video_candidates(candidates):
@@ -293,25 +369,32 @@ def deduplicate_video_candidates(candidates):
             "ocr_confidence", 0
         ):
             candidate["ocr_votes"] = votes
-            candidate["ocr_status"] = "複数フレーム一致"
+            candidate["ocr_status"] = candidate_review_status(candidate)
             unique[matching_index] = candidate
         else:
             current["ocr_votes"] = votes
-            current["ocr_status"] = "複数フレーム一致"
+            current["ocr_status"] = candidate_review_status(current)
     return unique, duplicate_count
 
 
 def filter_existing_candidates(candidates, published, pending):
     published_keys = {schedule_identity(item) for item in published}
-    pending_keys = {schedule_identity(item) for item in pending}
     new_candidates = []
     published_duplicates = 0
     pending_duplicates = 0
     for candidate in candidates:
         identity = schedule_identity(candidate)
-        if identity in published_keys:
+        complete_identity = all(
+            candidate.get(field)
+            for field in ("name", "difficulty")
+        )
+        if complete_identity and identity in published_keys:
             published_duplicates += 1
-        elif identity in pending_keys:
+        elif any(
+            candidate_identity(candidate) == candidate_identity(item)
+            or _similar_candidate(candidate, item)
+            for item in pending
+        ):
             pending_duplicates += 1
         else:
             new_candidates.append(candidate)
@@ -352,6 +435,19 @@ def _frame_hash(cv2, frame):
     resized = cv2.resize(gray, (9, 8))
     differences = resized[:, 1:] > resized[:, :-1]
     return sum(int(value) << index for index, value in enumerate(differences.flat))
+
+
+def _image_signature(cv2, image):
+    if image.size == 0:
+        return ""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(gray, (17, 16))
+    differences = resized[:, 1:] > resized[:, :-1]
+    value = sum(
+        int(bit) << index
+        for index, bit in enumerate(differences.flat)
+    )
+    return f"{value:064x}"
 
 
 def _hamming_distance(left, right):
@@ -443,8 +539,8 @@ def _ocr_name_variant(pytesseract, image):
 def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.38): int(height * 0.80),
-        int(width * 0.15): int(width * 0.77),
+        int(height * 0.54): int(height * 0.84),
+        int(width * 0.11): int(width * 0.68),
     ]
     if name_region.size == 0:
         return "", "", 0.0, "名前認識失敗"
@@ -507,17 +603,84 @@ def _extract_character_name(cv2, pytesseract, card, attribute):
         )
         variant["agreement"] = agreement
     selected = max(valid, key=lambda variant: variant["score"])
-    status = (
-        "複数処理一致"
-        if selected["agreement"] >= 2 and selected["confidence"] >= 45
-        else "要確認"
-    )
+    status = "要目視確認"
     return (
         selected["name"],
         raw_text,
         selected["confidence"],
         status,
     )
+
+
+def _ocr_single_line(pytesseract, image, language="jpn+eng"):
+    return normalize_ocr_text(
+        pytesseract.image_to_string(
+            image,
+            lang=language,
+            config="--psm 7 -c preserve_interword_spaces=1",
+        )
+    )
+
+
+def _extract_card_date_time(cv2, pytesseract, card):
+    height, width = card.shape[:2]
+    region = card[
+        int(height * 0.05): int(height * 0.34),
+        int(width * 0.06): int(width * 0.69),
+    ]
+    if region.size == 0:
+        return None, ""
+    variants = [
+        _ocr_single_line(
+            pytesseract,
+            cv2.resize(
+                region,
+                None,
+                fx=3.0,
+                fy=3.0,
+                interpolation=cv2.INTER_CUBIC,
+            ),
+        ),
+        _ocr_single_line(pytesseract, _prepare_ocr_image(cv2, region)),
+    ]
+    for text in variants:
+        parsed = find_date_time(text)
+        if parsed:
+            return parsed, " / ".join(
+                value for value in variants if value
+            )
+    return None, " / ".join(value for value in variants if value)
+
+
+def _extract_card_difficulty(cv2, pytesseract, card):
+    """条件説明ではなく、カード右側の実難易度ラベルだけを読む。"""
+    height, width = card.shape[:2]
+    region = card[
+        int(height * 0.43): int(height * 0.76),
+        int(width * 0.54): int(width * 0.70),
+    ]
+    if region.size == 0:
+        return "", ""
+    variants = [
+        _ocr_single_line(
+            pytesseract,
+            cv2.resize(
+                region,
+                None,
+                fx=4.0,
+                fy=4.0,
+                interpolation=cv2.INTER_CUBIC,
+            ),
+        ),
+        _ocr_single_line(pytesseract, _prepare_ocr_image(cv2, region)),
+    ]
+    results = [find_difficulty(text) for text in variants]
+    results = [value for value in results if value]
+    difficulty = ""
+    if results:
+        # 別処理が違う難易度を返した場合は、誤公開を防ぐため空欄にする。
+        difficulty = results[0] if len(set(results)) == 1 else ""
+    return difficulty, " / ".join(value for value in variants if value)
 
 
 def _group_ocr_lines(data):
@@ -560,8 +723,8 @@ def _infer_attribute(cv2, card):
     # 左端の赤いドクロ・黄色い宝箱と右端の予約ボタンを除き、
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
-        int(height * 0.52): int(height * 0.92),
-        int(width * 0.20): int(width * 0.66),
+        int(height * 0.54): int(height * 0.86),
+        int(width * 0.11): int(width * 0.68),
     ]
     if region.size == 0:
         return ""
@@ -577,42 +740,75 @@ def _infer_attribute(cv2, card):
         "水": int(((hues >= 88) & (hues < 122)).sum()),
         "闇": int(((hues >= 122) & (hues < 170)).sum()),
     }
-    attribute, count = max(counts.items(), key=lambda item: item[1])
-    return attribute if count >= 8 else ""
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
+    attribute, count = ranked[0]
+    second_count = ranked[1][1]
+    if count < 20 or count < second_count * 1.35:
+        return ""
+    return attribute
+
+
+def _detect_card_regions(cv2, frame):
+    """OCRに頼らず、カード上端の明るい横枠からカードを見つける。"""
+    height, width = frame.shape[:2]
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    left = int(width * 0.015)
+    right = int(width * 0.965)
+    search_top = int(height * 0.41)
+    search_bottom = int(height * 0.91)
+    bright_counts = (
+        gray[search_top:search_bottom, left:right] >= 145
+    ).sum(axis=1)
+    threshold = int((right - left) * 0.72)
+    strong_rows = [
+        search_top + index
+        for index, count in enumerate(bright_counts)
+        if int(count) >= threshold
+    ]
+    if not strong_rows:
+        return []
+
+    clusters = []
+    for row in strong_rows:
+        if not clusters or row - clusters[-1][-1] > 12:
+            clusters.append([row])
+        else:
+            clusters[-1].append(row)
+
+    tops = []
+    for cluster in clusters:
+        top = max(
+            cluster,
+            key=lambda row: int(bright_counts[row - search_top]),
+        )
+        if not tops or top - tops[-1] > int(height * 0.07):
+            tops.append(top)
+
+    card_height = int(height * 0.112)
+    regions = []
+    for top in tops:
+        bottom = min(top + card_height, search_bottom)
+        if bottom - top < int(card_height * 0.78):
+            continue
+        card = frame[top:bottom, left:right]
+        if card.size:
+            regions.append(card)
+    return regions
 
 
 def _extract_from_frame(cv2, pytesseract, frame, year):
-    height, width = frame.shape[:2]
-    # 上部のユーザー名・ランクと下部メニューをOCR対象から除外する。
-    crop_top = int(height * 0.34)
-    crop_bottom = int(height * 0.91)
-    content = frame[crop_top:crop_bottom, :]
-    prepared = _prepare_ocr_image(cv2, content)
-    data = pytesseract.image_to_data(
-        prepared,
-        lang="jpn+eng",
-        config="--psm 6",
-        output_type=pytesseract.Output.DICT,
-    )
-    lines = _group_ocr_lines(data)
-    date_lines = [line for line in lines if find_date_time(line["text"])]
     candidates = []
     failed_count = 0
-    scale = prepared.shape[0] / content.shape[0]
-    for line in date_lines:
-        original_top = max(0, int(line["top"] / scale) - 8)
-        card_bottom = min(content.shape[0], original_top + int(height * 0.115))
-        card = content[original_top:card_bottom, : int(width * 0.78)]
-        if card.size == 0:
+    cards = _detect_card_regions(cv2, frame)
+    for card in cards:
+        date_time, raw_date = _extract_card_date_time(
+            cv2,
+            pytesseract,
+            card,
+        )
+        if not date_time:
             failed_count += 1
             continue
-        card_text = pytesseract.image_to_string(
-            _prepare_ocr_image(cv2, card),
-            lang="jpn+eng",
-            config="--psm 6",
-        )
-        # 日時行がカード再OCRで欠けた場合に、先に検出した行を補う。
-        combined_text = f"{line['text']}\n{card_text}"
         attribute = _infer_attribute(cv2, card)
         name, raw_name, name_confidence, ocr_status = _extract_character_name(
             cv2,
@@ -620,16 +816,35 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
             card,
             attribute,
         )
+        difficulty, raw_difficulty = _extract_card_difficulty(
+            cv2,
+            pytesseract,
+            card,
+        )
+        height, width = card.shape[:2]
+        name_region = card[
+            int(height * 0.54): int(height * 0.84),
+            int(width * 0.11): int(width * 0.68),
+        ]
+        visual_signature = _image_signature(cv2, name_region)
+        date_text = (
+            f"{date_time['date']} {date_time['start_time']}～"
+            f"{date_time['date']} {date_time['end_time']}"
+        )
         candidate = candidate_from_card_text(
-            combined_text,
+            date_text,
             year,
             attribute=attribute,
             confidence=name_confidence,
             recognized_name=name,
             raw_name_text=raw_name,
             ocr_status=ocr_status,
+            recognized_difficulty=difficulty,
+            raw_difficulty_text=raw_difficulty,
+            visual_signature=visual_signature,
         )
         if candidate:
+            candidate["ocr_raw_date"] = raw_date
             candidates.append(candidate)
         else:
             failed_count += 1

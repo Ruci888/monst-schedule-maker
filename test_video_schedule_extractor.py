@@ -1,6 +1,7 @@
 import unittest
 
 from video_schedule_extractor import (
+    candidate_identity,
     candidate_from_card_text,
     clean_ocr_character_name,
     deduplicate_video_candidates,
@@ -38,7 +39,7 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         )
         self.assertEqual(clean_ocr_character_name("x ew. AO"), "")
 
-    def test_does_not_save_name_when_dedicated_name_ocr_failed(self):
+    def test_keeps_incomplete_candidate_for_manual_review(self):
         text = "8/21(金) 12:00 ～ 8/22(土) 11:59\n超絶\nソーマ"
         candidate = candidate_from_card_text(
             text,
@@ -47,7 +48,38 @@ class VideoScheduleExtractorTests(unittest.TestCase):
             raw_name_text="x ew. AO",
             ocr_status="名前認識失敗",
         )
-        self.assertIsNone(candidate)
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["name"], "")
+        self.assertIn("名前要入力", candidate["ocr_status"])
+        self.assertFalse(candidate["published"])
+
+    def test_uses_only_dedicated_difficulty_result(self):
+        text = (
+            "8/21(金) 12:00 ～ 8/22(土) 11:59\n"
+            "難易度『爆絶』を3種類以上クリア"
+        )
+        candidate = candidate_from_card_text(
+            text,
+            2026,
+            attribute="光",
+            recognized_name="ソーマ",
+            recognized_difficulty="超絶",
+            raw_difficulty_text="超絶",
+        )
+        self.assertEqual(candidate["difficulty"], "超絶")
+
+    def test_incomplete_candidates_have_separate_identities(self):
+        first = {
+            "year": 2026,
+            "date": "8/21",
+            "start_time": "12:00",
+            "name": "",
+            "attribute": "",
+            "difficulty": "",
+            "candidate_id": "first",
+        }
+        second = {**first, "candidate_id": "second"}
+        self.assertNotEqual(candidate_identity(first), candidate_identity(second))
 
     def test_finds_date_and_difficulty(self):
         parsed = find_date_time("8/25(火)12:00〜8/26(水)11:59")

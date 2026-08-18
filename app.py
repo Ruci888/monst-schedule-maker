@@ -16,7 +16,26 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.1"
+APP_VERSION = "v1.1.0-beta.9.2"
+
+SCHEDULE_MODE_FEATURED = "注目"
+SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
+
+FEATURED_DIFFICULTIES = [
+    "黎絶",
+    "轟絶",
+    "超究極",
+    "超究極・兵",
+]
+
+NORMAL_DIFFICULTIES = [
+    "爆絶",
+    "超絶",
+    "激究極",
+    "究極",
+    "極",
+    "星5制限",
+]
 
 
 st.set_page_config(
@@ -179,7 +198,40 @@ def latest_confirmation(items):
         return None
 
 
-def render_schedule_preview(selected_schedules):
+def render_schedule_preview(selected_schedules, schedule_mode):
+    if schedule_mode == SCHEDULE_MODE_NORMAL:
+        left_difficulties = {"爆絶", "超絶", "激究極"}
+        left_schedules = [
+            schedule
+            for schedule in selected_schedules
+            if schedule.get("difficulty") in left_difficulties
+        ]
+        right_schedules = [
+            schedule
+            for schedule in selected_schedules
+            if schedule.get("difficulty") not in left_difficulties
+        ]
+        left_column, right_column = st.columns(2)
+        with left_column:
+            st.markdown("#### 爆絶・超絶・激究極")
+            if not left_schedules:
+                st.caption("選択なし")
+            for schedule in left_schedules:
+                st.write(
+                    f"{schedule['date']}｜{schedule['name']}｜"
+                    f"{schedule['difficulty']}"
+                )
+        with right_column:
+            st.markdown("#### 究極・極・星5制限")
+            if not right_schedules:
+                st.caption("選択なし")
+            for schedule in right_schedules:
+                st.write(
+                    f"{schedule['date']}｜{schedule['name']}｜"
+                    f"{schedule['difficulty']}"
+                )
+        return
+
     event_schedules = []
     high_difficulty_schedules = []
 
@@ -258,6 +310,13 @@ with schedule_tab:
         )
         schedule_end_date = schedule_start_date + timedelta(days=6)
 
+        schedule_mode = st.radio(
+            "表示モード",
+            options=[SCHEDULE_MODE_FEATURED, SCHEDULE_MODE_NORMAL],
+            horizontal=True,
+            key="schedule_mode",
+        )
+
         available_schedules = [
             schedule
             for schedule in schedules
@@ -272,37 +331,62 @@ with schedule_tab:
             st.info("選択した7日間に掲載できる降臨はありません。")
             selected_schedules = []
         else:
-            selected_categories = st.pills(
-                "掲載カテゴリ",
-                options=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
-                default=[],
-                selection_mode="multi",
-                key=f"schedule_main_categories_{schedule_start_date.isoformat()}",
-            )
+            if schedule_mode == SCHEDULE_MODE_FEATURED:
+                selected_categories = st.pills(
+                    "掲載カテゴリ",
+                    options=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
+                    default=[],
+                    selection_mode="multi",
+                    key=(
+                        "schedule_main_categories_"
+                        f"{schedule_start_date.isoformat()}"
+                    ),
+                )
+                difficulty_options = FEATURED_DIFFICULTIES
+            else:
+                selected_categories = []
+                difficulty_options = NORMAL_DIFFICULTIES
+
             selected_difficulties = st.pills(
-                "掲載する難易度・シリーズ",
-                options=SCHEDULE_DIFFICULTY_ORDER,
+                "掲載する難易度",
+                options=difficulty_options,
                 default=[],
                 selection_mode="multi",
-                key=f"schedule_difficulties_{schedule_start_date.isoformat()}",
+                key=(
+                    f"schedule_difficulties_{schedule_mode}_"
+                    f"{schedule_start_date.isoformat()}"
+                ),
             )
 
             selected_category_set = set(selected_categories or [])
             selected_difficulty_set = set(selected_difficulties or [])
-            category_schedules = [
-                schedule
-                for schedule in available_schedules
-                if (
-                    normalize_schedule_category(schedule.get("category"))
-                    in selected_category_set
-                    or (
+            if schedule_mode == SCHEDULE_MODE_FEATURED:
+                category_schedules = [
+                    schedule
+                    for schedule in available_schedules
+                    if (
                         normalize_schedule_category(schedule.get("category"))
-                        == CATEGORY_FEATURED
+                        in selected_category_set
+                        or (
+                            normalize_schedule_category(
+                                schedule.get("category")
+                            ) == CATEGORY_FEATURED
+                            and schedule.get("difficulty")
+                            in selected_difficulty_set
+                        )
+                    )
+                ]
+            else:
+                category_schedules = [
+                    schedule
+                    for schedule in available_schedules
+                    if (
+                        normalize_schedule_category(schedule.get("category"))
+                        not in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
                         and schedule.get("difficulty")
                         in selected_difficulty_set
                     )
-                )
-            ]
+                ]
             schedule_map = {
                 schedule_key(schedule): schedule
                 for schedule in category_schedules
@@ -321,7 +405,7 @@ with schedule_tab:
             if schedule_map:
                 with st.expander("個別に選択を調整", expanded=False):
                     st.caption(
-                        "選択したコラボ・難易度の中から、"
+                        "選択したカテゴリ・難易度の中から、"
                         "掲載しない降臨を指定できます。"
                     )
                     excluded_schedule_keys = st.multiselect(
@@ -362,12 +446,13 @@ with schedule_tab:
             else:
                 selected_schedules.sort(key=parse_schedule_datetime)
                 st.subheader("生成結果")
-                render_schedule_preview(selected_schedules)
+                render_schedule_preview(selected_schedules, schedule_mode)
 
                 schedule_image = generate_schedule_image(
                     selected_schedules,
                     schedule_design,
                     schedule_start_date,
+                    schedule_mode,
                 )
 
                 st.image(schedule_image, caption="生成した降臨スケジュール")

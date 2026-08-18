@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import date, datetime, time
 
@@ -30,6 +31,7 @@ from schedule_utils import (
 )
 from video_schedule_extractor import (
     VideoScheduleError,
+    candidate_identity as pending_candidate_identity,
     extract_video_schedule_candidates,
 )
 
@@ -341,6 +343,20 @@ def save_schedule_candidates(candidates):
     )
 
 
+def ensure_candidate_id(candidate, index=0):
+    if candidate.get("candidate_id"):
+        return str(candidate["candidate_id"])
+    source = json.dumps(
+        candidate,
+        ensure_ascii=False,
+        sort_keys=True,
+        default=str,
+    )
+    return hashlib.sha1(
+        f"{index}|{source}".encode("utf-8")
+    ).hexdigest()[:20]
+
+
 def show_video_extraction_result(result):
     columns = st.columns(5)
     values = (
@@ -405,7 +421,7 @@ def import_schedule_candidates_from_video():
                     merged = merge_unique(
                         pending,
                         result.candidates,
-                        schedule_identity,
+                        pending_candidate_identity,
                     )
                     message = save_schedule_candidates(merged)
                     st.session_state.pop("schedule_candidate_editor", None)
@@ -432,9 +448,12 @@ def review_schedule_candidates():
         return
 
     rows = []
-    for candidate in candidates:
+    for index, candidate in enumerate(candidates):
+        candidate_id = ensure_candidate_id(candidate, index)
         rows.append({
             "approve": False,
+            "delete": False,
+            "candidate_id": candidate_id,
             "year": candidate.get("year"),
             "date": candidate.get("date", ""),
             "start_time": candidate.get("start_time", ""),
@@ -452,6 +471,10 @@ def review_schedule_candidates():
             "source_type": candidate.get("source_type", "official"),
             "source_url": candidate.get("source_url", ""),
             "ocr_raw_name": candidate.get("ocr_raw_name", ""),
+            "ocr_raw_difficulty": candidate.get(
+                "ocr_raw_difficulty", ""
+            ),
+            "ocr_raw_date": candidate.get("ocr_raw_date", ""),
             "ocr_confidence": candidate.get("ocr_confidence"),
             "ocr_status": candidate.get("ocr_status", ""),
             "ocr_votes": candidate.get("ocr_votes"),
@@ -467,6 +490,8 @@ def review_schedule_candidates():
         key="schedule_candidate_editor",
         column_config={
             "approve": st.column_config.CheckboxColumn("承認"),
+            "delete": st.column_config.CheckboxColumn("削除"),
+            "candidate_id": None,
             "attribute": st.column_config.SelectboxColumn("属性", options=ATTRIBUTES),
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
@@ -493,26 +518,74 @@ def review_schedule_candidates():
                 help="キャラ名領域を複数の方法で読み取った元データです。",
             ),
             "ocr_confidence": st.column_config.NumberColumn(
-                "名前信頼度",
+                "OCR内部評価",
                 disabled=True,
                 format="%.1f",
+                help=(
+                    "OCR処理内の比較用数値で、"
+                    "キャラ名の正答率を保証する値ではありません。"
+                ),
             ),
             "ocr_status": st.column_config.TextColumn(
                 "OCR判定",
                 disabled=True,
             ),
             "ocr_votes": st.column_config.NumberColumn(
-                "一致回数",
+                "検出回数",
                 disabled=True,
                 format="%d",
+            ),
+            "ocr_raw_difficulty": st.column_config.TextColumn(
+                "難易度OCR原文",
+                disabled=True,
+            ),
+            "ocr_raw_date": st.column_config.TextColumn(
+                "日時OCR原文",
+                disabled=True,
             ),
             "review_reason": st.column_config.TextColumn(
                 "確認理由", disabled=True
             ),
         },
     )
-    selected = editor[editor["approve"] == True].drop(columns=["approve"])
-    if st.button("選択した降臨候補を承認・公開", type="primary"):
+    selected = editor[editor["approve"] == True].drop(
+        columns=["approve", "delete"]
+    )
+    selected_delete_ids = set(
+        editor.loc[editor["delete"] == True, "candidate_id"].astype(str)
+    )
+
+    approve_column, delete_column = st.columns(2)
+    with approve_column:
+        approve_clicked = st.button(
+            "選択した降臨候補を承認・公開",
+            type="primary",
+        )
+    with delete_column:
+        delete_clicked = st.button("選択した承認待ち候補を削除")
+
+    if delete_clicked:
+        if not selected_delete_ids:
+            st.warning("削除する承認待ち候補を選択してください。")
+            return
+        remaining = [
+            candidate
+            for index, candidate in enumerate(candidates)
+            if ensure_candidate_id(candidate, index) not in selected_delete_ids
+        ]
+        try:
+            message = save_schedule_candidates(remaining)
+            st.session_state.pop("schedule_candidate_editor", None)
+            st.session_state["admin_flash_success"] = (
+                f"{message} 承認待ち候補を"
+                f"{len(candidates) - len(remaining)}件削除しました。"
+            )
+            st.rerun()
+        except GitHubStorageError as error:
+            st.error(str(error))
+        return
+
+    if approve_clicked:
         if selected.empty:
             st.warning("承認する候補を選択してください。")
             return
@@ -538,6 +611,13 @@ def review_schedule_candidates():
             save_schedules,
             "Approve descent schedule candidates",
         )
+        approved_ids = set(selected["candidate_id"].astype(str))
+        remaining = [
+            candidate
+            for index, candidate in enumerate(candidates)
+            if ensure_candidate_id(candidate, index) not in approved_ids
+        ]
+        save_schedule_candidates(remaining)
         st.session_state.pop("schedule_editor", None)
         st.session_state.pop("schedule_candidate_editor", None)
         st.session_state["admin_flash_success"] = message
