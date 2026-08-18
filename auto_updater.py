@@ -1,10 +1,17 @@
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from urllib.parse import urljoin, urlparse
 from zoneinfo import ZoneInfo
 
 from data_manager import save_json
-from schedule_utils import AVAILABILITY_SCHEDULED, CATEGORY_FEATURED
+from schedule_utils import (
+    AVAILABILITY_PERIOD,
+    AVAILABILITY_SCHEDULED,
+    CATEGORY_COLLABORATION,
+    CATEGORY_FEATURED,
+    CATEGORY_LIMITED_EVENT,
+    schedule_end_datetime,
+)
 
 
 OFFICIAL_NEWS_URL = "https://www.monster-strike.com/news/"
@@ -13,7 +20,7 @@ OFFICIAL_INDEX_URLS = (OFFICIAL_NEWS_URL, OFFICIAL_HOME_URL)
 ALLOWED_DOMAINS = {"www.monster-strike.com"}
 MAX_RESPONSE_BYTES = 4_000_000
 ARTICLE_LIMIT = 30
-UPDATER_VERSION = "1.1.8"
+UPDATER_VERSION = "1.2.0"
 ARTICLE_PATH_PATTERN = re.compile(r"/news/20\d{6}(?:_\d+)?\.html/?$")
 ARTICLE_URL_PATTERN = re.compile(
     r"(?:https://www\.monster-strike\.com)?/news/20\d{6}(?:_\d+)?\.html"
@@ -60,6 +67,36 @@ EXCLUDED_SECTION_WORDS = (
     "Webショップ",
     "パックを販売",
     "購入",
+)
+
+SCHEDULE_DIFFICULTIES = (
+    "超究極・兵",
+    "超究極",
+    "星5制限",
+    "激究極",
+    "黎絶",
+    "轟絶",
+    "爆絶",
+    "超絶",
+    "究極",
+    "極",
+)
+QUEST_PERIOD_LABELS = (
+    "初出現日時",
+    "初出現日程",
+    "クエスト出現期間",
+    "初出現期間",
+    "出現期間",
+    "登場期間",
+    "対象期間",
+    "開催期間",
+)
+LIMITED_ARTICLE_WORDS = (
+    "期間限定イベント",
+    "モンスト夏休み",
+    "モンストブライダル",
+    "モンスト学院",
+    "年末年始キャンペーン",
 )
 
 
@@ -534,41 +571,318 @@ def extract_primary_event(title, text, source_url, fetched_at):
     return None
 
 
-def extract_high_difficulty(title, text, source_url, fetched_at):
-    difficulty_match = re.search(r"新(黎絶|轟絶|爆絶|超絶)クエスト", title)
-    name_match = re.search(r"新(?:黎絶|轟絶|爆絶|超絶)クエスト（([^）]+)）", title)
-    if not difficulty_match or not name_match:
-        return None
+def schedule_difficulty(value):
+    normalized = normalize_space(value).replace("★5制限", "星5制限")
+    for difficulty in SCHEDULE_DIFFICULTIES:
+        if difficulty in normalized:
+            return difficulty
+    return ""
 
-    date_range, period_label = select_datetime_range(
-        text, ("初出現日時", "初出現日程")
+
+def article_schedule_category(title):
+    if "×モンスト" in title or "コラボイベント" in title:
+        return CATEGORY_COLLABORATION
+    if any(word in title for word in LIMITED_ARTICLE_WORDS):
+        return CATEGORY_LIMITED_EVENT
+    return CATEGORY_FEATURED
+
+
+def article_schedule_group(title, category, difficulty):
+    if category == CATEGORY_COLLABORATION:
+        match = re.search(r"【([^】]+)】", title)
+        name = match.group(1) if match else "コラボ"
+        name = name.replace("×モンスト", "").strip()
+        return f"{name}コラボ" if name != "コラボ" else name
+    if category == CATEGORY_LIMITED_EVENT:
+        return quoted_name(title) or clean_event_name(title)[:24]
+    if difficulty == "超究極・兵":
+        return "超究極・兵"
+    return ""
+
+
+def parenthesized_quest_character(value):
+    match = re.search(r"クエスト[（(]([^）)]+)[）)]", value)
+    return normalize_space(match.group(1)) if match else ""
+
+
+def boss_identity(text):
+    pattern = re.compile(
+        r"([火水木光闇])属性\s*★[56]\s*"
+        r"(.{1,48}?)"
+        r"(?=\s*(?:[（(]|▼|[火水木光闇]属性\s*★[56]|"
+        r"本クエスト|本来の|クエストを|初クリア|$))"
     )
-    if not date_range or period_label not in ("初出現日時", "初出現日程"):
-        return None
+    match = pattern.search(text)
+    if not match:
+        return "", ""
 
-    start, end = date_range
-    attribute_match = re.search(r"([火水木光闇])属性\s*★\d", text)
-    quest_match = re.search(rf"{difficulty_match.group(1)}クエスト「([^」]+)」", text)
+    name = normalize_space(match.group(2)).strip("・!！『』「」 ")
+    if not name or len(name) > 40:
+        return match.group(1), ""
+    return match.group(1), name
+
+
+def quest_names_for_difficulty(text, difficulty):
+    pattern = re.compile(
+        rf"{re.escape(difficulty)}(?:クエスト)?[「『]([^」』]+)[」』]"
+    )
+    return [normalize_space(value) for value in pattern.findall(text)]
+
+
+def last_display_day(end):
+    value = end.date()
+    if end.time() < time(12, 0):
+        value -= timedelta(days=1)
+    return value.isoformat()
+
+
+def build_schedule_candidate(
+    *,
+    name,
+    quest_name,
+    attribute,
+    difficulty,
+    category,
+    group_name,
+    start,
+    end,
+    availability_type,
+    source_url,
+    fetched_at,
+    period_label,
+    review_reason,
+):
+    missing = []
+    if not attribute:
+        missing.append("属性")
+    if not quest_name:
+        missing.append("クエスト名")
+    if missing:
+        review_reason += f" {'・'.join(missing)}を確認してください。"
+
     return {
         "year": start.year,
         "date": f"{start.month}/{start.day}",
         "start_time": start.strftime("%H:%M"),
         "end_time": end.strftime("%H:%M"),
-        "name": name_match.group(1).strip(),
-        "quest_name": quest_match.group(1).strip() if quest_match else "",
-        "attribute": attribute_match.group(1) if attribute_match else "",
-        "difficulty": difficulty_match.group(1),
-        "category": CATEGORY_FEATURED,
-        "group_name": "",
-        "availability_type": AVAILABILITY_SCHEDULED,
-        "period_end_date": "",
+        "name": normalize_space(name),
+        "quest_name": normalize_space(quest_name),
+        "attribute": attribute,
+        "difficulty": difficulty,
+        "category": category,
+        "group_name": group_name,
+        "availability_type": availability_type,
+        "period_end_date": (
+            last_display_day(end)
+            if availability_type == AVAILABILITY_PERIOD
+            else ""
+        ),
         "source_type": "official",
         "source_url": source_url,
         "fetched_at": fetched_at,
+        "period_label": period_label,
         "review_status": "needs_review",
-        "review_reason": "初出現日時から抽出しました。",
+        "review_reason": review_reason,
         "published": False,
     }
+
+
+def extract_schedule_candidate_from_block(
+    block_title,
+    block_text,
+    article_title,
+    source_url,
+    fetched_at,
+):
+    difficulty = schedule_difficulty(block_title)
+    if not difficulty:
+        difficulty = schedule_difficulty(block_text[:180])
+    if not difficulty:
+        return None
+
+    date_range, period_label = select_datetime_range(
+        block_text, QUEST_PERIOD_LABELS
+    )
+    if not date_range:
+        return None
+    start, end = date_range
+
+    category = article_schedule_category(article_title)
+    if difficulty == "超究極・兵" or re.search(
+        r"新(?:黎絶|轟絶|爆絶|超絶)クエスト", block_title
+    ):
+        category = CATEGORY_FEATURED
+
+    parenthesized_name = parenthesized_quest_character(block_title)
+    heading_name = quoted_name(block_title)
+    attribute, boss_name = boss_identity(block_text)
+
+    if parenthesized_name:
+        name = parenthesized_name
+    elif heading_name and boss_name and heading_name in boss_name:
+        name = heading_name
+    elif boss_name:
+        name = boss_name
+    else:
+        name = heading_name
+    if not name:
+        return None
+
+    quest_names = quest_names_for_difficulty(block_text, difficulty)
+    quest_name = next(
+        (
+            value
+            for value in quest_names
+            if value != name and value not in name and name not in value
+        ),
+        "",
+    )
+
+    is_initial_appearance = period_label in ("初出現日時", "初出現日程")
+    is_period = (
+        difficulty == "超究極・兵"
+        or "常時出現" in block_text
+        or (
+            category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+            and not is_initial_appearance
+        )
+    )
+    availability_type = (
+        AVAILABILITY_PERIOD if is_period else AVAILABILITY_SCHEDULED
+    )
+    group_name = article_schedule_group(article_title, category, difficulty)
+    review_reason = (
+        f"公式記事の「{period_label}」から降臨候補を抽出しました。"
+    )
+
+    return build_schedule_candidate(
+        name=name,
+        quest_name=quest_name,
+        attribute=attribute,
+        difficulty=difficulty,
+        category=category,
+        group_name=group_name,
+        start=start,
+        end=end,
+        availability_type=availability_type,
+        source_url=source_url,
+        fetched_at=fetched_at,
+        period_label=period_label,
+        review_reason=review_reason,
+    )
+
+
+def extract_listed_quest_candidates(
+    title,
+    text,
+    source_url,
+    fetched_at,
+):
+    category = article_schedule_category(title)
+    if category not in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
+        return []
+
+    date_range, period_label = select_datetime_range(
+        text,
+        (
+            "コラボイベント開催期間",
+            "期間限定イベント開催期間",
+            "コラボ開催期間",
+        ),
+    )
+    if not date_range:
+        return []
+    start, end = date_range
+
+    pattern = re.compile(
+        r"(?:^|[・。])([^・。▼]{2,60}?)"
+        r"（★5\s*([^）]{1,36})）\s*"
+        r"[（(](星5制限|激究極|究極|極)[）)]"
+    )
+    group_name = article_schedule_group(title, category, "")
+    candidates = []
+    for quest_name, name, difficulty in pattern.findall(text):
+        candidates.append(build_schedule_candidate(
+            name=name,
+            quest_name=quest_name,
+            attribute="",
+            difficulty=difficulty,
+            category=category,
+            group_name=group_name,
+            start=start,
+            end=end,
+            availability_type=AVAILABILITY_PERIOD,
+            source_url=source_url,
+            fetched_at=fetched_at,
+            period_label=period_label,
+            review_reason=(
+                "公式記事の難易度付きクエスト一覧から抽出しました。"
+            ),
+        ))
+    return candidates
+
+
+def extract_schedule_candidates(
+    title,
+    text,
+    sections,
+    source_url,
+    fetched_at,
+):
+    candidates = []
+    title_difficulty = schedule_difficulty(title)
+    if title_difficulty and (
+        "新" in title or parenthesized_quest_character(title)
+    ):
+        candidate = extract_schedule_candidate_from_block(
+            title,
+            text,
+            title,
+            source_url,
+            fetched_at,
+        )
+        if candidate:
+            candidates.append(candidate)
+
+    for heading, section_text in sections:
+        if "クエスト" not in heading:
+            continue
+        if any(word in heading for word in ("ミッション", "ガチャ", "詳細")):
+            continue
+        if not schedule_difficulty(heading):
+            continue
+        candidate = extract_schedule_candidate_from_block(
+            heading,
+            section_text,
+            title,
+            source_url,
+            fetched_at,
+        )
+        if candidate:
+            candidates.append(candidate)
+
+    candidates.extend(extract_listed_quest_candidates(
+        title,
+        text,
+        source_url,
+        fetched_at,
+    ))
+    return deduplicate(
+        candidates,
+        ("year", "date", "start_time", "name", "difficulty"),
+    )
+
+
+def extract_high_difficulty(title, text, source_url, fetched_at):
+    """旧呼び出し互換用。最初に見つかった降臨候補を返す。"""
+    candidates = extract_schedule_candidates(
+        title,
+        text,
+        [],
+        source_url,
+        fetched_at,
+    )
+    return candidates[0] if candidates else None
 
 
 def deduplicate(items, fields):
@@ -613,6 +927,18 @@ def remove_expired_events(events, reference_date=None):
             expired_count += 1
         else:
             active.append(event)
+    return active, expired_count
+
+
+def remove_expired_schedules(schedules, reference_date=None):
+    current_date = reference_date or japan_today()
+    active = []
+    expired_count = 0
+    for schedule in schedules:
+        if schedule_end_datetime(schedule).date() < current_date:
+            expired_count += 1
+        else:
+            active.append(schedule)
     return active, expired_count
 
 
@@ -680,6 +1006,7 @@ def run_update():
     schedule_candidates = []
     event_candidates = []
     errors = []
+    expired_schedule_count = 0
     expired_event_count = 0
     article_links = []
     seen_links = set()
@@ -723,9 +1050,14 @@ def run_update():
             if not title or not text:
                 raise ValueError("記事タイトルまたは本文を取得できませんでした。")
 
-            schedule = extract_high_difficulty(title, text, article_url, fetched_at)
-            if schedule:
-                schedule_candidates.append(schedule)
+            article_schedules = extract_schedule_candidates(
+                title=title,
+                text=text,
+                sections=extract_sections(soup),
+                source_url=article_url,
+                fetched_at=fetched_at,
+            )
+            schedule_candidates.extend(article_schedules)
 
             article_events, article_expired_count = extract_event_candidates(
                 title=title,
@@ -745,7 +1077,10 @@ def run_update():
 
     schedule_candidates = deduplicate(
         schedule_candidates,
-        ("year", "date", "start_time", "name"),
+        ("year", "date", "start_time", "name", "difficulty"),
+    )
+    schedule_candidates, expired_schedule_count = remove_expired_schedules(
+        schedule_candidates
     )
     event_candidates = [
         normalize_known_event_name(event)
@@ -762,6 +1097,7 @@ def run_update():
         "article_count": len(article_links),
         "schedule_candidate_count": len(schedule_candidates),
         "event_candidate_count": len(event_candidates),
+        "expired_schedule_count": expired_schedule_count,
         "expired_event_count": expired_event_count,
         "error_count": len(errors),
     }

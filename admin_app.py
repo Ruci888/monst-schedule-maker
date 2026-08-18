@@ -683,7 +683,8 @@ with candidate_tab:
                     "取得完了："
                     f"降臨候補 {result['schedule_candidate_count']}件、"
                     f"イベント候補 {result['event_candidate_count']}件、"
-                    f"終了済み除外 {result['expired_event_count']}件、"
+                    "終了済み除外 "
+                    f"{result.get('expired_schedule_count', 0) + result['expired_event_count']}件、"
                     f"エラー {result['error_count']}件"
                 )
             except Exception as error:

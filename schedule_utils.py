@@ -146,19 +146,13 @@ def schedule_time_text_for_day(schedule, day):
         schedule.get("availability_type")
     )
     start = schedule_start_datetime(schedule)
-    end = schedule_end_datetime(schedule)
-
     if availability_type == AVAILABILITY_SCHEDULED:
+        end = schedule_end_datetime(schedule)
         return f"{start.strftime('%H:%M')}～{end.strftime('%H:%M')}"
 
-    row_start, row_end = game_day_bounds(day)
-    starts_today = row_start <= start <= row_end
-    ends_today = row_start <= end <= row_end
-
-    if starts_today and ends_today:
-        return f"{start.strftime('%H:%M')}～{end.strftime('%H:%M')}"
-    if starts_today:
-        return f"{start.strftime('%H:%M')}～期間中"
-    if ends_today:
-        return f"期間中～{end.strftime('%H:%M')}"
-    return "期間中いつでも"
+    # 期間中常設は、行にキャラ名があるだけで開催中と分かるため、
+    # 「期間中」「期間中いつでも」「～11:59」は画像に表示しない。
+    # 初日の開始が標準の12:00以外の場合だけ開始時刻を残す。
+    if schedule_game_day(schedule) == day and start.time() != time(12, 0):
+        return f"{start.strftime('%H:%M')}～"
+    return ""
