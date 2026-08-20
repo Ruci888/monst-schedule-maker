@@ -362,9 +362,10 @@ def reset_schedule_candidate_editor():
 
 
 def show_video_extraction_result(result):
-    columns = st.columns(5)
+    columns = st.columns(6)
     values = (
         ("認識", result.recognized_count),
+        ("品質不足で除外", result.rejected_candidate_count),
         ("公開済み重複", result.published_duplicate_count),
         ("承認待ち重複", result.pending_duplicate_count),
         ("新規候補", len(result.candidates)),
@@ -387,12 +388,13 @@ def import_schedule_candidates_from_video():
     )
     left, right = st.columns([1, 3])
     with left:
-        recording_year = st.number_input(
-            "録画内の日程の年",
-            min_value=2020,
-            max_value=2100,
-            value=date.today().year,
-            step=1,
+        recording_start_date = st.date_input(
+            "録画内の最初の日程",
+            value=date.today(),
+            help=(
+                "録画で最初に表示されるゲーム日を指定します。"
+                "この日から14日を外れたOCR日付は保存しません。"
+            ),
         )
     with right:
         uploaded_video = st.file_uploader(
@@ -417,7 +419,8 @@ def import_schedule_candidates_from_video():
             ):
                 result = extract_video_schedule_candidates(
                     video_bytes=video_bytes,
-                    year=recording_year,
+                    year=recording_start_date.year,
+                    recording_start_date=recording_start_date,
                     published_schedules=published,
                     pending_candidates=pending,
                 )

@@ -13,7 +13,7 @@ import tempfile
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -72,6 +72,7 @@ class VideoScheduleError(RuntimeError):
 class VideoExtractionResult:
     candidates: list[dict]
     recognized_count: int
+    rejected_candidate_count: int
     published_duplicate_count: int
     pending_duplicate_count: int
     video_duplicate_count: int
@@ -83,6 +84,7 @@ class VideoExtractionResult:
         return {
             "candidates": self.candidates,
             "recognized_count": self.recognized_count,
+            "rejected_candidate_count": self.rejected_candidate_count,
             "published_duplicate_count": self.published_duplicate_count,
             "pending_duplicate_count": self.pending_duplicate_count,
             "video_duplicate_count": self.video_duplicate_count,
@@ -159,6 +161,7 @@ def find_date_time(text):
         return None
     return {
         "date": f"{values['start_month']}/{values['start_day']}",
+        "end_date": f"{values['end_month']}/{values['end_day']}",
         "start_time": f"{values['start_hour']:02d}:{values['start_minute']:02d}",
         "end_time": f"{values['end_hour']:02d}:{values['end_minute']:02d}",
     }
@@ -274,7 +277,9 @@ def candidate_from_card_text(
             identity_source.encode("utf-8")
         ).hexdigest()[:20],
         "year": int(year),
-        **date_time,
+        "date": date_time["date"],
+        "start_time": date_time["start_time"],
+        "end_time": date_time["end_time"],
         "name": name,
         "quest_name": "",
         "attribute": attribute,
@@ -292,6 +297,7 @@ def candidate_from_card_text(
         "ocr_confidence": round(float(confidence), 1),
         "ocr_raw_name": normalize_ocr_text(raw_name_text),
         "ocr_raw_difficulty": normalize_ocr_text(raw_difficulty_text),
+        "ocr_end_date": date_time["end_date"],
         "ocr_status": "・".join(status_parts),
         "ocr_votes": 1,
         "visual_signature": visual_signature,
@@ -299,6 +305,287 @@ def candidate_from_card_text(
         "published": False,
     }
     return candidate
+
+
+def _coerce_recording_start_date(value, fallback_year=None):
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if value:
+        try:
+            return datetime.strptime(str(value), "%Y-%m-%d").date()
+        except ValueError as error:
+            raise VideoScheduleError(
+                "録画内の最初の日程を正しく指定してください。"
+            ) from error
+    if fallback_year is not None:
+        return date(int(fallback_year), 1, 1)
+    raise VideoScheduleError("録画内の最初の日程を指定してください。")
+
+
+def _month_day_near_reference(value, reference_date):
+    try:
+        month, day = (int(part) for part in str(value).split("/", 1))
+    except (TypeError, ValueError):
+        return None
+
+    candidates = []
+    for year in (
+        reference_date.year - 1,
+        reference_date.year,
+        reference_date.year + 1,
+    ):
+        try:
+            candidates.append(date(year, month, day))
+        except ValueError:
+            continue
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda candidate_date: abs(
+            (candidate_date - reference_date).days
+        ),
+    )
+
+
+def normalize_candidate_recording_date(
+    candidate,
+    recording_start_date,
+    maximum_days=14,
+):
+    """録画開始日から外れたOCR日付を除外し、通常降臨時刻へ揃える。"""
+    recording_start = _coerce_recording_start_date(recording_start_date)
+    start_date = _month_day_near_reference(
+        candidate.get("date", ""),
+        recording_start,
+    )
+    if start_date is None:
+        return None
+    if not 0 <= (start_date - recording_start).days <= maximum_days:
+        return None
+
+    raw_end_date = candidate.get("ocr_end_date", "")
+    if raw_end_date:
+        end_date = _month_day_near_reference(raw_end_date, start_date)
+        if end_date is None or end_date != start_date + timedelta(days=1):
+            return None
+
+    normalized = dict(candidate)
+    normalized["year"] = start_date.year
+    normalized["date"] = f"{start_date.month}/{start_date.day}"
+    # アプリの通常降臨一覧は、当日12:00～翌11:59のゲーム日単位。
+    # OCRの11:58などの微小な誤読はここで安全な既定値へ補正する。
+    normalized["start_time"] = "12:00"
+    normalized["end_time"] = "11:59"
+    next_day = start_date + timedelta(days=1)
+    normalized["ocr_end_date"] = f"{next_day.month}/{next_day.day}"
+    return normalized
+
+
+def build_known_schedule_master(published_schedules, pending_candidates):
+    """承認済み・公式候補から名前補正に利用できる既知データを作る。"""
+    master = {}
+
+    def add(item):
+        if not all(
+            str(item.get(field, "")).strip()
+            for field in ("name", "attribute", "difficulty")
+        ):
+            return
+        normalized_name = normalize_identity_name(item.get("name"))
+        if len(normalized_name) < 2:
+            return
+        master.setdefault(normalized_name, dict(item))
+
+    for schedule in published_schedules or []:
+        add(schedule)
+    for candidate in pending_candidates or []:
+        source_type = str(candidate.get("source_type", "")).lower()
+        if source_type != "game" or candidate.get("confirmed_at"):
+            add(candidate)
+    return list(master.values())
+
+
+def _candidate_name_variants(candidate):
+    variants = []
+    sources = (
+        candidate.get("name", ""),
+        candidate.get("ocr_raw_name", ""),
+    )
+    for source in sources:
+        cleaned = clean_ocr_character_name(source)
+        if cleaned:
+            variants.append(cleaned)
+        variants.extend(
+            match.group(0).strip()
+            for match in JAPANESE_NAME_PATTERN.finditer(
+                normalize_ocr_text(source)
+            )
+            if len(normalize_identity_name(match.group(0))) >= 2
+        )
+    unique = []
+    for value in variants:
+        if value not in unique:
+            unique.append(value)
+    return unique
+
+
+def _name_similarity(left, right):
+    left_name = normalize_identity_name(left)
+    right_name = normalize_identity_name(right)
+    if not left_name or not right_name:
+        return 0.0
+    if left_name == right_name:
+        return 1.0
+    ratio = SequenceMatcher(None, left_name, right_name).ratio()
+    shorter = min(len(left_name), len(right_name))
+    longer = max(len(left_name), len(right_name))
+    if shorter >= 3 and (
+        left_name in right_name or right_name in left_name
+    ):
+        ratio = max(ratio, 0.88 * shorter / longer + 0.12)
+    return ratio
+
+
+def find_known_schedule_match(candidate, known_master):
+    variants = _candidate_name_variants(candidate)
+    if not variants or not known_master:
+        return None, 0.0
+
+    ranked = []
+    for known in known_master:
+        score = max(
+            _name_similarity(variant, known.get("name", ""))
+            for variant in variants
+        )
+        ranked.append((score, known))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    best_score, best = ranked[0]
+    second_score = ranked[1][0] if len(ranked) > 1 else 0.0
+    if best_score < 0.72:
+        return None, best_score
+    if best_score < 0.88 and best_score - second_score < 0.06:
+        return None, best_score
+    return best, best_score
+
+
+def _normalized_category(value):
+    aliases = {
+        "collaboration": "コラボ",
+        "limited_event": "イベント・期間限定",
+        "event": "イベント・期間限定",
+        "high_difficulty": "高難易度・注目",
+    }
+    return aliases.get(value, value or "高難易度・注目")
+
+
+def resolve_candidate_with_master(candidate, known_master):
+    match, score = find_known_schedule_match(candidate, known_master)
+    if match is None:
+        return dict(candidate), False
+
+    resolved = dict(candidate)
+    resolved["name"] = str(match.get("name", "")).strip()
+    resolved["attribute"] = str(match.get("attribute", "")).strip()
+    resolved["difficulty"] = str(match.get("difficulty", "")).strip()
+    resolved["quest_name"] = str(match.get("quest_name", "")).strip()
+    resolved["category"] = _normalized_category(match.get("category"))
+    resolved["group_name"] = str(match.get("group_name", "")).strip()
+    resolved["master_match_score"] = round(score * 100, 1)
+    resolved["ocr_status"] = "既知データ一致・要確認"
+    resolved["review_reason"] = (
+        "録画の日時を確認し、キャラ名・属性・難易度は"
+        "承認済みまたは公式候補の既知データで補正しました。"
+    )
+    return resolved, True
+
+
+def candidate_passes_quality_gate(candidate, matched_master=False):
+    if matched_master:
+        return True
+    if not all(
+        str(candidate.get(field, "")).strip()
+        for field in ("name", "attribute", "difficulty")
+    ):
+        return False
+    if not is_plausible_character_name(candidate.get("name")):
+        return False
+    votes = int(candidate.get("ocr_votes", 0) or 0)
+    confidence = float(candidate.get("ocr_confidence", 0) or 0)
+    return votes >= 2 and confidence >= 78.0
+
+
+def deduplicate_resolved_candidates(candidates):
+    selected_by_key = {}
+    duplicate_count = 0
+    for candidate in candidates:
+        key = (
+            int(candidate.get("year", 0)),
+            str(candidate.get("date", "")),
+            normalize_identity_name(candidate.get("name", "")),
+        )
+        existing = selected_by_key.get(key)
+        if existing is None:
+            selected_by_key[key] = candidate
+            continue
+        duplicate_count += 1
+        existing_score = (
+            float(existing.get("master_match_score", 0) or 0),
+            int(existing.get("ocr_votes", 0) or 0),
+            float(existing.get("ocr_confidence", 0) or 0),
+        )
+        candidate_score = (
+            float(candidate.get("master_match_score", 0) or 0),
+            int(candidate.get("ocr_votes", 0) or 0),
+            float(candidate.get("ocr_confidence", 0) or 0),
+        )
+        if candidate_score > existing_score:
+            selected_by_key[key] = candidate
+    return list(selected_by_key.values()), duplicate_count
+
+
+def postprocess_video_candidates(
+    candidates,
+    recording_start_date,
+    published_schedules=None,
+    pending_candidates=None,
+):
+    known_master = build_known_schedule_master(
+        published_schedules or [],
+        pending_candidates or [],
+    )
+    accepted = []
+    rejected_count = 0
+    for candidate in candidates:
+        normalized = normalize_candidate_recording_date(
+            candidate,
+            recording_start_date,
+        )
+        if normalized is None:
+            rejected_count += 1
+            continue
+        resolved, matched_master = resolve_candidate_with_master(
+            normalized,
+            known_master,
+        )
+        if not candidate_passes_quality_gate(resolved, matched_master):
+            rejected_count += 1
+            continue
+        if not matched_master:
+            resolved["category"] = _normalized_category(
+                resolved.get("category")
+            )
+            resolved["ocr_status"] = "高信頼OCR・要目視確認"
+            resolved["review_reason"] = (
+                "録画内で複数回一致した高信頼候補です。"
+                "キャラ名・属性・難易度を目視確認してください。"
+            )
+        accepted.append(resolved)
+
+    unique, duplicate_count = deduplicate_resolved_candidates(accepted)
+    return unique, rejected_count, duplicate_count
 
 
 def _similar_candidate(left, right):
@@ -967,7 +1254,7 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
         visual_signature = _image_signature(cv2, name_region)
         date_text = (
             f"{date_time['date']} {date_time['start_time']}～"
-            f"{date_time['date']} {date_time['end_time']}"
+            f"{date_time['end_date']} {date_time['end_time']}"
         )
         candidate = candidate_from_card_text(
             date_text,
@@ -991,14 +1278,19 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
 
 def extract_video_schedule_candidates(
     video_bytes,
-    year,
+    year=None,
+    recording_start_date=None,
     published_schedules=None,
     pending_candidates=None,
 ):
     """動画を解析し、既存データと重複しない承認待ち候補を返す。"""
     _validate_video(video_bytes)
+    recording_start = _coerce_recording_start_date(
+        recording_start_date,
+        fallback_year=year,
+    )
     try:
-        year = int(year)
+        year = int(recording_start.year)
     except (TypeError, ValueError) as error:
         raise VideoScheduleError("年は4桁の数字で指定してください。") from error
     if not 2020 <= year <= 2100:
@@ -1080,21 +1372,31 @@ def extract_video_schedule_candidates(
     unique_candidates, video_duplicate_count = deduplicate_video_candidates(
         all_candidates
     )
-    for candidate in unique_candidates:
+    processed_candidates, rejected_count, resolved_duplicate_count = (
+        postprocess_video_candidates(
+            unique_candidates,
+            recording_start,
+            published_schedules=published_schedules or [],
+            pending_candidates=pending_candidates or [],
+        )
+    )
+    video_duplicate_count += resolved_duplicate_count
+    for candidate in processed_candidates:
         candidate["video_fingerprint"] = fingerprint
         candidate["fetched_at"] = datetime.now().astimezone().isoformat(
             timespec="seconds"
         )
     new_candidates, published_duplicates, pending_duplicates = (
         filter_existing_candidates(
-            unique_candidates,
+            processed_candidates,
             published_schedules or [],
             pending_candidates or [],
         )
     )
     return VideoExtractionResult(
         candidates=new_candidates,
-        recognized_count=len(unique_candidates),
+        recognized_count=len(processed_candidates),
+        rejected_candidate_count=rejected_count,
         published_duplicate_count=published_duplicates,
         pending_duplicate_count=pending_duplicates,
         video_duplicate_count=video_duplicate_count,
