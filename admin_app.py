@@ -357,6 +357,10 @@ def ensure_candidate_id(candidate, index=0):
     ).hexdigest()[:20]
 
 
+def reset_schedule_candidate_editor():
+    st.session_state.pop("schedule_candidate_editor", None)
+
+
 def show_video_extraction_result(result):
     columns = st.columns(5)
     values = (
@@ -442,17 +446,30 @@ def import_schedule_candidates_from_video():
 
 
 def review_schedule_candidates():
+    if st.session_state.pop("reset_schedule_candidate_bulk_delete", False):
+        st.session_state.pop("schedule_candidate_delete_all", None)
+        st.session_state.pop("schedule_candidate_editor", None)
+
     candidates = load_admin_json("schedule_candidates.json")
     if not candidates:
         st.info("降臨の自動取得候補はまだありません。")
         return
+
+    delete_all = st.checkbox(
+        "公開しない候補をすべて削除対象にする",
+        key="schedule_candidate_delete_all",
+        on_change=reset_schedule_candidate_editor,
+    )
+    st.caption(
+        "一括選択後も、残したい候補の「削除」チェックは個別に外せます。"
+    )
 
     rows = []
     for index, candidate in enumerate(candidates):
         candidate_id = ensure_candidate_id(candidate, index)
         rows.append({
             "approve": False,
-            "delete": False,
+            "delete": delete_all,
             "candidate_id": candidate_id,
             "year": candidate.get("year"),
             "date": candidate.get("date", ""),
@@ -576,6 +593,7 @@ def review_schedule_candidates():
         try:
             message = save_schedule_candidates(remaining)
             st.session_state.pop("schedule_candidate_editor", None)
+            st.session_state["reset_schedule_candidate_bulk_delete"] = True
             st.session_state["admin_flash_success"] = (
                 f"{message} 承認待ち候補を"
                 f"{len(candidates) - len(remaining)}件削除しました。"

@@ -11,6 +11,7 @@ import re
 import shutil
 import tempfile
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from difflib import SequenceMatcher
@@ -19,8 +20,8 @@ from pathlib import Path
 
 MAX_VIDEO_BYTES = 100 * 1024 * 1024
 MAX_VIDEO_SECONDS = 180
-FRAME_INTERVAL_SECONDS = 1.0
-MAX_SAMPLE_FRAMES = 180
+FRAME_INTERVAL_SECONDS = 0.5
+MAX_SAMPLE_FRAMES = 360
 
 DIFFICULTY_PATTERNS = (
     ("超究極・兵", re.compile(r"超究極\s*[・･]\s*兵")),
@@ -307,20 +308,23 @@ def _similar_candidate(left, right):
         or left.get("start_time") != right.get("start_time")
     ):
         return False
-    left_name = normalize_identity_name(left.get("name"))
-    right_name = normalize_identity_name(right.get("name"))
-    if not left_name or not right_name:
-        left_signature = str(left.get("visual_signature", ""))
-        right_signature = str(right.get("visual_signature", ""))
-        if not left_signature or not right_signature:
-            return False
+    left_signature = str(left.get("visual_signature", ""))
+    right_signature = str(right.get("visual_signature", ""))
+    if left_signature and right_signature:
         try:
             distance = (
                 int(left_signature, 16) ^ int(right_signature, 16)
             ).bit_count()
-            return distance <= 12
+            if distance <= 16:
+                return True
         except ValueError:
-            return left_signature == right_signature
+            if left_signature == right_signature:
+                return True
+
+    left_name = normalize_identity_name(left.get("name"))
+    right_name = normalize_identity_name(right.get("name"))
+    if not left_name or not right_name:
+        return False
     if (
         left.get("difficulty")
         and right.get("difficulty")
@@ -328,6 +332,72 @@ def _similar_candidate(left, right):
     ):
         return False
     return SequenceMatcher(None, left_name, right_name).ratio() >= 0.82
+
+
+def _consensus_exact_value(candidates, field):
+    values = [str(item.get(field, "")).strip() for item in candidates]
+    values = [value for value in values if value]
+    if not values:
+        return ""
+    ranked = Counter(values).most_common()
+    if len(ranked) >= 2 and ranked[0][1] == ranked[1][1]:
+        return ""
+    return ranked[0][0]
+
+
+def _consensus_name(candidates):
+    groups = []
+    for candidate in candidates:
+        name = clean_ocr_character_name(candidate.get("name", ""))
+        normalized = normalize_identity_name(name)
+        if not normalized:
+            continue
+        matching_group = next(
+            (
+                group
+                for group in groups
+                if SequenceMatcher(
+                    None,
+                    normalized,
+                    group["normalized"],
+                ).ratio() >= 0.82
+            ),
+            None,
+        )
+        if matching_group is None:
+            matching_group = {
+                "normalized": normalized,
+                "items": [],
+            }
+            groups.append(matching_group)
+        matching_group["items"].append(candidate)
+    if not groups:
+        return ""
+
+    selected_group = max(
+        groups,
+        key=lambda group: (
+            len(group["items"]),
+            sum(
+                float(item.get("ocr_confidence", 0) or 0)
+                for item in group["items"]
+            ),
+        ),
+    )
+    selected = max(
+        selected_group["items"],
+        key=lambda item: float(item.get("ocr_confidence", 0) or 0),
+    )
+    return clean_ocr_character_name(selected.get("name", ""))
+
+
+def _join_ocr_values(candidates, field):
+    values = []
+    for candidate in candidates:
+        value = normalize_ocr_text(candidate.get(field, ""))
+        if value and value not in values:
+            values.append(value)
+    return " / ".join(values)[:1000]
 
 
 def candidate_review_status(candidate):
@@ -346,34 +416,46 @@ def candidate_review_status(candidate):
 
 
 def deduplicate_video_candidates(candidates):
-    unique = []
-    duplicate_count = 0
+    groups = []
     for candidate in candidates:
-        matching_index = next(
+        matching_group = next(
             (
-                index
-                for index, current in enumerate(unique)
-                if _similar_candidate(current, candidate)
+                group
+                for group in groups
+                if any(
+                    _similar_candidate(current, candidate)
+                    for current in group
+                )
             ),
             None,
         )
-        if matching_index is None:
-            unique.append(candidate)
-            continue
-        duplicate_count += 1
-        current = unique[matching_index]
-        votes = int(current.get("ocr_votes", 1)) + int(
-            candidate.get("ocr_votes", 1)
-        )
-        if candidate.get("ocr_confidence", 0) > current.get(
-            "ocr_confidence", 0
-        ):
-            candidate["ocr_votes"] = votes
-            candidate["ocr_status"] = candidate_review_status(candidate)
-            unique[matching_index] = candidate
+        if matching_group is None:
+            groups.append([candidate])
         else:
-            current["ocr_votes"] = votes
-            current["ocr_status"] = candidate_review_status(current)
+            matching_group.append(candidate)
+
+    unique = []
+    for group in groups:
+        selected = dict(max(
+            group,
+            key=lambda item: float(item.get("ocr_confidence", 0) or 0),
+        ))
+        selected["name"] = _consensus_name(group)
+        selected["attribute"] = _consensus_exact_value(group, "attribute")
+        selected["difficulty"] = _consensus_exact_value(group, "difficulty")
+        selected["ocr_raw_name"] = _join_ocr_values(group, "ocr_raw_name")
+        selected["ocr_raw_difficulty"] = _join_ocr_values(
+            group, "ocr_raw_difficulty"
+        )
+        selected["ocr_raw_date"] = _join_ocr_values(group, "ocr_raw_date")
+        selected["ocr_votes"] = sum(
+            int(item.get("ocr_votes", 1) or 1)
+            for item in group
+        )
+        selected["ocr_status"] = candidate_review_status(selected)
+        unique.append(selected)
+
+    duplicate_count = len(candidates) - len(unique)
     return unique, duplicate_count
 
 
@@ -432,9 +514,52 @@ def _require_video_dependencies():
 
 def _frame_hash(cv2, frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    resized = cv2.resize(gray, (9, 8))
+    resized = cv2.resize(gray, (17, 16))
     differences = resized[:, 1:] > resized[:, :-1]
     return sum(int(value) << index for index, value in enumerate(differences.flat))
+
+
+def _frame_sharpness(cv2, frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def _detect_game_viewport(cv2, frame):
+    """録画の黒い余白を除き、実際にゲームが表示されている領域を返す。"""
+    height, width = frame.shape[:2]
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    active = gray >= 12
+
+    active_columns = active.sum(axis=0)
+    active_rows = active.sum(axis=1)
+    minimum_column_pixels = max(4, int(height * 0.025))
+    minimum_row_pixels = max(4, int(width * 0.025))
+
+    columns = [
+        index
+        for index, count in enumerate(active_columns)
+        if int(count) >= minimum_column_pixels
+    ]
+    rows = [
+        index
+        for index, count in enumerate(active_rows)
+        if int(count) >= minimum_row_pixels
+    ]
+    if not columns or not rows:
+        return frame
+
+    left = max(0, columns[0] - 2)
+    right = min(width, columns[-1] + 3)
+    top = max(0, rows[0] - 2)
+    bottom = min(height, rows[-1] + 3)
+
+    # 一時的な暗転画面などを誤って極端に小さく切り出さない。
+    if (
+        right - left < int(width * 0.55)
+        or bottom - top < int(height * 0.55)
+    ):
+        return frame
+    return frame[top:bottom, left:right]
 
 
 def _image_signature(cv2, image):
@@ -539,8 +664,8 @@ def _ocr_name_variant(pytesseract, image):
 def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.54): int(height * 0.84),
-        int(width * 0.11): int(width * 0.68),
+        int(height * 0.40): int(height * 0.86),
+        int(width * 0.12): int(width * 0.68),
     ]
     if name_region.size == 0:
         return "", "", 0.0, "名前認識失敗"
@@ -561,22 +686,34 @@ def _extract_character_name(cv2, pytesseract, card, attribute):
         threshold_image = cv2.bitwise_not(threshold_image)
 
     variants = [
-        _ocr_name_variant(pytesseract, enlarged_color),
-        _ocr_name_variant(pytesseract, threshold_image),
-        _ocr_name_variant(
-            pytesseract,
-            _enlarge_name_image(
-                cv2,
-                _name_color_mask(cv2, name_region, attribute),
+        {
+            **_ocr_name_variant(
+                pytesseract,
+                _enlarge_name_image(
+                    cv2,
+                    _name_color_mask(cv2, name_region, attribute),
+                ),
             ),
-        ),
-        _ocr_name_variant(
-            pytesseract,
-            _enlarge_name_image(
-                cv2,
-                _name_color_mask(cv2, name_region),
+            "color_bonus": 24,
+        },
+        {
+            **_ocr_name_variant(
+                pytesseract,
+                _enlarge_name_image(
+                    cv2,
+                    _name_color_mask(cv2, name_region),
+                ),
             ),
-        ),
+            "color_bonus": 14,
+        },
+        {
+            **_ocr_name_variant(pytesseract, enlarged_color),
+            "color_bonus": 0,
+        },
+        {
+            **_ocr_name_variant(pytesseract, threshold_image),
+            "color_bonus": 0,
+        },
     ]
     valid = [variant for variant in variants if variant["name"]]
     raw_names = []
@@ -600,6 +737,7 @@ def _extract_character_name(cv2, pytesseract, card, attribute):
             variant["confidence"]
             + agreement * 12
             + len(normalize_identity_name(variant["name"]))
+            + variant.get("color_bonus", 0)
         )
         variant["agreement"] = agreement
     selected = max(valid, key=lambda variant: variant["score"])
@@ -625,8 +763,8 @@ def _ocr_single_line(pytesseract, image, language="jpn+eng"):
 def _extract_card_date_time(cv2, pytesseract, card):
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.05): int(height * 0.34),
-        int(width * 0.06): int(width * 0.69),
+        int(height * 0.03): int(height * 0.35),
+        int(width * 0.04): int(width * 0.72),
     ]
     if region.size == 0:
         return None, ""
@@ -656,8 +794,8 @@ def _extract_card_difficulty(cv2, pytesseract, card):
     """条件説明ではなく、カード右側の実難易度ラベルだけを読む。"""
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.43): int(height * 0.76),
-        int(width * 0.54): int(width * 0.70),
+        int(height * 0.38): int(height * 0.78),
+        int(width * 0.52): int(width * 0.68),
     ]
     if region.size == 0:
         return "", ""
@@ -723,8 +861,8 @@ def _infer_attribute(cv2, card):
     # 左端の赤いドクロ・黄色い宝箱と右端の予約ボタンを除き、
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
-        int(height * 0.54): int(height * 0.86),
-        int(width * 0.11): int(width * 0.68),
+        int(height * 0.40): int(height * 0.86),
+        int(width * 0.12): int(width * 0.68),
     ]
     if region.size == 0:
         return ""
@@ -754,7 +892,7 @@ def _detect_card_regions(cv2, frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     left = int(width * 0.015)
     right = int(width * 0.965)
-    search_top = int(height * 0.41)
+    search_top = int(height * 0.36)
     search_bottom = int(height * 0.91)
     bright_counts = (
         gray[search_top:search_bottom, left:right] >= 145
@@ -823,8 +961,8 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
         )
         height, width = card.shape[:2]
         name_region = card[
-            int(height * 0.54): int(height * 0.84),
-            int(width * 0.11): int(width * 0.68),
+            int(height * 0.40): int(height * 0.86),
+            int(width * 0.12): int(width * 0.68),
         ]
         visual_signature = _image_signature(cv2, name_region)
         date_text = (
@@ -888,7 +1026,9 @@ def extract_video_schedule_candidates(
                 raise VideoScheduleError("動画は3分以内にしてください。")
             step = max(1, int(round(fps * FRAME_INTERVAL_SECONDS)))
             frame_index = 0
-            previous_hash = None
+            pending_frame = None
+            pending_hash = None
+            pending_sharpness = -1.0
             while sampled_frame_count < MAX_SAMPLE_FRAMES:
                 ok, frame = capture.read()
                 if not ok:
@@ -897,15 +1037,40 @@ def extract_video_schedule_candidates(
                     frame_index += 1
                     continue
                 frame_index += 1
-                current_hash = _frame_hash(cv2, frame)
-                if previous_hash is not None and _hamming_distance(
-                    previous_hash, current_hash
-                ) <= 3:
+                game_viewport = _detect_game_viewport(cv2, frame)
+                current_hash = _frame_hash(cv2, game_viewport)
+                current_sharpness = _frame_sharpness(cv2, game_viewport)
+
+                # 同じ画面が続く場合は、最初のフレームではなく
+                # スクロール停止後の最も鮮明な1枚をOCRへ渡す。
+                if pending_hash is not None and _hamming_distance(
+                    pending_hash, current_hash
+                ) <= 5:
+                    if current_sharpness > pending_sharpness:
+                        pending_frame = game_viewport.copy()
+                        pending_hash = current_hash
+                        pending_sharpness = current_sharpness
                     continue
-                previous_hash = current_hash
+
+                if pending_frame is not None:
+                    sampled_frame_count += 1
+                    candidates, failed = _extract_from_frame(
+                        cv2, pytesseract, pending_frame, year
+                    )
+                    all_candidates.extend(candidates)
+                    ocr_error_count += failed
+
+                pending_frame = game_viewport.copy()
+                pending_hash = current_hash
+                pending_sharpness = current_sharpness
+
+            if (
+                pending_frame is not None
+                and sampled_frame_count < MAX_SAMPLE_FRAMES
+            ):
                 sampled_frame_count += 1
                 candidates, failed = _extract_from_frame(
-                    cv2, pytesseract, frame, year
+                    cv2, pytesseract, pending_frame, year
                 )
                 all_candidates.extend(candidates)
                 ocr_error_count += failed

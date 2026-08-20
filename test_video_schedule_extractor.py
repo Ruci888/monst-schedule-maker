@@ -103,6 +103,60 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         self.assertEqual(duplicate_count, 1)
         self.assertEqual(unique[0]["ocr_confidence"], 92)
 
+    def test_uses_multiple_frame_consensus_for_same_card(self):
+        base = {
+            "year": 2026,
+            "date": "8/22",
+            "start_time": "12:00",
+            "end_time": "11:59",
+            "difficulty": "超絶",
+            "attribute": "火",
+            "visual_signature": "0" * 64,
+            "ocr_votes": 1,
+        }
+        candidates = [
+            {
+                **base,
+                "name": "ソーレニにンスンス",
+                "ocr_confidence": 75,
+            },
+            {
+                **base,
+                "name": "ソーマ",
+                "ocr_confidence": 65,
+                "visual_signature": "0" * 63 + "1",
+            },
+            {
+                **base,
+                "name": "ソーマ",
+                "ocr_confidence": 70,
+                "visual_signature": "0" * 63 + "2",
+            },
+        ]
+        unique, duplicate_count = deduplicate_video_candidates(candidates)
+        self.assertEqual(len(unique), 1)
+        self.assertEqual(duplicate_count, 2)
+        self.assertEqual(unique[0]["name"], "ソーマ")
+        self.assertEqual(unique[0]["ocr_votes"], 3)
+
+    def test_keeps_different_visual_cards_separate(self):
+        base = {
+            "year": 2026,
+            "date": "8/22",
+            "start_time": "12:00",
+            "end_time": "11:59",
+            "difficulty": "超絶",
+            "attribute": "火",
+            "ocr_confidence": 70,
+        }
+        candidates = [
+            {**base, "name": "ソーマ", "visual_signature": "0" * 64},
+            {**base, "name": "アラミタマ", "visual_signature": "f" * 64},
+        ]
+        unique, duplicate_count = deduplicate_video_candidates(candidates)
+        self.assertEqual(len(unique), 2)
+        self.assertEqual(duplicate_count, 0)
+
     def test_filters_published_and_pending_duplicates(self):
         candidates = [
             {"year": 2026, "date": "8/19", "start_time": "12:00", "name": "ドライ", "difficulty": "超絶"},
