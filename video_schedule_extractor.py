@@ -72,6 +72,7 @@ class VideoScheduleError(RuntimeError):
 class VideoExtractionResult:
     candidates: list[dict]
     recognized_count: int
+    manual_review_count: int
     rejected_candidate_count: int
     published_duplicate_count: int
     pending_duplicate_count: int
@@ -84,6 +85,7 @@ class VideoExtractionResult:
         return {
             "candidates": self.candidates,
             "recognized_count": self.recognized_count,
+            "manual_review_count": self.manual_review_count,
             "rejected_candidate_count": self.rejected_candidate_count,
             "published_duplicate_count": self.published_duplicate_count,
             "pending_duplicate_count": self.pending_duplicate_count,
@@ -521,11 +523,21 @@ def deduplicate_resolved_candidates(candidates):
     selected_by_key = {}
     duplicate_count = 0
     for candidate in candidates:
-        key = (
-            int(candidate.get("year", 0)),
-            str(candidate.get("date", "")),
-            normalize_identity_name(candidate.get("name", "")),
-        )
+        normalized_name = normalize_identity_name(candidate.get("name", ""))
+        if candidate.get("date") and normalized_name:
+            key = (
+                "schedule",
+                int(candidate.get("year", 0)),
+                str(candidate.get("date", "")),
+                normalized_name,
+            )
+        else:
+            key = (
+                "image",
+                str(candidate.get("card_signature", ""))
+                or str(candidate.get("visual_signature", ""))
+                or str(candidate.get("candidate_id", "")),
+            )
         existing = selected_by_key.get(key)
         if existing is None:
             selected_by_key[key] = candidate
@@ -588,7 +600,114 @@ def postprocess_video_candidates(
     return unique, rejected_count, duplicate_count
 
 
+def prepare_video_review_candidates(
+    candidates,
+    recording_start_date,
+    published_schedules=None,
+    pending_candidates=None,
+):
+    """OCR候補を捨てず、画像を見ながら直せる一時確認候補へ変換する。"""
+    recording_start = _coerce_recording_start_date(recording_start_date)
+    known_master = build_known_schedule_master(
+        published_schedules or [],
+        pending_candidates or [],
+    )
+    review_candidates = []
+    rejected_count = 0
+
+    for candidate in candidates:
+        has_useful_content = bool(
+            candidate.get("_preview_image")
+            or normalize_ocr_text(candidate.get("ocr_raw_name", ""))
+            or normalize_ocr_text(candidate.get("ocr_raw_date", ""))
+            or normalize_ocr_text(candidate.get("ocr_raw_difficulty", ""))
+        )
+        if not has_useful_content:
+            rejected_count += 1
+            continue
+
+        normalized = normalize_candidate_recording_date(
+            candidate,
+            recording_start,
+        )
+        date_needs_review = normalized is None
+        if date_needs_review:
+            normalized = dict(candidate)
+            normalized["year"] = recording_start.year
+            normalized["date"] = ""
+            normalized["start_time"] = "12:00"
+            normalized["end_time"] = "11:59"
+
+        resolved, matched_master = resolve_candidate_with_master(
+            normalized,
+            known_master,
+        )
+        automatic = (
+            not date_needs_review
+            and candidate_passes_quality_gate(resolved, matched_master)
+        )
+        resolved["category"] = _normalized_category(
+            resolved.get("category")
+        )
+        resolved["_requires_manual"] = not automatic
+        if automatic and matched_master:
+            resolved["review_mode"] = "既知データ補正"
+        elif automatic:
+            resolved["review_mode"] = "高信頼OCR"
+            resolved["ocr_status"] = "高信頼OCR・要目視確認"
+        else:
+            reasons = []
+            if date_needs_review:
+                reasons.append("日付要修正")
+            if not resolved.get("name"):
+                reasons.append("名前要入力")
+            if not resolved.get("attribute"):
+                reasons.append("属性要確認")
+            if not resolved.get("difficulty"):
+                reasons.append("難易度要確認")
+            resolved["review_mode"] = "画像確認"
+            resolved["ocr_status"] = "・".join(
+                ["画像確認"] + reasons
+            )
+            resolved["review_reason"] = (
+                "OCRだけでは確定できません。切り出したカード画像を見て"
+                "日付・キャラ名・属性・難易度を修正してください。"
+            )
+        review_candidates.append(resolved)
+
+    unique, duplicate_count = deduplicate_resolved_candidates(
+        review_candidates
+    )
+    manual_count = sum(
+        bool(candidate.get("_requires_manual"))
+        for candidate in unique
+    )
+    automatic_count = len(unique) - manual_count
+    return (
+        unique,
+        automatic_count,
+        manual_count,
+        rejected_count,
+        duplicate_count,
+    )
+
+
 def _similar_candidate(left, right):
+    # OCRの日付や名前が別の文字に化けても、同じ切り出し画像なら先にまとめる。
+    left_card_signature = str(left.get("card_signature", ""))
+    right_card_signature = str(right.get("card_signature", ""))
+    if left_card_signature and right_card_signature:
+        try:
+            distance = (
+                int(left_card_signature, 16)
+                ^ int(right_card_signature, 16)
+            ).bit_count()
+            if distance <= 20:
+                return True
+        except ValueError:
+            if left_card_signature == right_card_signature:
+                return True
+
     if (
         int(left.get("year", 0)) != int(right.get("year", 0))
         or left.get("date") != right.get("date")
@@ -1231,9 +1350,6 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
             pytesseract,
             card,
         )
-        if not date_time:
-            failed_count += 1
-            continue
         attribute = _infer_attribute(cv2, card)
         name, raw_name, name_confidence, ocr_status = _extract_character_name(
             cv2,
@@ -1252,24 +1368,71 @@ def _extract_from_frame(cv2, pytesseract, frame, year):
             int(width * 0.12): int(width * 0.68),
         ]
         visual_signature = _image_signature(cv2, name_region)
-        date_text = (
-            f"{date_time['date']} {date_time['start_time']}～"
-            f"{date_time['end_date']} {date_time['end_time']}"
-        )
-        candidate = candidate_from_card_text(
-            date_text,
-            year,
-            attribute=attribute,
-            confidence=name_confidence,
-            recognized_name=name,
-            raw_name_text=raw_name,
-            ocr_status=ocr_status,
-            recognized_difficulty=difficulty,
-            raw_difficulty_text=raw_difficulty,
-            visual_signature=visual_signature,
-        )
+        card_signature = _image_signature(cv2, card)
+        if date_time:
+            date_text = (
+                f"{date_time['date']} {date_time['start_time']}～"
+                f"{date_time['end_date']} {date_time['end_time']}"
+            )
+            candidate = candidate_from_card_text(
+                date_text,
+                year,
+                attribute=attribute,
+                confidence=name_confidence,
+                recognized_name=name,
+                raw_name_text=raw_name,
+                ocr_status=ocr_status,
+                recognized_difficulty=difficulty,
+                raw_difficulty_text=raw_difficulty,
+                visual_signature=visual_signature,
+            )
+        else:
+            failed_count += 1
+            identity_source = "|".join((
+                str(year),
+                card_signature,
+                visual_signature,
+                normalize_ocr_text(raw_name),
+            ))
+            candidate = {
+                "candidate_id": hashlib.sha1(
+                    identity_source.encode("utf-8")
+                ).hexdigest()[:20],
+                "year": int(year),
+                "date": "",
+                "start_time": "12:00",
+                "end_time": "11:59",
+                "name": clean_ocr_character_name(name),
+                "quest_name": "",
+                "attribute": attribute,
+                "difficulty": difficulty,
+                "category": "high_difficulty",
+                "group_name": "",
+                "availability_type": "時間指定",
+                "period_end_date": "",
+                "source_type": "game",
+                "source_url": "",
+                "review_reason": "カード画像を見て内容を修正してください。",
+                "ocr_confidence": round(float(name_confidence), 1),
+                "ocr_raw_name": normalize_ocr_text(raw_name),
+                "ocr_raw_difficulty": normalize_ocr_text(raw_difficulty),
+                "ocr_end_date": "",
+                "ocr_status": "画像確認・日付要修正",
+                "ocr_votes": 1,
+                "visual_signature": visual_signature,
+                "confirmed_at": "",
+                "published": False,
+            }
         if candidate:
             candidate["ocr_raw_date"] = raw_date
+            candidate["card_signature"] = card_signature
+            encoded_ok, encoded_card = cv2.imencode(
+                ".jpg",
+                card,
+                [int(cv2.IMWRITE_JPEG_QUALITY), 88],
+            )
+            if encoded_ok:
+                candidate["_preview_image"] = encoded_card.tobytes()
             candidates.append(candidate)
         else:
             failed_count += 1
@@ -1372,13 +1535,17 @@ def extract_video_schedule_candidates(
     unique_candidates, video_duplicate_count = deduplicate_video_candidates(
         all_candidates
     )
-    processed_candidates, rejected_count, resolved_duplicate_count = (
-        postprocess_video_candidates(
+    (
+        processed_candidates,
+        recognized_count,
+        manual_review_count,
+        rejected_count,
+        resolved_duplicate_count,
+    ) = prepare_video_review_candidates(
             unique_candidates,
             recording_start,
             published_schedules=published_schedules or [],
             pending_candidates=pending_candidates or [],
-        )
     )
     video_duplicate_count += resolved_duplicate_count
     for candidate in processed_candidates:
@@ -1395,7 +1562,8 @@ def extract_video_schedule_candidates(
     )
     return VideoExtractionResult(
         candidates=new_candidates,
-        recognized_count=len(processed_candidates),
+        recognized_count=recognized_count,
+        manual_review_count=manual_review_count,
         rejected_candidate_count=rejected_count,
         published_duplicate_count=published_duplicates,
         pending_duplicate_count=pending_duplicates,

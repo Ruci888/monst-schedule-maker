@@ -364,23 +364,238 @@ def reset_schedule_candidate_editor():
 def show_video_extraction_result(result):
     columns = st.columns(6)
     values = (
-        ("認識", result.recognized_count),
-        ("品質不足で除外", result.rejected_candidate_count),
+        ("自動補正", result.recognized_count),
+        ("画像確認", result.manual_review_count),
+        ("確認候補", len(result.candidates)),
         ("公開済み重複", result.published_duplicate_count),
         ("承認待ち重複", result.pending_duplicate_count),
-        ("新規候補", len(result.candidates)),
-        ("認識失敗", result.ocr_error_count),
+        ("完全除外", result.rejected_candidate_count),
     )
     for column, (label, value) in zip(columns, values):
         column.metric(label, value)
     st.caption(
         f"確認フレーム {result.sampled_frame_count}枚／"
         f"動画内重複 {result.video_duplicate_count}件／"
+        f"日付OCR未完成 {result.ocr_error_count}件／"
         f"動画識別子 {result.video_fingerprint[:12]}…"
     )
 
 
+def clear_video_review_state():
+    for key in (
+        "video_review_candidates",
+        "video_extraction_result",
+        "video_review_editor",
+        "video_review_select_all",
+        "video_review_last_select_all",
+        "video_review_preview_index",
+    ):
+        st.session_state.pop(key, None)
+
+
+def video_review_candidate_label(candidate, index):
+    date_value = candidate.get("date") or "日付未確定"
+    name = candidate.get("name") or "名前未確定"
+    mode = candidate.get("review_mode", "画像確認")
+    return f"{index + 1}. {date_value}｜{name}｜{mode}"
+
+
+def render_video_review_candidates():
+    candidates = st.session_state.get("video_review_candidates", [])
+    result = st.session_state.get("video_extraction_result")
+    if not candidates:
+        return
+
+    st.markdown("##### 動画から切り出した一時確認候補")
+    st.warning(
+        "この段階ではJSONへ保存していません。"
+        "切り出し画像を確認し、表を修正してから保存対象を選んでください。"
+    )
+    if result is not None:
+        show_video_extraction_result(result)
+
+    preview_index = st.selectbox(
+        "確認する切り出し画像",
+        options=list(range(len(candidates))),
+        format_func=lambda index: video_review_candidate_label(
+            candidates[index], index
+        ),
+        key="video_review_preview_index",
+    )
+    preview_candidate = candidates[preview_index]
+    preview_image = preview_candidate.get("_preview_image")
+    if preview_image:
+        st.image(
+            preview_image,
+            caption=video_review_candidate_label(
+                preview_candidate, preview_index
+            ),
+            use_container_width=True,
+        )
+    else:
+        st.info("この候補には確認画像がありません。")
+
+    select_all = st.checkbox(
+        "確認候補をすべて保存対象にする",
+        key="video_review_select_all",
+    )
+    last_select_all = st.session_state.get("video_review_last_select_all")
+    if last_select_all is not None and last_select_all != select_all:
+        st.session_state.pop("video_review_editor", None)
+    st.session_state["video_review_last_select_all"] = select_all
+
+    rows = []
+    for index, candidate in enumerate(candidates):
+        rows.append({
+            "save": select_all,
+            "candidate_id": ensure_candidate_id(candidate, index),
+            "year": candidate.get("year"),
+            "date": candidate.get("date", ""),
+            "start_time": candidate.get("start_time", "12:00"),
+            "end_time": candidate.get("end_time", "11:59"),
+            "name": candidate.get("name", ""),
+            "quest_name": candidate.get("quest_name", ""),
+            "attribute": candidate.get("attribute", ""),
+            "difficulty": candidate.get("difficulty", ""),
+            "category": normalize_schedule_category(
+                candidate.get("category")
+            ),
+            "group_name": candidate.get("group_name", ""),
+            "availability_type": normalize_availability_type(
+                candidate.get("availability_type")
+            ),
+            "period_end_date": candidate.get("period_end_date", ""),
+            "review_mode": candidate.get("review_mode", "画像確認"),
+            "ocr_status": candidate.get("ocr_status", ""),
+            "source_type": "game",
+            "source_url": "",
+            "confirmed_at": "",
+            "published": False,
+        })
+
+    editor = st.data_editor(
+        pd.DataFrame(rows),
+        use_container_width=True,
+        hide_index=True,
+        key="video_review_editor",
+        column_config={
+            "save": st.column_config.CheckboxColumn("保存対象"),
+            "candidate_id": None,
+            "year": st.column_config.NumberColumn(
+                "year", min_value=2020, max_value=2100, step=1
+            ),
+            "attribute": st.column_config.SelectboxColumn(
+                "属性", options=[""] + ATTRIBUTES
+            ),
+            "difficulty": st.column_config.SelectboxColumn(
+                "難易度", options=[""] + DIFFICULTIES
+            ),
+            "category": st.column_config.SelectboxColumn(
+                "カテゴリ", options=SCHEDULE_CATEGORIES
+            ),
+            "availability_type": st.column_config.SelectboxColumn(
+                "開催方式", options=AVAILABILITY_TYPES
+            ),
+            "review_mode": st.column_config.TextColumn(
+                "判定方法", disabled=True
+            ),
+            "ocr_status": st.column_config.TextColumn(
+                "確認項目", disabled=True
+            ),
+            "source_type": None,
+            "source_url": None,
+            "confirmed_at": None,
+            "published": None,
+        },
+    )
+
+    save_column, discard_column = st.columns(2)
+    with save_column:
+        save_clicked = st.button(
+            "選択した修正済み候補を承認待ちへ保存",
+            type="primary",
+        )
+    with discard_column:
+        discard_clicked = st.button("今回の一時候補を破棄")
+
+    if discard_clicked:
+        st.session_state["reset_video_review_state"] = True
+        st.session_state["admin_flash_success"] = (
+            "動画の一時確認候補を破棄しました。JSONは変更していません。"
+        )
+        st.rerun()
+
+    if not save_clicked:
+        return
+
+    selected = editor[editor["save"] == True].copy()
+    if selected.empty:
+        st.warning("承認待ちへ保存する候補を選択してください。")
+        return
+
+    selected_core = selected.drop(
+        columns=["save", "review_mode", "ocr_status"]
+    )
+    additions, errors = schedule_rows_from_editor(selected_core)
+    if errors:
+        for error in errors:
+            st.error(error)
+        return
+
+    candidate_by_id = {
+        ensure_candidate_id(candidate, index): candidate
+        for index, candidate in enumerate(candidates)
+    }
+    selected_records = selected.to_dict("records")
+    metadata_fields = (
+        "candidate_id",
+        "review_reason",
+        "ocr_confidence",
+        "ocr_raw_name",
+        "ocr_raw_difficulty",
+        "ocr_raw_date",
+        "ocr_end_date",
+        "ocr_status",
+        "ocr_votes",
+        "visual_signature",
+        "card_signature",
+        "video_fingerprint",
+        "fetched_at",
+        "review_mode",
+    )
+    for addition, selected_row in zip(additions, selected_records):
+        candidate_id = str(selected_row["candidate_id"])
+        source_candidate = candidate_by_id.get(candidate_id, {})
+        for field in metadata_fields:
+            if field in source_candidate:
+                addition[field] = source_candidate[field]
+        addition["candidate_id"] = candidate_id
+        addition["source_type"] = "game"
+        addition["published"] = False
+
+    try:
+        pending = load_admin_json("schedule_candidates.json")
+        merged = merge_unique(
+            pending,
+            additions,
+            pending_candidate_identity,
+        )
+        message = save_schedule_candidates(merged)
+        st.session_state["reset_video_review_state"] = True
+        st.session_state.pop("schedule_candidate_editor", None)
+        st.session_state["admin_flash_success"] = (
+            f"{message} 修正済み候補{len(additions)}件を"
+            "承認待ちへ保存しました。"
+        )
+        st.rerun()
+    except GitHubStorageError as error:
+        st.error(str(error))
+
+
 def import_schedule_candidates_from_video():
+    if st.session_state.pop("reset_video_review_state", False):
+        clear_video_review_state()
+
     st.markdown("#### アプリ画面録画から降臨候補を取得")
     st.caption(
         "MP4・MOV（100MB以下／3分以内）に対応します。"
@@ -424,21 +639,20 @@ def import_schedule_candidates_from_video():
                     published_schedules=published,
                     pending_candidates=pending,
                 )
-                if result.candidates:
-                    merged = merge_unique(
-                        pending,
-                        result.candidates,
-                        pending_candidate_identity,
-                    )
-                    message = save_schedule_candidates(merged)
-                    st.session_state.pop("schedule_candidate_editor", None)
-                    st.success(
-                        f"{message} 新規候補{len(result.candidates)}件を追加しました。"
-                    )
-                else:
-                    st.info("追加できる新規候補はありませんでした。")
-            st.session_state["video_extraction_result"] = result.as_dict()
-            show_video_extraction_result(result)
+            if result.candidates:
+                st.session_state["video_review_candidates"] = (
+                    result.candidates
+                )
+                st.session_state["video_extraction_result"] = result
+                st.session_state.pop("video_review_editor", None)
+                st.session_state.pop("video_review_select_all", None)
+                st.session_state.pop("video_review_last_select_all", None)
+                st.success(
+                    f"切り出し画像付きの一時確認候補"
+                    f"{len(result.candidates)}件を作成しました。"
+                )
+            else:
+                st.info("確認できる一時候補はありませんでした。")
         except (VideoScheduleError, GitHubStorageError) as error:
             st.error(str(error))
         except Exception as error:
@@ -446,6 +660,8 @@ def import_schedule_candidates_from_video():
                 "動画を解析できませんでした。録画を短くして再度お試しください。"
                 f"（詳細：{error}）"
             )
+
+    render_video_review_candidates()
 
 
 def review_schedule_candidates():
