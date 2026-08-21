@@ -2,7 +2,10 @@ import unittest
 from datetime import date
 
 from video_schedule_extractor import (
+    OCR_MODE_FAST,
+    OCR_MODE_PRECISE,
     build_known_schedule_master,
+    card_signatures_match,
     candidate_passes_quality_gate,
     candidate_identity,
     candidate_from_card_text,
@@ -13,6 +16,7 @@ from video_schedule_extractor import (
     find_difficulty,
     normalize_candidate_recording_date,
     normalize_identity_name,
+    normalize_ocr_mode,
     postprocess_video_candidates,
     prepare_video_review_candidates,
     resolve_candidate_with_master,
@@ -20,6 +24,21 @@ from video_schedule_extractor import (
 
 
 class VideoScheduleExtractorTests(unittest.TestCase):
+    def test_defaults_unknown_ocr_mode_to_fast(self):
+        self.assertEqual(normalize_ocr_mode(""), OCR_MODE_FAST)
+        self.assertEqual(normalize_ocr_mode("不明"), OCR_MODE_FAST)
+        self.assertEqual(
+            normalize_ocr_mode(OCR_MODE_PRECISE),
+            OCR_MODE_PRECISE,
+        )
+
+    def test_matches_nearly_identical_card_signatures_before_ocr(self):
+        base = "0" * 64
+        near = "0" * 63 + "3"
+        far = "f" * 64
+        self.assertTrue(card_signatures_match(base, near))
+        self.assertFalse(card_signatures_match(base, far))
+
     def test_parses_app_card_text(self):
         text = """
         8/21(金) 12:00 ～ 8/22(土) 11:59

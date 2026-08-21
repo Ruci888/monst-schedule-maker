@@ -30,6 +30,8 @@ from schedule_utils import (
     normalize_schedule_category,
 )
 from video_schedule_extractor import (
+    OCR_MODE_FAST,
+    OCR_MODE_PRECISE,
     VideoScheduleError,
     candidate_identity as pending_candidate_identity,
     extract_video_schedule_candidates,
@@ -562,6 +564,7 @@ def render_video_review_candidates():
         "video_fingerprint",
         "fetched_at",
         "review_mode",
+        "ocr_mode",
     )
     for addition, selected_row in zip(additions, selected_records):
         candidate_id = str(selected_row["candidate_id"])
@@ -600,8 +603,9 @@ def import_schedule_candidates_from_video():
     st.caption(
         "MP4・MOV（100MB以下／3分以内）に対応します。"
         "動画は処理中だけ一時保存し、処理後に削除します。"
+        "処理が120秒を超えた場合は安全のため停止します。"
     )
-    left, right = st.columns([1, 3])
+    left, middle, right = st.columns([1, 1.2, 2.8])
     with left:
         recording_start_date = st.date_input(
             "録画内の最初の日程",
@@ -609,6 +613,16 @@ def import_schedule_candidates_from_video():
             help=(
                 "録画で最初に表示されるゲーム日を指定します。"
                 "この日から14日を外れたOCR日付は保存しません。"
+            ),
+        )
+    with middle:
+        ocr_mode = st.radio(
+            "抽出モード",
+            [OCR_MODE_FAST, OCR_MODE_PRECISE],
+            horizontal=False,
+            help=(
+                "高速抽出は各カードを原則1回だけ認識します。"
+                "精密抽出は不足項目だけ追加認識します。"
             ),
         )
     with right:
@@ -629,16 +643,27 @@ def import_schedule_candidates_from_video():
                 load_admin_json("schedules.json", load_schedules)
             )
             pending = load_admin_json("schedule_candidates.json")
-            with st.spinner(
-                "動画を解析しています。録画時間によって1～2分ほどかかります..."
-            ):
+            progress_bar = st.progress(0.0)
+            progress_text = st.empty()
+
+            def update_video_progress(progress, message):
+                progress_bar.progress(progress)
+                progress_text.caption(message)
+
+            with st.spinner("動画を解析しています…"):
                 result = extract_video_schedule_candidates(
                     video_bytes=video_bytes,
                     year=recording_start_date.year,
                     recording_start_date=recording_start_date,
                     published_schedules=published,
                     pending_candidates=pending,
+                    ocr_mode=ocr_mode,
+                    progress_callback=update_video_progress,
                 )
+            progress_bar.progress(1.0)
+            progress_text.caption(
+                f"{ocr_mode}が完了しました。"
+            )
             if result.candidates:
                 st.session_state["video_review_candidates"] = (
                     result.candidates

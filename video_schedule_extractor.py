@@ -10,6 +10,7 @@ import hashlib
 import re
 import shutil
 import tempfile
+import time as time_module
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass
@@ -20,8 +21,15 @@ from pathlib import Path
 
 MAX_VIDEO_BYTES = 100 * 1024 * 1024
 MAX_VIDEO_SECONDS = 180
-FRAME_INTERVAL_SECONDS = 0.5
-MAX_SAMPLE_FRAMES = 360
+FRAME_INTERVAL_SECONDS = 1.0
+MAX_SAMPLE_FRAMES = 120
+MAX_UNIQUE_CARDS = 100
+MAX_PROCESSING_SECONDS = 120
+CARD_DEDUPE_THRESHOLD = 6
+
+OCR_MODE_FAST = "高速抽出"
+OCR_MODE_PRECISE = "精密抽出"
+OCR_MODES = (OCR_MODE_FAST, OCR_MODE_PRECISE)
 
 DIFFICULTY_PATTERNS = (
     ("超究極・兵", re.compile(r"超究極\s*[・･]\s*兵")),
@@ -94,6 +102,11 @@ class VideoExtractionResult:
             "sampled_frame_count": self.sampled_frame_count,
             "video_fingerprint": self.video_fingerprint,
         }
+
+
+def normalize_ocr_mode(value):
+    """管理画面から渡されたOCRモードを安全な既定値へ揃える。"""
+    return OCR_MODE_PRECISE if value == OCR_MODE_PRECISE else OCR_MODE_FAST
 
 
 def normalize_ocr_text(value):
@@ -985,6 +998,33 @@ def _hamming_distance(left, right):
     return (left ^ right).bit_count()
 
 
+def card_signatures_match(left, right, threshold=CARD_DEDUPE_THRESHOLD):
+    """OCRを始める前に、ほぼ同じカード画像かを判定する。"""
+    if not left or not right:
+        return False
+    try:
+        return _hamming_distance(int(left, 16), int(right, 16)) <= threshold
+    except (TypeError, ValueError):
+        return str(left) == str(right)
+
+
+def _notify_progress(progress_callback, progress, message):
+    if progress_callback is None:
+        return
+    progress_callback(
+        max(0.0, min(float(progress), 1.0)),
+        str(message),
+    )
+
+
+def _raise_if_timed_out(started_at):
+    if time_module.monotonic() - started_at > MAX_PROCESSING_SECONDS:
+        raise VideoScheduleError(
+            "動画処理が120秒を超えたため停止しました。"
+            "高速抽出を選ぶか、録画を短く分けてください。"
+        )
+
+
 def _prepare_ocr_image(cv2, image):
     enlarged = cv2.resize(image, None, fx=2.2, fy=2.2, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(enlarged, cv2.COLOR_BGR2GRAY)
@@ -1340,102 +1380,244 @@ def _detect_card_regions(cv2, frame):
     return regions
 
 
-def _extract_from_frame(cv2, pytesseract, frame, year):
+def _collect_unique_cards_from_frame(cv2, frame, unique_cards):
+    """OCR前に同一カードをまとめ、最も鮮明な画像だけを残す。"""
+    duplicate_count = 0
+    for card in _detect_card_regions(cv2, frame):
+        signature = _image_signature(cv2, card)
+        sharpness = _frame_sharpness(cv2, card)
+        matching = next(
+            (
+                item
+                for item in unique_cards
+                if card_signatures_match(
+                    item.get("card_signature", ""),
+                    signature,
+                )
+            ),
+            None,
+        )
+        if matching is not None:
+            duplicate_count += 1
+            if sharpness > matching.get("sharpness", -1.0):
+                matching["image"] = card.copy()
+                matching["card_signature"] = signature
+                matching["sharpness"] = sharpness
+            continue
+        if len(unique_cards) >= MAX_UNIQUE_CARDS:
+            break
+        unique_cards.append({
+            "image": card.copy(),
+            "card_signature": signature,
+            "sharpness": sharpness,
+        })
+    return duplicate_count
+
+
+def _ocr_card_fast(cv2, pytesseract, card):
+    """カード全体を1回だけOCRし、日時・名前・難易度の材料を得る。"""
+    enlarged = cv2.resize(
+        card,
+        None,
+        fx=2.0,
+        fy=2.0,
+        interpolation=cv2.INTER_CUBIC,
+    )
+    data = pytesseract.image_to_data(
+        enlarged,
+        lang="jpn+eng",
+        config="--psm 6 -c preserve_interword_spaces=1",
+        output_type=pytesseract.Output.DICT,
+    )
+    lines = _group_ocr_lines(data)
+    raw_text = "\n".join(
+        line["text"]
+        for line in lines
+        if line.get("text")
+    )
+    confidences = [
+        float(line["confidence"])
+        for line in lines
+        if float(line.get("confidence", 0) or 0) >= 0
+    ]
+    confidence = (
+        sum(confidences) / len(confidences)
+        if confidences
+        else 0.0
+    )
+    return raw_text, confidence
+
+
+def _build_incomplete_candidate(
+    year,
+    card_signature,
+    visual_signature,
+    name,
+    attribute,
+    difficulty,
+    confidence,
+    raw_name,
+    raw_difficulty,
+):
+    identity_source = "|".join((
+        str(year),
+        card_signature,
+        visual_signature,
+        normalize_ocr_text(raw_name),
+    ))
+    return {
+        "candidate_id": hashlib.sha1(
+            identity_source.encode("utf-8")
+        ).hexdigest()[:20],
+        "year": int(year),
+        "date": "",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "name": clean_ocr_character_name(name),
+        "quest_name": "",
+        "attribute": attribute,
+        "difficulty": difficulty,
+        "category": "high_difficulty",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "game",
+        "source_url": "",
+        "review_reason": "カード画像を見て内容を修正してください。",
+        "ocr_confidence": round(float(confidence), 1),
+        "ocr_raw_name": normalize_ocr_text(raw_name),
+        "ocr_raw_difficulty": normalize_ocr_text(raw_difficulty),
+        "ocr_end_date": "",
+        "ocr_status": "画像確認・日付要修正",
+        "ocr_votes": 1,
+        "visual_signature": visual_signature,
+        "confirmed_at": "",
+        "published": False,
+    }
+
+
+def _extract_card_candidate(
+    cv2,
+    pytesseract,
+    card,
+    year,
+    card_signature="",
+    ocr_mode=OCR_MODE_FAST,
+):
+    """高速OCRを先に行い、精密モードでは不足項目だけを再認識する。"""
+    mode = normalize_ocr_mode(ocr_mode)
+    card_signature = card_signature or _image_signature(cv2, card)
+    height, width = card.shape[:2]
+    name_region = card[
+        int(height * 0.40): int(height * 0.86),
+        int(width * 0.12): int(width * 0.68),
+    ]
+    visual_signature = _image_signature(cv2, name_region)
+    attribute = _infer_attribute(cv2, card)
+
+    fast_text, confidence = _ocr_card_fast(cv2, pytesseract, card)
+    date_time = find_date_time(fast_text)
+    name = clean_ocr_character_name(find_character_name(fast_text))
+    difficulty = find_difficulty(fast_text)
+    raw_date = fast_text
+    raw_name = fast_text
+    raw_difficulty = fast_text
+
+    if mode == OCR_MODE_PRECISE:
+        if date_time is None:
+            date_time, precise_raw_date = _extract_card_date_time(
+                cv2,
+                pytesseract,
+                card,
+            )
+            raw_date = precise_raw_date or raw_date
+        if not is_plausible_character_name(name) or confidence < 70:
+            (
+                precise_name,
+                precise_raw_name,
+                precise_confidence,
+                _name_status,
+            ) = _extract_character_name(
+                cv2,
+                pytesseract,
+                card,
+                attribute,
+            )
+            if precise_name:
+                name = precise_name
+            raw_name = precise_raw_name or raw_name
+            confidence = max(confidence, precise_confidence)
+        if not difficulty:
+            difficulty, precise_raw_difficulty = _extract_card_difficulty(
+                cv2,
+                pytesseract,
+                card,
+            )
+            raw_difficulty = precise_raw_difficulty or raw_difficulty
+
+    if date_time:
+        date_text = (
+            f"{date_time['date']} {date_time['start_time']}～"
+            f"{date_time['end_date']} {date_time['end_time']}"
+        )
+        candidate = candidate_from_card_text(
+            date_text,
+            year,
+            attribute=attribute,
+            confidence=confidence,
+            recognized_name=name,
+            raw_name_text=raw_name,
+            ocr_status=f"{mode}・要目視確認",
+            recognized_difficulty=difficulty,
+            raw_difficulty_text=raw_difficulty,
+            visual_signature=visual_signature,
+        )
+    else:
+        candidate = _build_incomplete_candidate(
+            year,
+            card_signature,
+            visual_signature,
+            name,
+            attribute,
+            difficulty,
+            confidence,
+            raw_name,
+            raw_difficulty,
+        )
+
+    candidate["ocr_raw_date"] = normalize_ocr_text(raw_date)
+    candidate["card_signature"] = card_signature
+    candidate["ocr_mode"] = mode
+    encoded_ok, encoded_card = cv2.imencode(
+        ".jpg",
+        card,
+        [int(cv2.IMWRITE_JPEG_QUALITY), 88],
+    )
+    if encoded_ok:
+        candidate["_preview_image"] = encoded_card.tobytes()
+    return candidate, date_time is None
+
+
+def _extract_from_frame(
+    cv2,
+    pytesseract,
+    frame,
+    year,
+    ocr_mode=OCR_MODE_FAST,
+):
+    """互換用。新しい本処理ではOCR前にカードをまとめてから呼び出す。"""
     candidates = []
     failed_count = 0
-    cards = _detect_card_regions(cv2, frame)
-    for card in cards:
-        date_time, raw_date = _extract_card_date_time(
+    for card in _detect_card_regions(cv2, frame):
+        candidate, failed = _extract_card_candidate(
             cv2,
             pytesseract,
             card,
+            year,
+            ocr_mode=ocr_mode,
         )
-        attribute = _infer_attribute(cv2, card)
-        name, raw_name, name_confidence, ocr_status = _extract_character_name(
-            cv2,
-            pytesseract,
-            card,
-            attribute,
-        )
-        difficulty, raw_difficulty = _extract_card_difficulty(
-            cv2,
-            pytesseract,
-            card,
-        )
-        height, width = card.shape[:2]
-        name_region = card[
-            int(height * 0.40): int(height * 0.86),
-            int(width * 0.12): int(width * 0.68),
-        ]
-        visual_signature = _image_signature(cv2, name_region)
-        card_signature = _image_signature(cv2, card)
-        if date_time:
-            date_text = (
-                f"{date_time['date']} {date_time['start_time']}～"
-                f"{date_time['end_date']} {date_time['end_time']}"
-            )
-            candidate = candidate_from_card_text(
-                date_text,
-                year,
-                attribute=attribute,
-                confidence=name_confidence,
-                recognized_name=name,
-                raw_name_text=raw_name,
-                ocr_status=ocr_status,
-                recognized_difficulty=difficulty,
-                raw_difficulty_text=raw_difficulty,
-                visual_signature=visual_signature,
-            )
-        else:
-            failed_count += 1
-            identity_source = "|".join((
-                str(year),
-                card_signature,
-                visual_signature,
-                normalize_ocr_text(raw_name),
-            ))
-            candidate = {
-                "candidate_id": hashlib.sha1(
-                    identity_source.encode("utf-8")
-                ).hexdigest()[:20],
-                "year": int(year),
-                "date": "",
-                "start_time": "12:00",
-                "end_time": "11:59",
-                "name": clean_ocr_character_name(name),
-                "quest_name": "",
-                "attribute": attribute,
-                "difficulty": difficulty,
-                "category": "high_difficulty",
-                "group_name": "",
-                "availability_type": "時間指定",
-                "period_end_date": "",
-                "source_type": "game",
-                "source_url": "",
-                "review_reason": "カード画像を見て内容を修正してください。",
-                "ocr_confidence": round(float(name_confidence), 1),
-                "ocr_raw_name": normalize_ocr_text(raw_name),
-                "ocr_raw_difficulty": normalize_ocr_text(raw_difficulty),
-                "ocr_end_date": "",
-                "ocr_status": "画像確認・日付要修正",
-                "ocr_votes": 1,
-                "visual_signature": visual_signature,
-                "confirmed_at": "",
-                "published": False,
-            }
-        if candidate:
-            candidate["ocr_raw_date"] = raw_date
-            candidate["card_signature"] = card_signature
-            encoded_ok, encoded_card = cv2.imencode(
-                ".jpg",
-                card,
-                [int(cv2.IMWRITE_JPEG_QUALITY), 88],
-            )
-            if encoded_ok:
-                candidate["_preview_image"] = encoded_card.tobytes()
-            candidates.append(candidate)
-        else:
-            failed_count += 1
+        candidates.append(candidate)
+        failed_count += int(failed)
     return candidates, failed_count
 
 
@@ -1445,8 +1627,13 @@ def extract_video_schedule_candidates(
     recording_start_date=None,
     published_schedules=None,
     pending_candidates=None,
+    ocr_mode=OCR_MODE_FAST,
+    progress_callback=None,
 ):
     """動画を解析し、既存データと重複しない承認待ち候補を返す。"""
+    started_at = time_module.monotonic()
+    mode = normalize_ocr_mode(ocr_mode)
+    _notify_progress(progress_callback, 0.01, "動画を確認しています…")
     _validate_video(video_bytes)
     recording_start = _coerce_recording_start_date(
         recording_start_date,
@@ -1462,8 +1649,10 @@ def extract_video_schedule_candidates(
     cv2, pytesseract = _require_video_dependencies()
     fingerprint = hashlib.sha256(video_bytes).hexdigest()
     all_candidates = []
+    unique_cards = []
     ocr_error_count = 0
     sampled_frame_count = 0
+    pre_ocr_duplicate_count = 0
 
     with tempfile.TemporaryDirectory(prefix="monst_video_") as temporary_directory:
         video_path = Path(temporary_directory) / "upload.mp4"
@@ -1485,6 +1674,7 @@ def extract_video_schedule_candidates(
             pending_hash = None
             pending_sharpness = -1.0
             while sampled_frame_count < MAX_SAMPLE_FRAMES:
+                _raise_if_timed_out(started_at)
                 ok, frame = capture.read()
                 if not ok:
                     break
@@ -1495,9 +1685,19 @@ def extract_video_schedule_candidates(
                 game_viewport = _detect_game_viewport(cv2, frame)
                 current_hash = _frame_hash(cv2, game_viewport)
                 current_sharpness = _frame_sharpness(cv2, game_viewport)
+                scan_ratio = (
+                    min(frame_index / frame_count, 1.0)
+                    if frame_count
+                    else min(sampled_frame_count / MAX_SAMPLE_FRAMES, 1.0)
+                )
+                _notify_progress(
+                    progress_callback,
+                    0.04 + scan_ratio * 0.36,
+                    f"カード画像を収集中… {len(unique_cards)}件",
+                )
 
                 # 同じ画面が続く場合は、最初のフレームではなく
-                # スクロール停止後の最も鮮明な1枚をOCRへ渡す。
+                # スクロール停止後の最も鮮明な1枚をカード検出へ渡す。
                 if pending_hash is not None and _hamming_distance(
                     pending_hash, current_hash
                 ) <= 5:
@@ -1509,11 +1709,13 @@ def extract_video_schedule_candidates(
 
                 if pending_frame is not None:
                     sampled_frame_count += 1
-                    candidates, failed = _extract_from_frame(
-                        cv2, pytesseract, pending_frame, year
+                    pre_ocr_duplicate_count += _collect_unique_cards_from_frame(
+                        cv2,
+                        pending_frame,
+                        unique_cards,
                     )
-                    all_candidates.extend(candidates)
-                    ocr_error_count += failed
+                    if len(unique_cards) >= MAX_UNIQUE_CARDS:
+                        break
 
                 pending_frame = game_viewport.copy()
                 pending_hash = current_hash
@@ -1524,17 +1726,45 @@ def extract_video_schedule_candidates(
                 and sampled_frame_count < MAX_SAMPLE_FRAMES
             ):
                 sampled_frame_count += 1
-                candidates, failed = _extract_from_frame(
-                    cv2, pytesseract, pending_frame, year
+                pre_ocr_duplicate_count += _collect_unique_cards_from_frame(
+                    cv2,
+                    pending_frame,
+                    unique_cards,
                 )
-                all_candidates.extend(candidates)
-                ocr_error_count += failed
         finally:
             capture.release()
+
+    if not unique_cards:
+        _notify_progress(progress_callback, 1.0, "カード画像を検出できませんでした。")
+    else:
+        _notify_progress(
+            progress_callback,
+            0.42,
+            f"重複を除いた{len(unique_cards)}件を{mode}で認識します…",
+        )
+
+    for index, item in enumerate(unique_cards):
+        _raise_if_timed_out(started_at)
+        candidate, failed = _extract_card_candidate(
+            cv2,
+            pytesseract,
+            item["image"],
+            year,
+            card_signature=item["card_signature"],
+            ocr_mode=mode,
+        )
+        all_candidates.append(candidate)
+        ocr_error_count += int(failed)
+        _notify_progress(
+            progress_callback,
+            0.42 + ((index + 1) / max(len(unique_cards), 1)) * 0.48,
+            f"文字認識中… {index + 1}/{len(unique_cards)}件",
+        )
 
     unique_candidates, video_duplicate_count = deduplicate_video_candidates(
         all_candidates
     )
+    video_duplicate_count += pre_ocr_duplicate_count
     (
         processed_candidates,
         recognized_count,
@@ -1559,6 +1789,11 @@ def extract_video_schedule_candidates(
             published_schedules or [],
             pending_candidates or [],
         )
+    )
+    _notify_progress(
+        progress_callback,
+        1.0,
+        f"完了：確認候補{len(new_candidates)}件",
     )
     return VideoExtractionResult(
         candidates=new_candidates,
