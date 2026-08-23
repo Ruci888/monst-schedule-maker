@@ -14,6 +14,7 @@ from video_schedule_extractor import (
     filter_existing_candidates,
     find_date_time,
     find_difficulty,
+    infer_schedule_category,
     normalize_candidate_recording_date,
     normalize_identity_name,
     normalize_ocr_mode,
@@ -21,6 +22,7 @@ from video_schedule_extractor import (
     prepare_video_review_candidates,
     resolve_candidate_with_master,
     screenshot_batch_fingerprint,
+    apply_screenshot_date_context,
     validate_screenshot_batch,
 )
 
@@ -99,6 +101,37 @@ class VideoScheduleExtractorTests(unittest.TestCase):
             "オーポレン",
         )
         self.assertEqual(clean_ocr_character_name("x ew. AO"), "")
+
+    def test_preserves_meaningful_ascii_name_prefixes(self):
+        self.assertEqual(
+            clean_ocr_character_name("U-20日本代表 士道龍聖"),
+            "U-20日本代表 士道龍聖",
+        )
+        self.assertEqual(
+            clean_ocr_character_name("TOP3 蟻生十兵衛"),
+            "TOP3 蟻生十兵衛",
+        )
+        self.assertEqual(
+            clean_ocr_character_name("チームY 二子一揮"),
+            "チームY 二子一揮",
+        )
+
+    def test_classifies_collaboration_and_normal_schedules(self):
+        self.assertEqual(
+            infer_schedule_category("究極", "コラボ期間限定!"),
+            "コラボ",
+        )
+        self.assertEqual(infer_schedule_category("轟絶"), "高難易度・注目")
+        self.assertEqual(infer_schedule_category("究極"), "通常降臨")
+
+    def test_applies_valid_date_from_same_screenshot(self):
+        candidates = [
+            {"date": "8/24", "source_indexes": [0], "ocr_status": ""},
+            {"date": "3/24", "source_indexes": [0], "ocr_status": "画像確認"},
+        ]
+        apply_screenshot_date_context(candidates, date(2026, 8, 24))
+        self.assertEqual(candidates[1]["date"], "8/24")
+        self.assertEqual(candidates[1]["ocr_end_date"], "8/25")
 
     def test_keeps_incomplete_candidate_for_manual_review(self):
         text = "8/21(金) 12:00 ～ 8/22(土) 11:59\n超絶\nソーマ"

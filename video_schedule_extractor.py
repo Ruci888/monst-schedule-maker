@@ -25,7 +25,7 @@ FRAME_INTERVAL_SECONDS = 1.0
 MAX_SAMPLE_FRAMES = 120
 MAX_UNIQUE_CARDS = 100
 MAX_PROCESSING_SECONDS = 120
-CARD_DEDUPE_THRESHOLD = 6
+CARD_DEDUPE_THRESHOLD = 10
 MAX_SCREENSHOT_COUNT = 10
 MAX_SCREENSHOT_BYTES = 15 * 1024 * 1024
 MAX_SCREENSHOT_BATCH_BYTES = 80 * 1024 * 1024
@@ -46,6 +46,17 @@ DIFFICULTY_PATTERNS = (
     ("究極", re.compile(r"究極")),
     ("極", re.compile(r"(?<!究)極")),
 )
+
+FEATURED_DIFFICULTIES = {"黎絶", "轟絶", "爆絶", "超究極", "超究極・兵"}
+
+
+def infer_schedule_category(difficulty, text=""):
+    normalized = normalize_ocr_text(text)
+    if "コラボ" in normalized:
+        return "コラボ"
+    if difficulty in FEATURED_DIFFICULTIES:
+        return "高難易度・注目"
+    return "通常降臨"
 
 DATE_TIME_PATTERN = re.compile(
     r"(?P<start_month>\d{1,2})\s*/\s*(?P<start_day>\d{1,2})"
@@ -200,8 +211,21 @@ def japanese_ratio(text):
 
 
 def clean_ocr_character_name(text):
-    """OCR文字列から英数字やUI断片を除き、日本語の名前部分だけを返す。"""
+    """OCR文字列からUI断片を除き、名称に必要な英数字は残す。"""
     normalized = normalize_ocr_text(text)
+    prefix_patterns = (
+        r"U\s*[-ー−]?\s*20\s*日本代表\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
+        r"TOP\s*3\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
+        r"チーム\s*[A-Z]\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
+    )
+    for pattern in prefix_patterns:
+        match = re.search(pattern, normalized, flags=re.IGNORECASE)
+        if match:
+            value = re.sub(r"\s+", " ", match.group(0)).strip()
+            value = re.sub(r"U\s*[-ー−]?\s*20", "U-20", value, flags=re.I)
+            value = re.sub(r"TOP\s*3", "TOP3", value, flags=re.I)
+            value = re.sub(r"チーム\s*([A-Z])\s*", r"チーム\1 ", value)
+            return value
     matches = [match.group(0).strip() for match in JAPANESE_NAME_PATTERN.finditer(normalized)]
     matches = [
         match
@@ -724,6 +748,16 @@ def _similar_candidate(left, right):
             if left_card_signature == right_card_signature:
                 return True
 
+    left_portrait = str(left.get("portrait_signature", ""))
+    right_portrait = str(right.get("portrait_signature", ""))
+    if left_portrait and right_portrait:
+        try:
+            if (int(left_portrait, 16) ^ int(right_portrait, 16)).bit_count() <= 16:
+                return True
+        except ValueError:
+            if left_portrait == right_portrait:
+                return True
+
     if (
         int(left.get("year", 0)) != int(right.get("year", 0))
         or left.get("date") != right.get("date")
@@ -1165,7 +1199,7 @@ def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
     name_region = card[
         int(height * 0.40): int(height * 0.86),
-        int(width * 0.12): int(width * 0.68),
+        int(width * 0.055): int(width * 0.57),
     ]
     if name_region.size == 0:
         return "", "", 0.0, "名前認識失敗"
@@ -1294,8 +1328,8 @@ def _extract_card_difficulty(cv2, pytesseract, card):
     """条件説明ではなく、カード右側の実難易度ラベルだけを読む。"""
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.38): int(height * 0.78),
-        int(width * 0.52): int(width * 0.68),
+        int(height * 0.40): int(height * 0.79),
+        int(width * 0.535): int(width * 0.675),
     ]
     if region.size == 0:
         return "", ""
@@ -1362,7 +1396,7 @@ def _infer_attribute(cv2, card):
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
         int(height * 0.40): int(height * 0.86),
-        int(width * 0.12): int(width * 0.68),
+        int(width * 0.055): int(width * 0.52),
     ]
     if region.size == 0:
         return ""
@@ -1381,7 +1415,7 @@ def _infer_attribute(cv2, card):
     ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
     attribute, count = ranked[0]
     second_count = ranked[1][1]
-    if count < 20 or count < second_count * 1.35:
+    if count < 30 or count < second_count * 1.60:
         return ""
     return attribute
 
@@ -1425,7 +1459,10 @@ def _detect_card_regions(cv2, frame):
     card_height = int(height * 0.112)
     regions = []
     for top in tops:
-        bottom = min(top + card_height, search_bottom)
+        bottom = top + card_height
+        # 下部メニュー等で欠けたカードは、次の画像との重なりから取得する。
+        if bottom > int(height * 0.875):
+            continue
         if bottom - top < int(card_height * 0.78):
             continue
         card = frame[top:bottom, left:right]
@@ -1434,25 +1471,42 @@ def _detect_card_regions(cv2, frame):
     return regions
 
 
-def _collect_unique_cards_from_frame(cv2, frame, unique_cards):
+def _collect_unique_cards_from_frame(
+    cv2, frame, unique_cards, source_index=None
+):
     """OCR前に同一カードをまとめ、最も鮮明な画像だけを残す。"""
     duplicate_count = 0
     for card in _detect_card_regions(cv2, frame):
         signature = _image_signature(cv2, card)
+        card_height, card_width = card.shape[:2]
+        portrait = card[
+            int(card_height * 0.05): int(card_height * 0.92),
+            int(card_width * 0.68): int(card_width * 0.88),
+        ]
+        portrait_signature = _image_signature(cv2, portrait)
         sharpness = _frame_sharpness(cv2, card)
         matching = next(
             (
                 item
                 for item in unique_cards
-                if card_signatures_match(
-                    item.get("card_signature", ""),
-                    signature,
+                if (
+                    card_signatures_match(
+                        item.get("card_signature", ""), signature
+                    )
+                    or (
+                        portrait_signature
+                        and card_signatures_match(
+                            item.get("portrait_signature", ""),
+                            portrait_signature,
+                        )
+                    )
                 )
             ),
             None,
         )
         if matching is not None:
             duplicate_count += 1
+            matching.setdefault("source_indexes", set()).add(source_index)
             if sharpness > matching.get("sharpness", -1.0):
                 matching["image"] = card.copy()
                 matching["card_signature"] = signature
@@ -1464,6 +1518,8 @@ def _collect_unique_cards_from_frame(cv2, frame, unique_cards):
             "image": card.copy(),
             "card_signature": signature,
             "sharpness": sharpness,
+            "portrait_signature": portrait_signature,
+            "source_indexes": {source_index},
         })
     return duplicate_count
 
@@ -1531,7 +1587,9 @@ def _build_incomplete_candidate(
         "quest_name": "",
         "attribute": attribute,
         "difficulty": difficulty,
-        "category": "high_difficulty",
+        "category": infer_schedule_category(
+            difficulty, f"{raw_name}\n{raw_difficulty}"
+        ),
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1564,7 +1622,7 @@ def _extract_card_candidate(
     height, width = card.shape[:2]
     name_region = card[
         int(height * 0.40): int(height * 0.86),
-        int(width * 0.12): int(width * 0.68),
+        int(width * 0.055): int(width * 0.57),
     ]
     visual_signature = _image_signature(cv2, name_region)
     attribute = _infer_attribute(cv2, card)
@@ -1572,7 +1630,7 @@ def _extract_card_candidate(
     fast_text, confidence = _ocr_card_fast(cv2, pytesseract, card)
     date_time = find_date_time(fast_text)
     name = clean_ocr_character_name(find_character_name(fast_text))
-    difficulty = find_difficulty(fast_text)
+    difficulty = find_difficulty(fast_text) if mode == OCR_MODE_FAST else ""
     raw_date = fast_text
     raw_name = fast_text
     raw_difficulty = fast_text
@@ -1601,13 +1659,14 @@ def _extract_card_candidate(
                 name = precise_name
             raw_name = precise_raw_name or raw_name
             confidence = max(confidence, precise_confidence)
-        if not difficulty:
-            difficulty, precise_raw_difficulty = _extract_card_difficulty(
-                cv2,
-                pytesseract,
-                card,
-            )
-            raw_difficulty = precise_raw_difficulty or raw_difficulty
+        # 条件説明の「爆絶を3種類以上」等を難易度と誤認しないよう、
+        # 精密モードでは必ず右側ラベルだけで上書きする。
+        difficulty, precise_raw_difficulty = _extract_card_difficulty(
+            cv2,
+            pytesseract,
+            card,
+        )
+        raw_difficulty = precise_raw_difficulty or ""
 
     if date_time:
         date_text = (
@@ -1642,6 +1701,10 @@ def _extract_card_candidate(
     candidate["ocr_raw_date"] = normalize_ocr_text(raw_date)
     candidate["card_signature"] = card_signature
     candidate["ocr_mode"] = mode
+    candidate["category"] = infer_schedule_category(
+        candidate.get("difficulty", ""),
+        f"{fast_text}\n{raw_name}",
+    )
     encoded_ok, encoded_card = cv2.imencode(
         ".jpg",
         card,
@@ -1673,6 +1736,46 @@ def _extract_from_frame(
         candidates.append(candidate)
         failed_count += int(failed)
     return candidates, failed_count
+
+
+def apply_screenshot_date_context(candidates, recording_start_date):
+    """画像ごとの有効な日付を、日付OCRに失敗した同一画像の候補へ補う。"""
+    start = _coerce_recording_start_date(recording_start_date)
+    end = start + timedelta(days=13)
+    dates_by_source = {}
+    for candidate in candidates:
+        parsed = _month_day_near_reference(candidate.get("date"), start)
+        if parsed is None or not start <= parsed <= end:
+            continue
+        for source_index in candidate.get("source_indexes", []):
+            dates_by_source.setdefault(source_index, []).append(parsed)
+
+    source_context = {
+        source_index: Counter(values).most_common(1)[0][0]
+        for source_index, values in dates_by_source.items()
+        if values
+    }
+    for candidate in candidates:
+        parsed = _month_day_near_reference(candidate.get("date"), start)
+        if parsed is not None and start <= parsed <= end:
+            continue
+        contexts = [
+            source_context[index]
+            for index in candidate.get("source_indexes", [])
+            if index in source_context
+        ]
+        replacement = Counter(contexts).most_common(1)[0][0] if contexts else None
+        if replacement is None:
+            continue
+        candidate["year"] = replacement.year
+        candidate["date"] = f"{replacement.month}/{replacement.day}"
+        next_day = replacement + timedelta(days=1)
+        candidate["ocr_end_date"] = f"{next_day.month}/{next_day.day}"
+        status = candidate.get("ocr_status", "")
+        candidate["ocr_status"] = "・".join(
+            part for part in (status, "画像日付で補正") if part
+        )
+    return candidates
 
 
 def extract_screenshot_schedule_candidates(
@@ -1721,6 +1824,7 @@ def extract_screenshot_schedule_candidates(
             cv2,
             viewport,
             unique_cards,
+            source_index=index,
         )
         _notify_progress(
             progress_callback,
@@ -1748,6 +1852,13 @@ def extract_screenshot_schedule_candidates(
             ocr_mode=OCR_MODE_PRECISE,
         )
         candidate["source_capture_type"] = "screenshot"
+        candidate["portrait_signature"] = item.get(
+            "portrait_signature", ""
+        )
+        candidate["source_indexes"] = sorted(
+            index for index in item.get("source_indexes", set())
+            if index is not None
+        )
         all_candidates.append(candidate)
         ocr_error_count += int(failed)
         _notify_progress(
@@ -1756,6 +1867,7 @@ def extract_screenshot_schedule_candidates(
             f"カードを文字認識中… {index + 1}/{len(unique_cards)}件",
         )
 
+    apply_screenshot_date_context(all_candidates, recording_start)
     unique_candidates, image_duplicate_count = deduplicate_video_candidates(
         all_candidates
     )

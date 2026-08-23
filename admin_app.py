@@ -492,9 +492,10 @@ def render_video_review_candidates():
         column_config={
             "save": st.column_config.CheckboxColumn("保存対象"),
             "candidate_id": None,
-            "year": st.column_config.NumberColumn(
-                "year", min_value=2020, max_value=2100, step=1
-            ),
+            "year": None,
+            "start_time": None,
+            "end_time": None,
+            "quest_name": None,
             "attribute": st.column_config.SelectboxColumn(
                 "属性", options=[""] + ATTRIBUTES
             ),
@@ -504,9 +505,9 @@ def render_video_review_candidates():
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=SCHEDULE_CATEGORIES
             ),
-            "availability_type": st.column_config.SelectboxColumn(
-                "開催方式", options=AVAILABILITY_TYPES
-            ),
+            "group_name": None,
+            "period_end_date": None,
+            "availability_type": None,
             "review_mode": st.column_config.TextColumn(
                 "判定方法", disabled=True
             ),

@@ -4,11 +4,13 @@ from datetime import datetime, time, timedelta
 CATEGORY_COLLABORATION = "コラボ"
 CATEGORY_LIMITED_EVENT = "イベント・期間限定"
 CATEGORY_FEATURED = "高難易度・注目"
+CATEGORY_NORMAL = "通常降臨"
 
 SCHEDULE_CATEGORIES = [
     CATEGORY_COLLABORATION,
     CATEGORY_LIMITED_EVENT,
     CATEGORY_FEATURED,
+    CATEGORY_NORMAL,
 ]
 
 AVAILABILITY_SCHEDULED = "時間指定"
@@ -26,6 +28,7 @@ def normalize_schedule_category(value):
         "limited_event": CATEGORY_LIMITED_EVENT,
         "event": CATEGORY_LIMITED_EVENT,
         "high_difficulty": CATEGORY_FEATURED,
+        "normal": CATEGORY_NORMAL,
     }
     return aliases.get(value, value or CATEGORY_FEATURED)
 
