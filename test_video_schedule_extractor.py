@@ -20,10 +20,44 @@ from video_schedule_extractor import (
     postprocess_video_candidates,
     prepare_video_review_candidates,
     resolve_candidate_with_master,
+    screenshot_batch_fingerprint,
+    validate_screenshot_batch,
 )
 
 
 class VideoScheduleExtractorTests(unittest.TestCase):
+    def test_validates_multiple_screenshots(self):
+        png = b"\x89PNG\r\n\x1a\n" + b"image-data"
+        files = [
+            {"name": "first.png", "bytes": png},
+            ("second.png", png + b"2"),
+        ]
+        normalized = validate_screenshot_batch(files)
+        self.assertEqual([item[0] for item in normalized], [
+            "first.png",
+            "second.png",
+        ])
+        self.assertEqual(normalized[0][1], png)
+
+    def test_rejects_non_image_screenshot(self):
+        with self.assertRaisesRegex(RuntimeError, "PNGまたはJPEG"):
+            validate_screenshot_batch([
+                {"name": "not-image.txt", "bytes": b"plain text"},
+            ])
+
+    def test_screenshot_batch_fingerprint_is_stable_and_ordered(self):
+        png = b"\x89PNG\r\n\x1a\n" + b"image-data"
+        first = [("a.png", png), ("b.png", png + b"b")]
+        second = list(reversed(first))
+        self.assertEqual(
+            screenshot_batch_fingerprint(first),
+            screenshot_batch_fingerprint(first),
+        )
+        self.assertNotEqual(
+            screenshot_batch_fingerprint(first),
+            screenshot_batch_fingerprint(second),
+        )
+
     def test_defaults_unknown_ocr_mode_to_fast(self):
         self.assertEqual(normalize_ocr_mode(""), OCR_MODE_FAST)
         self.assertEqual(normalize_ocr_mode("不明"), OCR_MODE_FAST)

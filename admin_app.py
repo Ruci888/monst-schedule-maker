@@ -34,6 +34,7 @@ from video_schedule_extractor import (
     OCR_MODE_PRECISE,
     VideoScheduleError,
     candidate_identity as pending_candidate_identity,
+    extract_screenshot_schedule_candidates,
     extract_video_schedule_candidates,
 )
 
@@ -364,6 +365,8 @@ def reset_schedule_candidate_editor():
 
 
 def show_video_extraction_result(result):
+    source_kind = st.session_state.get("capture_review_source", "video")
+    is_screenshot = source_kind == "screenshot"
     columns = st.columns(6)
     values = (
         ("自動補正", result.recognized_count),
@@ -376,10 +379,13 @@ def show_video_extraction_result(result):
     for column, (label, value) in zip(columns, values):
         column.metric(label, value)
     st.caption(
-        f"確認フレーム {result.sampled_frame_count}枚／"
-        f"動画内重複 {result.video_duplicate_count}件／"
+        f"確認{'画像' if is_screenshot else 'フレーム'} "
+        f"{result.sampled_frame_count}枚／"
+        f"{'画像間' if is_screenshot else '動画内'}重複 "
+        f"{result.video_duplicate_count}件／"
         f"日付OCR未完成 {result.ocr_error_count}件／"
-        f"動画識別子 {result.video_fingerprint[:12]}…"
+        f"{'画像' if is_screenshot else '動画'}識別子 "
+        f"{result.video_fingerprint[:12]}…"
     )
 
 
@@ -391,6 +397,7 @@ def clear_video_review_state():
         "video_review_select_all",
         "video_review_last_select_all",
         "video_review_preview_index",
+        "capture_review_source",
     ):
         st.session_state.pop(key, None)
 
@@ -408,10 +415,12 @@ def render_video_review_candidates():
     if not candidates:
         return
 
-    st.markdown("##### 動画から切り出した一時確認候補")
+    source_kind = st.session_state.get("capture_review_source", "video")
+    source_label = "スクリーンショット" if source_kind == "screenshot" else "動画"
+    st.markdown(f"##### {source_label}から取得した一時確認候補")
     st.warning(
         "この段階ではJSONへ保存していません。"
-        "切り出し画像を確認し、表を修正してから保存対象を選んでください。"
+        "確認画像を見て表を修正し、保存対象だけを選んでください。"
     )
     if result is not None:
         show_video_extraction_result(result)
@@ -523,7 +532,8 @@ def render_video_review_candidates():
     if discard_clicked:
         st.session_state["reset_video_review_state"] = True
         st.session_state["admin_flash_success"] = (
-            "動画の一時確認候補を破棄しました。JSONは変更していません。"
+            f"{source_label}の一時確認候補を破棄しました。"
+            "JSONは変更していません。"
         )
         st.rerun()
 
@@ -562,6 +572,8 @@ def render_video_review_candidates():
         "visual_signature",
         "card_signature",
         "video_fingerprint",
+        "screenshot_batch_fingerprint",
+        "source_capture_type",
         "fetched_at",
         "review_mode",
         "ocr_mode",
@@ -595,11 +607,100 @@ def render_video_review_candidates():
         st.error(str(error))
 
 
+def import_schedule_candidates_from_screenshots():
+    if st.session_state.pop("reset_video_review_state", False):
+        clear_video_review_state()
+
+    st.markdown("#### スクリーンショットから降臨候補を取得")
+    st.caption(
+        "PNG・JPEGを一度に10枚まで選択できます。"
+        "重なって写った同じカードは画像で判定してまとめます。"
+        "画像は処理後に保存されず、候補だけを下の確認画面へ渡します。"
+    )
+    left, right = st.columns([1, 3])
+    with left:
+        screenshot_start_date = st.date_input(
+            "画像内の最初の日程",
+            value=date.today(),
+            key="screenshot_start_date",
+            help=(
+                "最初のスクリーンショットに表示されるゲーム日を指定します。"
+                "この日から14日を外れたOCR日付は未確定として確認画面へ送ります。"
+            ),
+        )
+    with right:
+        uploaded_screenshots = st.file_uploader(
+            "モンストアプリのスケジュール画面スクリーンショット",
+            type=["png", "jpg", "jpeg"],
+            accept_multiple_files=True,
+            key="schedule_screenshot_uploader",
+            help=(
+                "縦向きのまま、カード全体と日付が読める画像を選択してください。"
+                "隣の画像と1～2枚分重ねても重複候補にはしません。"
+            ),
+        )
+
+    if st.button(
+        "スクリーンショットから降臨候補を抽出",
+        type="primary",
+        disabled=not uploaded_screenshots,
+        key="extract_schedule_screenshots",
+    ):
+        try:
+            screenshot_files = [
+                {"name": uploaded.name, "bytes": uploaded.getvalue()}
+                for uploaded in uploaded_screenshots
+            ]
+            published = ensure_schedule_columns(
+                load_admin_json("schedules.json", load_schedules)
+            )
+            pending = load_admin_json("schedule_candidates.json")
+            progress_bar = st.progress(0.0)
+            progress_text = st.empty()
+
+            def update_screenshot_progress(progress, message):
+                progress_bar.progress(progress)
+                progress_text.caption(message)
+
+            with st.spinner("スクリーンショットを解析しています…"):
+                result = extract_screenshot_schedule_candidates(
+                    screenshot_files=screenshot_files,
+                    year=screenshot_start_date.year,
+                    recording_start_date=screenshot_start_date,
+                    published_schedules=published,
+                    pending_candidates=pending,
+                    progress_callback=update_screenshot_progress,
+                )
+            progress_bar.progress(1.0)
+            progress_text.caption("スクリーンショット抽出が完了しました。")
+            if result.candidates:
+                st.session_state["video_review_candidates"] = result.candidates
+                st.session_state["video_extraction_result"] = result
+                st.session_state["capture_review_source"] = "screenshot"
+                st.session_state.pop("video_review_editor", None)
+                st.session_state.pop("video_review_select_all", None)
+                st.session_state.pop("video_review_last_select_all", None)
+                st.success(
+                    f"確認画像付きの一時候補{len(result.candidates)}件を"
+                    "作成しました。"
+                )
+            else:
+                clear_video_review_state()
+                st.info("追加できる新規候補はありませんでした。")
+        except (VideoScheduleError, GitHubStorageError) as error:
+            st.error(str(error))
+        except Exception as error:
+            st.error(
+                "画像を解析できませんでした。枚数を減らして再度お試しください。"
+                f"（詳細：{error}）"
+            )
+
+
 def import_schedule_candidates_from_video():
     if st.session_state.pop("reset_video_review_state", False):
         clear_video_review_state()
 
-    st.markdown("#### アプリ画面録画から降臨候補を取得")
+    st.markdown("#### 実験機能：アプリ画面録画から降臨候補を取得")
     st.caption(
         "MP4・MOV（100MB以下／3分以内）に対応します。"
         "動画は処理中だけ一時保存し、処理後に削除します。"
@@ -669,6 +770,7 @@ def import_schedule_candidates_from_video():
                     result.candidates
                 )
                 st.session_state["video_extraction_result"] = result
+                st.session_state["capture_review_source"] = "video"
                 st.session_state.pop("video_review_editor", None)
                 st.session_state.pop("video_review_select_all", None)
                 st.session_state.pop("video_review_last_select_all", None)
@@ -685,9 +787,6 @@ def import_schedule_candidates_from_video():
                 "動画を解析できませんでした。録画を短くして再度お試しください。"
                 f"（詳細：{error}）"
             )
-
-    render_video_review_candidates()
-
 
 def review_schedule_candidates():
     if st.session_state.pop("reset_schedule_candidate_bulk_delete", False):
@@ -1123,7 +1222,10 @@ with event_tab:
 
 with candidate_tab:
     st.subheader("自動取得候補")
-    import_schedule_candidates_from_video()
+    import_schedule_candidates_from_screenshots()
+    with st.expander("実験機能：画面録画から取得", expanded=False):
+        import_schedule_candidates_from_video()
+    render_video_review_candidates()
     st.divider()
     st.markdown("#### 公式ニュースから取得")
     if st.button("公式ニュースから候補を取得", type="primary"):

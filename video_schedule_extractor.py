@@ -1,6 +1,6 @@
-"""モンストアプリの画面録画から降臨候補を抽出する。
+"""モンストアプリのスクリーンショット・画面録画から降臨候補を抽出する。
 
-動画と抽出フレームは一時ディレクトリだけで扱い、処理終了時に削除する。
+画像はメモリ上、動画と抽出フレームは一時ディレクトリだけで扱う。
 OCR結果は必ず管理画面の承認待ち候補として返し、自動公開しない。
 """
 
@@ -26,6 +26,9 @@ MAX_SAMPLE_FRAMES = 120
 MAX_UNIQUE_CARDS = 100
 MAX_PROCESSING_SECONDS = 120
 CARD_DEDUPE_THRESHOLD = 6
+MAX_SCREENSHOT_COUNT = 10
+MAX_SCREENSHOT_BYTES = 15 * 1024 * 1024
+MAX_SCREENSHOT_BATCH_BYTES = 80 * 1024 * 1024
 
 OCR_MODE_FAST = "高速抽出"
 OCR_MODE_PRECISE = "精密抽出"
@@ -73,7 +76,7 @@ JAPANESE_NAME_PATTERN = re.compile(
 
 
 class VideoScheduleError(RuntimeError):
-    """管理画面にそのまま表示できる動画処理エラー。"""
+    """管理画面にそのまま表示できる画像・動画処理エラー。"""
 
 
 @dataclass
@@ -911,6 +914,57 @@ def _validate_video(video_bytes):
         raise VideoScheduleError("MP4またはMOV形式の動画を選択してください。")
 
 
+def validate_screenshot_batch(screenshot_files):
+    """画像バッチを検証し、[(ファイル名, bytes)] の形へ揃える。"""
+    if not screenshot_files:
+        raise VideoScheduleError("スクリーンショットを1枚以上選択してください。")
+    if len(screenshot_files) > MAX_SCREENSHOT_COUNT:
+        raise VideoScheduleError(
+            f"スクリーンショットは一度に{MAX_SCREENSHOT_COUNT}枚までです。"
+        )
+
+    normalized = []
+    total_bytes = 0
+    for index, item in enumerate(screenshot_files):
+        if isinstance(item, dict):
+            filename = str(item.get("name") or f"screenshot_{index + 1}.png")
+            image_bytes = item.get("bytes", b"")
+        elif isinstance(item, (tuple, list)) and len(item) == 2:
+            filename = str(item[0] or f"screenshot_{index + 1}.png")
+            image_bytes = item[1]
+        else:
+            filename = f"screenshot_{index + 1}.png"
+            image_bytes = item
+
+        if not isinstance(image_bytes, (bytes, bytearray)) or not image_bytes:
+            raise VideoScheduleError(f"{filename} は空の画像です。")
+        image_bytes = bytes(image_bytes)
+        if len(image_bytes) > MAX_SCREENSHOT_BYTES:
+            raise VideoScheduleError(f"{filename} は15MB以下にしてください。")
+        is_png = image_bytes.startswith(b"\x89PNG\r\n\x1a\n")
+        is_jpeg = image_bytes.startswith(b"\xff\xd8\xff")
+        if not (is_png or is_jpeg):
+            raise VideoScheduleError(
+                f"{filename} はPNGまたはJPEG形式で選択してください。"
+            )
+        total_bytes += len(image_bytes)
+        normalized.append((filename, image_bytes))
+
+    if total_bytes > MAX_SCREENSHOT_BATCH_BYTES:
+        raise VideoScheduleError("画像の合計サイズは80MB以下にしてください。")
+    return normalized
+
+
+def screenshot_batch_fingerprint(screenshot_files):
+    """画像名・順番・内容を含む、バッチ固有の識別子を返す。"""
+    digest = hashlib.sha256()
+    for filename, image_bytes in validate_screenshot_batch(screenshot_files):
+        digest.update(filename.encode("utf-8", errors="replace"))
+        digest.update(len(image_bytes).to_bytes(8, "big"))
+        digest.update(image_bytes)
+    return digest.hexdigest()
+
+
 def _require_video_dependencies():
     try:
         import cv2
@@ -1619,6 +1673,136 @@ def _extract_from_frame(
         candidates.append(candidate)
         failed_count += int(failed)
     return candidates, failed_count
+
+
+def extract_screenshot_schedule_candidates(
+    screenshot_files,
+    year=None,
+    recording_start_date=None,
+    published_schedules=None,
+    pending_candidates=None,
+    progress_callback=None,
+):
+    """複数スクリーンショットから、重複しない承認待ち候補を返す。"""
+    started_at = time_module.monotonic()
+    images = validate_screenshot_batch(screenshot_files)
+    recording_start = _coerce_recording_start_date(
+        recording_start_date,
+        fallback_year=year,
+    )
+    try:
+        year = int(recording_start.year)
+    except (TypeError, ValueError) as error:
+        raise VideoScheduleError("年は4桁の数字で指定してください。") from error
+    if not 2020 <= year <= 2100:
+        raise VideoScheduleError("年は2020～2100の範囲で指定してください。")
+
+    cv2, pytesseract = _require_video_dependencies()
+    try:
+        import numpy as np
+    except ImportError as error:
+        raise VideoScheduleError(
+            "画像読取用ライブラリNumPyが見つかりません。"
+        ) from error
+
+    fingerprint = screenshot_batch_fingerprint(images)
+    unique_cards = []
+    pre_ocr_duplicate_count = 0
+    _notify_progress(progress_callback, 0.02, "スクリーンショットを確認しています…")
+
+    for index, (filename, image_bytes) in enumerate(images):
+        _raise_if_timed_out(started_at)
+        encoded = np.frombuffer(image_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+        if frame is None or frame.size == 0:
+            raise VideoScheduleError(f"{filename} を画像として開けませんでした。")
+        viewport = _detect_game_viewport(cv2, frame)
+        pre_ocr_duplicate_count += _collect_unique_cards_from_frame(
+            cv2,
+            viewport,
+            unique_cards,
+        )
+        _notify_progress(
+            progress_callback,
+            0.05 + ((index + 1) / len(images)) * 0.25,
+            f"画像を確認中… {index + 1}/{len(images)}枚・"
+            f"カード{len(unique_cards)}件",
+        )
+
+    if not unique_cards:
+        raise VideoScheduleError(
+            "降臨カードを検出できませんでした。"
+            "モンストのスケジュール画面が見える縦向き画像を選択してください。"
+        )
+
+    all_candidates = []
+    ocr_error_count = 0
+    for index, item in enumerate(unique_cards):
+        _raise_if_timed_out(started_at)
+        candidate, failed = _extract_card_candidate(
+            cv2,
+            pytesseract,
+            item["image"],
+            year,
+            card_signature=item["card_signature"],
+            ocr_mode=OCR_MODE_PRECISE,
+        )
+        candidate["source_capture_type"] = "screenshot"
+        all_candidates.append(candidate)
+        ocr_error_count += int(failed)
+        _notify_progress(
+            progress_callback,
+            0.30 + ((index + 1) / len(unique_cards)) * 0.60,
+            f"カードを文字認識中… {index + 1}/{len(unique_cards)}件",
+        )
+
+    unique_candidates, image_duplicate_count = deduplicate_video_candidates(
+        all_candidates
+    )
+    image_duplicate_count += pre_ocr_duplicate_count
+    (
+        processed_candidates,
+        recognized_count,
+        manual_review_count,
+        rejected_count,
+        resolved_duplicate_count,
+    ) = prepare_video_review_candidates(
+        unique_candidates,
+        recording_start,
+        published_schedules=published_schedules or [],
+        pending_candidates=pending_candidates or [],
+    )
+    image_duplicate_count += resolved_duplicate_count
+    fetched_at = datetime.now().astimezone().isoformat(timespec="seconds")
+    for candidate in processed_candidates:
+        candidate["screenshot_batch_fingerprint"] = fingerprint
+        candidate["source_capture_type"] = "screenshot"
+        candidate["fetched_at"] = fetched_at
+
+    new_candidates, published_duplicates, pending_duplicates = (
+        filter_existing_candidates(
+            processed_candidates,
+            published_schedules or [],
+            pending_candidates or [],
+        )
+    )
+    _notify_progress(
+        progress_callback,
+        1.0,
+        f"完了：確認候補{len(new_candidates)}件",
+    )
+    return VideoExtractionResult(
+        candidates=new_candidates,
+        recognized_count=recognized_count,
+        manual_review_count=manual_review_count,
+        rejected_candidate_count=rejected_count,
+        published_duplicate_count=published_duplicates,
+        pending_duplicate_count=pending_duplicates,
+        video_duplicate_count=image_duplicate_count,
+        ocr_error_count=ocr_error_count,
+        sampled_frame_count=len(images),
+        video_fingerprint=fingerprint,
+    )
 
 
 def extract_video_schedule_candidates(
