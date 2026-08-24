@@ -115,6 +115,10 @@ class VideoScheduleExtractorTests(unittest.TestCase):
             clean_ocr_character_name("チームY 二子一揮"),
             "チームY 二子一揮",
         )
+        self.assertEqual(
+            clean_ocr_character_name("殺し屋 烏旅人"),
+            "殺し屋 烏旅人",
+        )
 
     def test_classifies_collaboration_and_normal_schedules(self):
         self.assertEqual(
@@ -132,6 +136,29 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         apply_screenshot_date_context(candidates, date(2026, 8, 24))
         self.assertEqual(candidates[1]["date"], "8/24")
         self.assertEqual(candidates[1]["ocr_end_date"], "8/25")
+
+    def test_corrects_valid_but_wrong_date_from_multiple_positions(self):
+        candidates = [
+            {
+                "date": "8/24",
+                "source_positions": [
+                    {"source_index": 0, "top": 100},
+                    {"source_index": 1, "top": 100},
+                ],
+                "ocr_status": "画像確認",
+            },
+            {
+                "date": "8/25",
+                "source_positions": [
+                    {"source_index": 0, "top": 200},
+                    {"source_index": 1, "top": 200},
+                ],
+                "ocr_status": "",
+            },
+        ]
+        apply_screenshot_date_context(candidates, date(2026, 8, 24))
+        self.assertEqual(candidates[0]["date"], "8/25")
+        self.assertEqual(candidates[0]["ocr_end_date"], "8/26")
 
     def test_keeps_incomplete_candidate_for_manual_review(self):
         text = "8/21(金) 12:00 ～ 8/22(土) 11:59\n超絶\nソーマ"
@@ -179,7 +206,7 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         parsed = find_date_time("8/25(火)12:00〜8/26(水)11:59")
         self.assertEqual(parsed["date"], "8/25")
         self.assertEqual(parsed["end_date"], "8/26")
-        self.assertEqual(find_difficulty("超絶・廻"), "超絶")
+        self.assertEqual(find_difficulty("超絶・廻"), "超絶・廻")
         self.assertEqual(find_difficulty("轟絶・究極"), "轟絶")
 
     def test_deduplicates_overlapping_video_frames(self):

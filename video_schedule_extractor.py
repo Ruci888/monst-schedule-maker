@@ -40,6 +40,7 @@ DIFFICULTY_PATTERNS = (
     ("黎絶", re.compile(r"黎絶")),
     ("轟絶", re.compile(r"轟絶")),
     ("爆絶", re.compile(r"爆絶")),
+    ("超絶・廻", re.compile(r"超絶\s*[・･]?\s*廻")),
     ("超絶", re.compile(r"超絶")),
     ("激究極", re.compile(r"激究極")),
     ("星5制限", re.compile(r"星\s*5\s*制限")),
@@ -217,6 +218,7 @@ def clean_ocr_character_name(text):
         r"U\s*[-ー−]?\s*20\s*日本代表\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
         r"TOP\s*3\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
         r"チーム\s*[A-Z]\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
+        r"殺し屋\s*[ぁ-んァ-ヶー一-龠々〆ヵヶ]+",
     )
     for pattern in prefix_patterns:
         match = re.search(pattern, normalized, flags=re.IGNORECASE)
@@ -225,6 +227,7 @@ def clean_ocr_character_name(text):
             value = re.sub(r"U\s*[-ー−]?\s*20", "U-20", value, flags=re.I)
             value = re.sub(r"TOP\s*3", "TOP3", value, flags=re.I)
             value = re.sub(r"チーム\s*([A-Z])\s*", r"チーム\1 ", value)
+            value = re.sub(r"殺し屋\s*", "殺し屋 ", value)
             return value
     matches = [match.group(0).strip() for match in JAPANESE_NAME_PATTERN.finditer(normalized)]
     matches = [
@@ -248,6 +251,32 @@ def is_plausible_character_name(value):
     name = clean_ocr_character_name(value)
     length = len(normalize_identity_name(name))
     return bool(name) and 2 <= length <= 30 and japanese_ratio(name) >= 0.75
+
+
+def _name_quality_score(value, confidence=0.0):
+    """短い切れ端より、接頭語を含む完全なキャラ名を優先する。"""
+    name = clean_ocr_character_name(value)
+    if not is_plausible_character_name(name):
+        return -1.0
+    compact = normalize_identity_name(name)
+    prefix_bonus = 0
+    if re.match(r"^(U-20日本代表|TOP3|殺し屋|チーム[A-Z])", name):
+        prefix_bonus = 35
+    return float(confidence) + len(compact) * 3 + prefix_bonus
+
+
+def _select_best_name_candidate(candidates):
+    valid = [
+        (name, confidence)
+        for name, confidence in candidates
+        if is_plausible_character_name(name)
+    ]
+    if not valid:
+        return "", 0.0
+    return max(
+        valid,
+        key=lambda item: _name_quality_score(item[0], item[1]),
+    )
 
 
 def find_character_name(text):
@@ -1198,8 +1227,8 @@ def _ocr_name_variant(pytesseract, image):
 def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.40): int(height * 0.86),
-        int(width * 0.055): int(width * 0.57),
+        int(height * 0.47): int(height * 0.92),
+        int(width * 0.055): int(width * 0.66),
     ]
     if name_region.size == 0:
         return "", "", 0.0, "名前認識失敗"
@@ -1297,8 +1326,8 @@ def _ocr_single_line(pytesseract, image, language="jpn+eng"):
 def _extract_card_date_time(cv2, pytesseract, card):
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.03): int(height * 0.35),
-        int(width * 0.04): int(width * 0.72),
+        int(height * 0.00): int(height * 0.39),
+        int(width * 0.03): int(width * 0.80),
     ]
     if region.size == 0:
         return None, ""
@@ -1308,8 +1337,8 @@ def _extract_card_date_time(cv2, pytesseract, card):
             cv2.resize(
                 region,
                 None,
-                fx=3.0,
-                fy=3.0,
+                fx=4.0,
+                fy=4.0,
                 interpolation=cv2.INTER_CUBIC,
             ),
         ),
@@ -1328,8 +1357,8 @@ def _extract_card_difficulty(cv2, pytesseract, card):
     """条件説明ではなく、カード右側の実難易度ラベルだけを読む。"""
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.40): int(height * 0.79),
-        int(width * 0.535): int(width * 0.675),
+        int(height * 0.30): int(height * 0.78),
+        int(width * 0.50): int(width * 0.72),
     ]
     if region.size == 0:
         return "", ""
@@ -1339,8 +1368,8 @@ def _extract_card_difficulty(cv2, pytesseract, card):
             cv2.resize(
                 region,
                 None,
-                fx=4.0,
-                fy=4.0,
+                fx=6.0,
+                fy=6.0,
                 interpolation=cv2.INTER_CUBIC,
             ),
         ),
@@ -1348,10 +1377,7 @@ def _extract_card_difficulty(cv2, pytesseract, card):
     ]
     results = [find_difficulty(text) for text in variants]
     results = [value for value in results if value]
-    difficulty = ""
-    if results:
-        # 別処理が違う難易度を返した場合は、誤公開を防ぐため空欄にする。
-        difficulty = results[0] if len(set(results)) == 1 else ""
+    difficulty = Counter(results).most_common(1)[0][0] if results else ""
     return difficulty, " / ".join(value for value in variants if value)
 
 
@@ -1395,8 +1421,8 @@ def _infer_attribute(cv2, card):
     # 左端の赤いドクロ・黄色い宝箱と右端の予約ボタンを除き、
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
-        int(height * 0.40): int(height * 0.86),
-        int(width * 0.055): int(width * 0.52),
+        int(height * 0.47): int(height * 0.92),
+        int(width * 0.055): int(width * 0.62),
     ]
     if region.size == 0:
         return ""
@@ -1420,7 +1446,7 @@ def _infer_attribute(cv2, card):
     return attribute
 
 
-def _detect_card_regions(cv2, frame):
+def _detect_card_regions_with_positions(cv2, frame):
     """OCRに頼らず、カード上端の明るい横枠からカードを見つける。"""
     height, width = frame.shape[:2]
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -1467,8 +1493,16 @@ def _detect_card_regions(cv2, frame):
             continue
         card = frame[top:bottom, left:right]
         if card.size:
-            regions.append(card)
+            regions.append({"image": card, "top": top, "bottom": bottom})
     return regions
+
+
+def _detect_card_regions(cv2, frame):
+    """従来呼び出しとの互換性を保ち、カード画像だけを返す。"""
+    return [
+        region["image"]
+        for region in _detect_card_regions_with_positions(cv2, frame)
+    ]
 
 
 def _collect_unique_cards_from_frame(
@@ -1476,7 +1510,9 @@ def _collect_unique_cards_from_frame(
 ):
     """OCR前に同一カードをまとめ、最も鮮明な画像だけを残す。"""
     duplicate_count = 0
-    for card in _detect_card_regions(cv2, frame):
+    for region in _detect_card_regions_with_positions(cv2, frame):
+        card = region["image"]
+        card_top = int(region["top"])
         signature = _image_signature(cv2, card)
         card_height, card_width = card.shape[:2]
         portrait = card[
@@ -1507,6 +1543,10 @@ def _collect_unique_cards_from_frame(
         if matching is not None:
             duplicate_count += 1
             matching.setdefault("source_indexes", set()).add(source_index)
+            matching.setdefault("source_positions", []).append({
+                "source_index": source_index,
+                "top": card_top,
+            })
             if sharpness > matching.get("sharpness", -1.0):
                 matching["image"] = card.copy()
                 matching["card_signature"] = signature
@@ -1520,6 +1560,10 @@ def _collect_unique_cards_from_frame(
             "sharpness": sharpness,
             "portrait_signature": portrait_signature,
             "source_indexes": {source_index},
+            "source_positions": [{
+                "source_index": source_index,
+                "top": card_top,
+            }],
         })
     return duplicate_count
 
@@ -1621,8 +1665,8 @@ def _extract_card_candidate(
     card_signature = card_signature or _image_signature(cv2, card)
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.40): int(height * 0.86),
-        int(width * 0.055): int(width * 0.57),
+        int(height * 0.47): int(height * 0.92),
+        int(width * 0.055): int(width * 0.66),
     ]
     visual_signature = _image_signature(cv2, name_region)
     attribute = _infer_attribute(cv2, card)
@@ -1636,29 +1680,31 @@ def _extract_card_candidate(
     raw_difficulty = fast_text
 
     if mode == OCR_MODE_PRECISE:
-        if date_time is None:
-            date_time, precise_raw_date = _extract_card_date_time(
-                cv2,
-                pytesseract,
-                card,
-            )
-            raw_date = precise_raw_date or raw_date
-        if not is_plausible_character_name(name) or confidence < 70:
-            (
-                precise_name,
-                precise_raw_name,
-                precise_confidence,
-                _name_status,
-            ) = _extract_character_name(
-                cv2,
-                pytesseract,
-                card,
-                attribute,
-            )
-            if precise_name:
-                name = precise_name
-            raw_name = precise_raw_name or raw_name
-            confidence = max(confidence, precise_confidence)
+        precise_date_time, precise_raw_date = _extract_card_date_time(
+            cv2,
+            pytesseract,
+            card,
+        )
+        if precise_date_time:
+            date_time = precise_date_time
+        raw_date = precise_raw_date or raw_date
+        (
+            precise_name,
+            precise_raw_name,
+            precise_confidence,
+            _name_status,
+        ) = _extract_character_name(
+            cv2,
+            pytesseract,
+            card,
+            attribute,
+        )
+        name, selected_confidence = _select_best_name_candidate((
+            (name, confidence),
+            (precise_name, precise_confidence),
+        ))
+        raw_name = precise_raw_name or raw_name
+        confidence = max(confidence, precise_confidence, selected_confidence)
         # 条件説明の「爆絶を3種類以上」等を難易度と誤認しないよう、
         # 精密モードでは必ず右側ラベルだけで上書きする。
         difficulty, precise_raw_difficulty = _extract_card_difficulty(
@@ -1739,32 +1785,79 @@ def _extract_from_frame(
 
 
 def apply_screenshot_date_context(candidates, recording_start_date):
-    """画像ごとの有効な日付を、日付OCRに失敗した同一画像の候補へ補う。"""
+    """各カード直上に近いカードの日付から、誤読した日付も補正する。"""
     start = _coerce_recording_start_date(recording_start_date)
     end = start + timedelta(days=13)
-    dates_by_source = {}
-    for candidate in candidates:
+    anchors_by_source = {}
+    for candidate_index, candidate in enumerate(candidates):
         parsed = _month_day_near_reference(candidate.get("date"), start)
         if parsed is None or not start <= parsed <= end:
             continue
-        for source_index in candidate.get("source_indexes", []):
-            dates_by_source.setdefault(source_index, []).append(parsed)
+        positions = candidate.get("source_positions", [])
+        if positions:
+            for position in positions:
+                source_index = position.get("source_index")
+                if source_index is None:
+                    continue
+                anchors_by_source.setdefault(source_index, []).append((
+                    int(position.get("top", 0)),
+                    parsed,
+                    candidate_index,
+                ))
+        else:
+            for source_index in candidate.get("source_indexes", []):
+                anchors_by_source.setdefault(source_index, []).append((
+                    0,
+                    parsed,
+                    candidate_index,
+                ))
 
-    source_context = {
-        source_index: Counter(values).most_common(1)[0][0]
-        for source_index, values in dates_by_source.items()
-        if values
-    }
-    for candidate in candidates:
-        parsed = _month_day_near_reference(candidate.get("date"), start)
-        if parsed is not None and start <= parsed <= end:
-            continue
-        contexts = [
-            source_context[index]
-            for index in candidate.get("source_indexes", [])
-            if index in source_context
+    for anchors in anchors_by_source.values():
+        anchors.sort(key=lambda item: item[0])
+
+    def nearest_context(source_index, top, candidate_index):
+        anchors = [
+            item for item in anchors_by_source.get(source_index, [])
+            if item[2] != candidate_index
         ]
-        replacement = Counter(contexts).most_common(1)[0][0] if contexts else None
+        if not anchors:
+            return None
+        preceding = [item for item in anchors if item[0] <= top]
+        if preceding:
+            return preceding[-1][1]
+        return min(anchors, key=lambda item: abs(item[0] - top))[1]
+
+    for candidate_index, candidate in enumerate(candidates):
+        parsed = _month_day_near_reference(candidate.get("date"), start)
+        positions = candidate.get("source_positions", [])
+        contexts = [
+            nearest_context(
+                position.get("source_index"),
+                int(position.get("top", 0)),
+                candidate_index,
+            )
+            for position in positions
+        ]
+        contexts = [value for value in contexts if value is not None]
+        if not contexts:
+            contexts = [
+                nearest_context(index, 0, candidate_index)
+                for index in candidate.get("source_indexes", [])
+            ]
+            contexts = [value for value in contexts if value is not None]
+        context_counts = Counter(contexts)
+        replacement = context_counts.most_common(1)[0][0] if contexts else None
+        parsed_is_valid = parsed is not None and start <= parsed <= end
+        # 有効日付でも、別画像を含む周辺カードが2票以上一致した場合は
+        # その日付を優先する。単独の周辺情報だけでは上書きしない。
+        should_replace_valid = bool(
+            parsed_is_valid
+            and replacement is not None
+            and replacement != parsed
+            and context_counts[replacement] >= 2
+        )
+        if parsed_is_valid and not should_replace_valid:
+            continue
         if replacement is None:
             continue
         candidate["year"] = replacement.year
@@ -1858,6 +1951,9 @@ def extract_screenshot_schedule_candidates(
         candidate["source_indexes"] = sorted(
             index for index in item.get("source_indexes", set())
             if index is not None
+        )
+        candidate["source_positions"] = list(
+            item.get("source_positions", [])
         )
         all_candidates.append(candidate)
         ocr_error_count += int(failed)
