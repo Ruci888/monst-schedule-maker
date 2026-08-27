@@ -1810,9 +1810,18 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_462538543624c7a6",
+                "portrait_signature": "1681a5044b04e09040ac428c0b13778e7d6948ca6f5ae5d86ac25ae464ada583",
+                "visual_signature": "c773c33346ba43ba420b000000000000000000000000000100440022001a0016",
+                "card_signature": "137f0b560357035c7400e404a413ac13a4026a006600640094adac294809ec05",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-08-27T23:04:55+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
-        "updated_at": "2026-08-27T22:50:37+00:00"
+        "updated_at": "2026-08-27T23:04:55+00:00"
     }
 ]
