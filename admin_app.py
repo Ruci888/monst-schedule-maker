@@ -32,6 +32,7 @@ from schedule_utils import (
     normalize_schedule_category,
 )
 from quest_master import (
+    KANA_GROUPS,
     LIMITED_MASTER_CATEGORIES,
     add_candidate_image_reference,
     card_reference_is_learnable,
@@ -40,6 +41,7 @@ from quest_master import (
     normalize_quest_master,
     normalize_quest_master_record,
     parse_master_bulk_text,
+    quest_master_kana_group,
     quest_master_key,
     schedule_from_master,
     search_quest_master,
@@ -382,12 +384,16 @@ def save_quest_master_records(records, commit_message="Update quest master"):
 
 
 def quest_master_label(record):
+    reading = (
+        f"（{record['name_reading']}）"
+        if record.get("name_reading") else ""
+    )
     group = f"｜{record['group_name']}" if record.get("group_name") else ""
     expired = "｜期限切れ" if master_expired(record) else ""
     image_count = len(record.get("image_references", []))
     image_text = f"｜画像{image_count}件" if image_count else "｜画像未登録"
     return (
-        f"{record.get('name', '')}｜{record.get('attribute', '')}｜"
+        f"{record.get('name', '')}{reading}｜{record.get('attribute', '')}｜"
         f"{record.get('difficulty', '')}｜{record.get('category', '')}"
         f"{group}{image_text}{expired}"
     )
@@ -452,6 +458,13 @@ def render_quest_master_management():
     with single_tab:
         with st.form("manual_quest_master_form", clear_on_submit=True):
             manual_name = st.text_input("名前")
+            manual_name_reading = st.text_input(
+                "読み（任意）",
+                help=(
+                    "漢字で始まる名前は、五十音分類に使う先頭1文字だけでも"
+                    "登録できます。フルの読みを入れると読みでも検索できます。"
+                ),
+            )
             manual_attribute = st.selectbox("属性", ATTRIBUTES)
             manual_difficulty = st.selectbox("難易度", DIFFICULTIES)
             manual_category = st.selectbox(
@@ -486,6 +499,7 @@ def render_quest_master_management():
             else:
                 additions = [{
                     "name": manual_name,
+                    "name_reading": manual_name_reading,
                     "attribute": manual_attribute,
                     "difficulty": manual_difficulty,
                     "category": manual_category,
@@ -532,11 +546,12 @@ def render_quest_master_management():
                 "1行に1体入力",
                 placeholder=(
                     "スノーマン｜木｜究極\n"
-                    "ストラテジー｜水｜爆絶｜高難易度・注目"
+                    "仙丹｜木｜超絶｜通常降臨｜せ"
                 ),
                 help=(
                     "名前｜属性｜難易度の順です。4項目目に降臨カテゴリも"
-                    "指定できます。縦線の代わりにカンマも使用できます。"
+                    "指定できます。5項目目は読みで、先頭1文字だけでも構いません。"
+                    "縦線の代わりにカンマも使用できます。"
                 ),
                 height=180,
             )
@@ -603,11 +618,17 @@ def render_quest_master_management():
                     st.error(str(error))
 
     st.markdown("#### 登録済み降臨を検索して日程へ追加")
-    search_column, expired_column = st.columns([3, 1])
+    search_column, kana_column, expired_column = st.columns([2, 1, 1])
     with search_column:
         query = st.text_input(
-            "名前・難易度・カテゴリで検索",
+            "名前・読み・難易度・カテゴリで検索",
             key="quest_master_search",
+        )
+    with kana_column:
+        kana_group = st.selectbox(
+            "五十音",
+            options=["すべて", *KANA_GROUPS],
+            key="quest_master_kana_group",
         )
     with expired_column:
         include_expired = st.checkbox(
@@ -619,6 +640,12 @@ def render_quest_master_management():
         query=query,
         include_expired=include_expired,
     )
+    if kana_group != "すべて":
+        matches = [
+            record
+            for record in matches
+            if quest_master_kana_group(record) == kana_group
+        ]
     if not matches:
         st.info(
             "条件に合う登録済み降臨がありません。"
@@ -684,6 +711,12 @@ def render_quest_master_management():
             "名前",
             value=selected.get("name", ""),
             key=f"master_name_{selected_id}",
+        )
+        detail_name_reading = st.text_input(
+            "読み（任意）",
+            value=selected.get("name_reading", ""),
+            help="五十音分類は先頭1文字、読み検索は入力した文字列を使用します。",
+            key=f"master_name_reading_{selected_id}",
         )
         detail_quest_name = st.text_input(
             "クエスト名（任意）",
@@ -752,6 +785,7 @@ def render_quest_master_management():
             proposed = {
                 **selected,
                 "name": detail_name,
+                "name_reading": detail_name_reading,
                 "quest_name": detail_quest_name,
                 "attribute": detail_attribute,
                 "difficulty": detail_difficulty,
@@ -851,9 +885,11 @@ def ensure_candidate_id(candidate, index=0):
         sort_keys=True,
         default=str,
     )
-    return hashlib.sha1(
+    candidate_id = hashlib.sha1(
         f"{index}|{source}".encode("utf-8")
     ).hexdigest()[:20]
+    candidate["candidate_id"] = candidate_id
+    return candidate_id
 
 
 def reset_schedule_candidate_editor():
@@ -894,8 +930,25 @@ def clear_video_review_state():
         "video_review_last_select_all",
         "video_review_preview_index",
         "capture_review_source",
+        "admin_candidate_tab_active",
     ):
         st.session_state.pop(key, None)
+
+
+def keep_candidate_tab_active():
+    """抽出操作による再実行後も抽出タブを先頭表示に保つ。"""
+    st.session_state["admin_candidate_tab_active"] = True
+
+
+def mark_all_video_review_candidates_selected():
+    """ウィジェット生成前のコールバックで全候補を保存対象にする。"""
+    candidates = st.session_state.get("video_review_candidates", [])
+    for index, candidate in enumerate(candidates):
+        candidate_id = ensure_candidate_id(candidate, index)
+        candidate["_selected_for_save"] = True
+        st.session_state[f"video_review_save_{candidate_id}"] = True
+    st.session_state["video_review_candidates"] = candidates
+    st.session_state["admin_candidate_tab_active"] = True
 
 
 def video_review_candidate_label(candidate, index):
@@ -990,20 +1043,39 @@ def render_video_review_candidates():
                 "このカードは画像マスターへ保存しません："
                 f"{learnable_reason} 既存マスターの適用だけは可能です。"
             )
+        present_groups = [
+            group
+            for group in KANA_GROUPS
+            if any(
+                quest_master_kana_group(record) == group
+                for record in available_master
+            )
+        ]
+        review_kana_group = st.selectbox(
+            "五十音から絞り込み",
+            options=["すべて", *present_groups],
+            key=(
+                "review_master_kana_"
+                f"{ensure_candidate_id(preview_candidate, preview_index)}"
+            ),
+        )
+        filtered_master = available_master
+        if review_kana_group != "すべて":
+            filtered_master = [
+                record
+                for record in available_master
+                if quest_master_kana_group(record) == review_kana_group
+            ]
         selected_master_id = st.selectbox(
             "このカードへ割り当てるマスター",
-            options=[""] + [
-                record["quest_id"] for record in available_master
-            ],
-            format_func=lambda value: (
-                "名前を入力して検索できます"
-                if not value
-                else quest_master_label(next(
+            options=[record["quest_id"] for record in filtered_master],
+            index=None,
+            placeholder="名前を入力して検索できます",
+            format_func=lambda value: quest_master_label(next(
                     record
-                    for record in available_master
+                    for record in filtered_master
                     if record["quest_id"] == value
-                ))
-            ),
+                )),
             key=f"review_master_choice_{ensure_candidate_id(preview_candidate, preview_index)}",
         )
         learn_image_reference = st.checkbox(
@@ -1153,7 +1225,11 @@ def render_video_review_candidates():
             key=f"apply_video_review_{candidate_id}",
         )
     with all_column:
-        select_all_clicked = st.button("全候補を保存対象にする")
+        st.button(
+            "全候補を保存対象にする",
+            key="video_review_select_all_button",
+            on_click=mark_all_video_review_candidates_selected,
+        )
 
     if apply_clicked:
         edited = editor.iloc[0].to_dict()
@@ -1175,13 +1251,6 @@ def render_video_review_candidates():
         )
         st.session_state["video_review_candidates"] = candidates
         st.success("この候補の修正を一時反映しました。")
-
-    if select_all_clicked:
-        for candidate in candidates:
-            candidate["_selected_for_save"] = True
-        st.session_state["video_review_candidates"] = candidates
-        st.session_state[f"video_review_save_{candidate_id}"] = True
-        st.rerun()
 
     selected_count = sum(
         bool(candidate.get("_selected_for_save", False))
@@ -1336,6 +1405,7 @@ def import_schedule_candidates_from_screenshots():
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
             key="schedule_screenshot_uploader",
+            on_change=keep_candidate_tab_active,
             help=(
                 "縦向きのまま、カード全体と日付が読める画像を選択してください。"
                 "隣の画像と1～2枚分重ねても重複候補にはしません。"
@@ -1347,6 +1417,7 @@ def import_schedule_candidates_from_screenshots():
         type="primary",
         disabled=not uploaded_screenshots,
         key="extract_schedule_screenshots",
+        on_click=keep_candidate_tab_active,
     ):
         try:
             screenshot_files = [
@@ -1785,12 +1856,24 @@ if github_is_configured():
 else:
     st.info("ローカル保存モード：GitHub連携は未設定です。")
 
-master_tab, schedule_tab, event_tab, candidate_tab = st.tabs([
-    "降臨マスター",
-    "降臨日程",
-    "イベント管理",
-    "自動取得候補・失敗ログ",
-])
+candidate_tab_active = bool(
+    st.session_state.get("admin_candidate_tab_active")
+    or st.session_state.get("video_review_candidates")
+)
+if candidate_tab_active:
+    candidate_tab, master_tab, schedule_tab, event_tab = st.tabs([
+        "自動取得候補・失敗ログ",
+        "降臨マスター",
+        "降臨日程",
+        "イベント管理",
+    ])
+else:
+    master_tab, schedule_tab, event_tab, candidate_tab = st.tabs([
+        "降臨マスター",
+        "降臨日程",
+        "イベント管理",
+        "自動取得候補・失敗ログ",
+    ])
 
 
 with master_tab:

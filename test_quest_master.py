@@ -7,6 +7,7 @@ from quest_master import (
     delete_quest_master,
     master_expired,
     parse_master_bulk_text,
+    quest_master_kana_group,
     quest_master_key,
     schedule_from_master,
     search_quest_master,
@@ -173,11 +174,47 @@ class QuestMasterTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(records[0], {
             "name": "スノーマン",
+            "name_reading": "",
             "attribute": "木",
             "difficulty": "究極",
             "category": "通常降臨",
         })
         self.assertEqual(records[1]["category"], "高難易度・注目")
+
+    def test_parses_optional_reading_for_kana_browse(self):
+        records, errors = parse_master_bulk_text(
+            "仙丹｜木｜超絶｜通常降臨｜せ",
+            "通常降臨",
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(records[0]["name_reading"], "せ")
+
+    def test_kana_group_uses_katakana_name_automatically(self):
+        self.assertEqual(
+            quest_master_kana_group({"name": "スノーマン"}),
+            "さ行",
+        )
+
+    def test_kana_group_uses_registered_reading_for_kanji_name(self):
+        self.assertEqual(
+            quest_master_kana_group({"name": "仙丹"}),
+            "未分類",
+        )
+        self.assertEqual(
+            quest_master_kana_group({"name": "仙丹", "name_reading": "せ"}),
+            "さ行",
+        )
+
+    def test_searches_master_by_registered_reading(self):
+        records = [{
+            "name": "仙丹",
+            "name_reading": "せんたん",
+            "attribute": "木",
+            "difficulty": "超絶",
+            "category": "通常降臨",
+        }]
+        matches = search_quest_master(records, query="せん")
+        self.assertEqual([record["name"] for record in matches], ["仙丹"])
 
     def test_bulk_master_input_reports_invalid_line(self):
         records, errors = parse_master_bulk_text(

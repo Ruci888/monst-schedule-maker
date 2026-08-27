@@ -16,11 +16,65 @@ LIMITED_MASTER_CATEGORIES = {
     CATEGORY_LIMITED_EVENT,
 }
 MAX_IMAGE_REFERENCES_PER_QUEST = 8
+KANA_GROUPS = (
+    "あ行",
+    "か行",
+    "さ行",
+    "た行",
+    "な行",
+    "は行",
+    "ま行",
+    "や行",
+    "ら行",
+    "わ行",
+    "英数・その他",
+    "未分類",
+)
 
 
 def normalize_master_name(value):
     text = unicodedata.normalize("NFKC", str(value or ""))
     return "".join(text.split()).casefold()
+
+
+def normalize_master_reading(value):
+    """検索・五十音分類用に全角カタカナをひらがなへ揃える。"""
+    text = unicodedata.normalize("NFKC", str(value or "")).strip()
+    converted = []
+    for character in text:
+        codepoint = ord(character)
+        if 0x30A1 <= codepoint <= 0x30F6:
+            character = chr(codepoint - 0x60)
+        converted.append(character)
+    return "".join(converted).casefold()
+
+
+def quest_master_kana_group(record):
+    """登録済みの読み、または仮名で始まる名前から五十音行を返す。"""
+    reading = normalize_master_reading(record.get("name_reading"))
+    if not reading:
+        reading = normalize_master_reading(record.get("name"))
+    if not reading:
+        return "未分類"
+    first = reading[0]
+    groups = {
+        "あ行": "ぁあぃいうぅえぇおゔ",
+        "か行": "かがきぎくぐけげこご",
+        "さ行": "さざしじすずせぜそぞ",
+        "た行": "ただちぢっつづてでとど",
+        "な行": "なにぬねの",
+        "は行": "はばぱひびぴふぶぷへべぺほぼぽ",
+        "ま行": "まみむめも",
+        "や行": "ゃやゅゆょよ",
+        "ら行": "らりるれろ",
+        "わ行": "ゎわをん",
+    }
+    for label, characters in groups.items():
+        if first in characters:
+            return label
+    if first.isascii() and first.isalnum():
+        return "英数・その他"
+    return "未分類"
 
 
 def quest_master_key(record):
@@ -180,6 +234,7 @@ def normalize_quest_master_record(record, now=None):
     normalized = {
         "quest_id": str(record.get("quest_id") or make_quest_id(record)),
         "name": str(record.get("name", "")).strip(),
+        "name_reading": str(record.get("name_reading", "")).strip(),
         "quest_name": str(record.get("quest_name", "")).strip(),
         "attribute": str(record.get("attribute", "")).strip(),
         "difficulty": str(record.get("difficulty", "")).strip(),
@@ -236,6 +291,7 @@ def master_record_from_schedule(schedule, now=None):
         {
             "quest_id": schedule.get("quest_id", ""),
             "name": schedule.get("name", ""),
+            "name_reading": schedule.get("name_reading", ""),
             "quest_name": schedule.get("quest_name", ""),
             "attribute": schedule.get("attribute", ""),
             "difficulty": schedule.get("difficulty", ""),
@@ -283,6 +339,7 @@ def upsert_quest_master(records, schedules, now=None):
         combined = dict(current)
         for field in (
             "name",
+            "name_reading",
             "quest_name",
             "attribute",
             "difficulty",
@@ -331,6 +388,7 @@ def search_quest_master(records, query="", include_expired=False, today=None):
             str(record.get(field, ""))
             for field in (
                 "name",
+                "name_reading",
                 "quest_name",
                 "attribute",
                 "difficulty",
@@ -399,7 +457,7 @@ def delete_quest_master(records, quest_ids):
 
 
 def parse_master_bulk_text(text, default_category):
-    """名前｜属性｜難易度（｜カテゴリ）の複数行入力を解析する。"""
+    """名前｜属性｜難易度（｜カテゴリ｜読み）の複数行入力を解析する。"""
     records = []
     errors = []
     for line_number, raw_line in enumerate(str(text or "").splitlines(), 1):
@@ -410,16 +468,18 @@ def parse_master_bulk_text(text, default_category):
         if "|" not in normalized:
             normalized = normalized.replace(",", "|").replace("、", "|")
         parts = [part.strip() for part in normalized.split("|")]
-        if len(parts) not in (3, 4) or not all(parts[:3]):
+        if len(parts) not in (3, 4, 5) or not all(parts[:3]):
             errors.append(
-                f"{line_number}行目：名前｜属性｜難易度の形式で入力してください。"
+                f"{line_number}行目：名前｜属性｜難易度"
+                "（｜カテゴリ｜読み）の形式で入力してください。"
             )
             continue
         category = normalize_schedule_category(
-            parts[3] if len(parts) == 4 else default_category
+            parts[3] if len(parts) >= 4 and parts[3] else default_category
         )
         records.append({
             "name": parts[0],
+            "name_reading": parts[4] if len(parts) == 5 else "",
             "attribute": parts[1],
             "difficulty": parts[2],
             "category": category,
