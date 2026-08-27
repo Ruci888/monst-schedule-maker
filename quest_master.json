@@ -947,10 +947,19 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_d25aafc275a59737",
+                "portrait_signature": "02760023010042dc448460006bd56b4d632d554e67cae5945baa4c655f0db1c3",
+                "visual_signature": "0028002800000000000000000000000000000001102010a414522e9a2ad40476",
+                "card_signature": "1801180818181001ac00ed49add2b4239c049a006e009400a529ad89600dfc05",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-08-27T12:21:25+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-08-27T12:18:22+00:00",
-        "updated_at": "2026-08-27T12:18:22+00:00"
+        "updated_at": "2026-08-27T12:21:25+00:00"
     },
     {
         "quest_id": "quest_5ef91c5c6b700d35",
