@@ -26,6 +26,9 @@ MAX_SAMPLE_FRAMES = 120
 MAX_UNIQUE_CARDS = 100
 MAX_PROCESSING_SECONDS = 120
 CARD_DEDUPE_THRESHOLD = 10
+CROSS_IMAGE_CARD_THRESHOLD = 18
+CROSS_IMAGE_PORTRAIT_THRESHOLD = 36
+CROSS_IMAGE_NAME_THRESHOLD = 28
 MAX_SCREENSHOT_COUNT = 10
 MAX_SCREENSHOT_BYTES = 15 * 1024 * 1024
 MAX_SCREENSHOT_BATCH_BYTES = 80 * 1024 * 1024
@@ -79,6 +82,9 @@ IGNORED_NAME_WORDS = (
     "最大",
     "スケジュール",
     "繰り返し予約",
+    "コラボ期間限定",
+    "期間限定",
+    "モンスター名で検索",
 )
 JAPANESE_PATTERN = re.compile(r"[ぁ-んァ-ヶー一-龠々〆ヵヶ]")
 JAPANESE_NAME_PATTERN = re.compile(
@@ -250,7 +256,14 @@ def clean_ocr_character_name(text):
 def is_plausible_character_name(value):
     name = clean_ocr_character_name(value)
     length = len(normalize_identity_name(name))
-    return bool(name) and 2 <= length <= 30 and japanese_ratio(name) >= 0.75
+    meaningful_prefix = bool(re.match(
+        r"^(U-20日本代表|TOP3|殺し屋|チーム[A-Z])\s*"
+        r"[ぁ-んァ-ヶー一-龠々〆ヵヶ]{2,}",
+        name,
+    ))
+    return bool(name) and 2 <= length <= 30 and (
+        japanese_ratio(name) >= 0.75 or meaningful_prefix
+    )
 
 
 def _name_quality_score(value, confidence=0.0):
@@ -277,6 +290,42 @@ def _select_best_name_candidate(candidates):
         valid,
         key=lambda item: _name_quality_score(item[0], item[1]),
     )
+
+
+def _select_precise_name_candidate(
+    fast_name,
+    fast_confidence,
+    precise_name,
+    precise_confidence,
+):
+    """名前専用領域を優先し、全体OCRは補完にだけ使用する。"""
+    fast = clean_ocr_character_name(fast_name)
+    precise = clean_ocr_character_name(precise_name)
+    fast_valid = is_plausible_character_name(fast)
+    precise_valid = is_plausible_character_name(precise)
+    if precise_valid:
+        if fast_valid:
+            fast_id = normalize_identity_name(fast)
+            precise_id = normalize_identity_name(precise)
+            similarity = SequenceMatcher(None, fast_id, precise_id).ratio()
+            has_complete_prefix = bool(
+                re.match(
+                    r"^(U-20日本代表|TOP3|殺し屋|チーム[A-Z])",
+                    fast,
+                )
+                and precise_id in fast_id
+            )
+            if has_complete_prefix or (
+                similarity >= 0.78 and len(fast_id) > len(precise_id)
+            ):
+                return fast, max(
+                    float(fast_confidence),
+                    float(precise_confidence),
+                )
+        return precise, float(precise_confidence)
+    if fast_valid:
+        return fast, float(fast_confidence)
+    return "", 0.0
 
 
 def find_character_name(text):
@@ -621,12 +670,14 @@ def deduplicate_resolved_candidates(candidates):
     duplicate_count = 0
     for candidate in candidates:
         normalized_name = normalize_identity_name(candidate.get("name", ""))
-        if candidate.get("date") and normalized_name:
+        master_identity = str(candidate.get("quest_id", "")).strip()
+        resolved_identity = master_identity or normalized_name
+        if candidate.get("date") and resolved_identity:
             key = (
                 "schedule",
                 int(candidate.get("year", 0)),
                 str(candidate.get("date", "")),
-                normalized_name,
+                resolved_identity,
             )
         else:
             key = (
@@ -802,6 +853,12 @@ def _similar_candidate(left, right):
         or left.get("start_time") != right.get("start_time")
     ):
         return False
+    if (
+        left.get("difficulty")
+        and right.get("difficulty")
+        and left.get("difficulty") != right.get("difficulty")
+    ):
+        return False
 
     left_card_signature = str(left.get("card_signature", ""))
     right_card_signature = str(right.get("card_signature", ""))
@@ -811,7 +868,7 @@ def _similar_candidate(left, right):
                 int(left_card_signature, 16)
                 ^ int(right_card_signature, 16)
             ).bit_count()
-            if distance <= 10:
+            if distance <= CROSS_IMAGE_CARD_THRESHOLD:
                 return True
         except ValueError:
             if left_card_signature == right_card_signature:
@@ -821,7 +878,9 @@ def _similar_candidate(left, right):
     right_portrait = str(right.get("portrait_signature", ""))
     if left_portrait and right_portrait:
         try:
-            if (int(left_portrait, 16) ^ int(right_portrait, 16)).bit_count() <= 8:
+            if (
+                int(left_portrait, 16) ^ int(right_portrait, 16)
+            ).bit_count() <= CROSS_IMAGE_PORTRAIT_THRESHOLD:
                 return True
         except ValueError:
             if left_portrait == right_portrait:
@@ -834,7 +893,7 @@ def _similar_candidate(left, right):
             distance = (
                 int(left_signature, 16) ^ int(right_signature, 16)
             ).bit_count()
-            if distance <= 16:
+            if distance <= CROSS_IMAGE_NAME_THRESHOLD:
                 return True
         except ValueError:
             if left_signature == right_signature:
@@ -843,12 +902,6 @@ def _similar_candidate(left, right):
     left_name = normalize_identity_name(left.get("name"))
     right_name = normalize_identity_name(right.get("name"))
     if not left_name or not right_name:
-        return False
-    if (
-        left.get("difficulty")
-        and right.get("difficulty")
-        and left.get("difficulty") != right.get("difficulty")
-    ):
         return False
     return SequenceMatcher(None, left_name, right_name).ratio() >= 0.82
 
@@ -1262,7 +1315,7 @@ def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
     # 左のドクロ・宝箱と右の難易度ラベルを避け、名前の文字列だけを読む。
     name_region = card[
-        int(height * 0.52): int(height * 0.91),
+        int(height * 0.58): int(height * 0.86),
         int(width * 0.135): int(width * 0.61),
     ]
     if name_region.size == 0:
@@ -1456,7 +1509,7 @@ def _infer_attribute(cv2, card):
     # 左端の赤いドクロ・黄色い宝箱と右端の予約ボタンを除き、
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
-        int(height * 0.52): int(height * 0.91),
+        int(height * 0.58): int(height * 0.86),
         int(width * 0.135): int(width * 0.61),
     ]
     if region.size == 0:
@@ -1702,7 +1755,7 @@ def _extract_card_candidate(
     card_signature = card_signature or _image_signature(cv2, card)
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.52): int(height * 0.91),
+        int(height * 0.58): int(height * 0.86),
         int(width * 0.135): int(width * 0.61),
     ]
     visual_signature = _image_signature(cv2, name_region)
@@ -1736,10 +1789,12 @@ def _extract_card_candidate(
             card,
             attribute,
         )
-        name, selected_confidence = _select_best_name_candidate((
-            (name, confidence),
-            (precise_name, precise_confidence),
-        ))
+        name, selected_confidence = _select_precise_name_candidate(
+            name,
+            confidence,
+            precise_name,
+            precise_confidence,
+        )
         raw_name = precise_raw_name or raw_name
         confidence = max(confidence, precise_confidence, selected_confidence)
         # 条件説明の「爆絶を3種類以上」等を難易度と誤認しないよう、

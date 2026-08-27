@@ -271,3 +271,32 @@ def delete_quest_master(records, quest_ids):
         for record in normalize_quest_master(records)
         if str(record.get("quest_id")) not in targets
     ]
+
+
+def parse_master_bulk_text(text, default_category):
+    """名前｜属性｜難易度（｜カテゴリ）の複数行入力を解析する。"""
+    records = []
+    errors = []
+    for line_number, raw_line in enumerate(str(text or "").splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        normalized = line.replace("｜", "|").replace("\t", "|")
+        if "|" not in normalized:
+            normalized = normalized.replace(",", "|").replace("、", "|")
+        parts = [part.strip() for part in normalized.split("|")]
+        if len(parts) not in (3, 4) or not all(parts[:3]):
+            errors.append(
+                f"{line_number}行目：名前｜属性｜難易度の形式で入力してください。"
+            )
+            continue
+        category = normalize_schedule_category(
+            parts[3] if len(parts) == 4 else default_category
+        )
+        records.append({
+            "name": parts[0],
+            "attribute": parts[1],
+            "difficulty": parts[2],
+            "category": category,
+        })
+    return records, errors

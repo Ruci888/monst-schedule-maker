@@ -4,6 +4,7 @@ from datetime import date, datetime, timezone
 from quest_master import (
     delete_quest_master,
     master_expired,
+    parse_master_bulk_text,
     quest_master_key,
     schedule_from_master,
     search_quest_master,
@@ -160,6 +161,55 @@ class QuestMasterTests(unittest.TestCase):
         remaining = delete_quest_master(records, {"one"})
         self.assertEqual([item["quest_id"] for item in remaining], ["two"])
         self.assertEqual(quest_master_key(remaining[0]), ("二", "究極"))
+
+    def test_parses_mobile_friendly_bulk_master_input(self):
+        records, errors = parse_master_bulk_text(
+            "スノーマン｜木｜究極\n"
+            "ストラテジー,水,爆絶,高難易度・注目",
+            "通常降臨",
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(records[0], {
+            "name": "スノーマン",
+            "attribute": "木",
+            "difficulty": "究極",
+            "category": "通常降臨",
+        })
+        self.assertEqual(records[1]["category"], "高難易度・注目")
+
+    def test_bulk_master_input_reports_invalid_line(self):
+        records, errors = parse_master_bulk_text(
+            "名前だけ",
+            "通常降臨",
+        )
+        self.assertEqual(records, [])
+        self.assertIn("1行目", errors[0])
+
+    def test_parses_all_unique_quests_from_reported_screenshot_batch(self):
+        records, errors = parse_master_bulk_text(
+            "U-20日本代表 士道龍聖｜光｜超究極｜コラボ\n"
+            "TOP3 蟻生十兵衛｜木｜究極｜コラボ\n"
+            "殺し屋 烏旅人｜水｜究極｜コラボ\n"
+            "チームY 二子一揮｜闇｜極｜コラボ\n"
+            "チームV 剣城斬鉄｜光｜極｜コラボ\n"
+            "イゴーロナク｜光｜激究極\n"
+            "スタバーン｜光｜轟絶\n"
+            "ジョルノ・ロキア｜水｜激究極\n"
+            "スノーマン｜木｜究極\n"
+            "ドリルマックス｜闇｜究極\n"
+            "ぶんぶく茶釜｜光｜極\n"
+            "浄化の仏神 金剛夜叉明王廻｜光｜超絶・廻\n"
+            "松永久秀｜火｜究極\n"
+            "キャスパリーグ｜水｜極\n"
+            "コポルネス｜火｜黎絶\n"
+            "ストラテジー｜水｜爆絶\n"
+            "仙丹｜木｜超絶",
+            "通常降臨",
+        )
+        self.assertEqual(errors, [])
+        self.assertEqual(len(records), 17)
+        self.assertEqual(records[0]["name"], "U-20日本代表 士道龍聖")
+        self.assertEqual(records[11]["difficulty"], "超絶・廻")
 
 
 if __name__ == "__main__":

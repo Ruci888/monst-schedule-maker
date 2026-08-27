@@ -10,6 +10,7 @@ from video_schedule_extractor import (
     candidate_identity,
     candidate_from_card_text,
     clean_ocr_character_name,
+    deduplicate_resolved_candidates,
     deduplicate_video_candidates,
     filter_existing_candidates,
     find_date_time,
@@ -24,6 +25,7 @@ from video_schedule_extractor import (
     screenshot_batch_fingerprint,
     apply_screenshot_date_context,
     validate_screenshot_batch,
+    _select_precise_name_candidate,
 )
 
 
@@ -119,6 +121,29 @@ class VideoScheduleExtractorTests(unittest.TestCase):
             clean_ocr_character_name("殺し屋 烏旅人"),
             "殺し屋 烏旅人",
         )
+
+    def test_rejects_collaboration_ui_text_as_character_name(self):
+        self.assertEqual(clean_ocr_character_name("コラボ期間限定"), "")
+
+    def test_precise_name_region_wins_over_whole_card_ui_text(self):
+        name, confidence = _select_precise_name_candidate(
+            "コラボ期間限定",
+            95,
+            "士道龍聖",
+            70,
+        )
+        self.assertEqual(name, "士道龍聖")
+        self.assertEqual(confidence, 70)
+
+    def test_whole_card_can_restore_meaningful_name_prefix(self):
+        name, confidence = _select_precise_name_candidate(
+            "U-20日本代表 士道龍聖",
+            80,
+            "士道龍聖",
+            75,
+        )
+        self.assertEqual(name, "U-20日本代表 士道龍聖")
+        self.assertEqual(confidence, 80)
 
     def test_classifies_collaboration_and_normal_schedules(self):
         self.assertEqual(
@@ -278,6 +303,54 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         unique, duplicate_count = deduplicate_video_candidates(candidates)
         self.assertEqual(len(unique), 2)
         self.assertEqual(duplicate_count, 0)
+
+    def test_deduplicates_same_portrait_across_overlapping_images(self):
+        base = {
+            "year": 2026,
+            "date": "8/24",
+            "start_time": "12:00",
+            "end_time": "11:59",
+            "difficulty": "究極",
+            "attribute": "闇",
+            "ocr_confidence": 70,
+        }
+        near_portrait = f"{(1 << 20) - 1:064x}"
+        candidates = [
+            {
+                **base,
+                "name": "二ナー控",
+                "portrait_signature": "0" * 64,
+            },
+            {
+                **base,
+                "name": "コーロナン",
+                "portrait_signature": near_portrait,
+            },
+        ]
+        unique, duplicate_count = deduplicate_video_candidates(candidates)
+        self.assertEqual(len(unique), 1)
+        self.assertEqual(duplicate_count, 1)
+
+    def test_deduplicates_manual_master_matches_by_quest_id(self):
+        candidates = [
+            {
+                "quest_id": "quest_niko",
+                "year": 2026,
+                "date": "8/24",
+                "name": "チームY 二子一揮",
+                "ocr_votes": 1,
+            },
+            {
+                "quest_id": "quest_niko",
+                "year": 2026,
+                "date": "8/24",
+                "name": "二子一揮",
+                "ocr_votes": 2,
+            },
+        ]
+        unique, duplicate_count = deduplicate_resolved_candidates(candidates)
+        self.assertEqual(len(unique), 1)
+        self.assertEqual(duplicate_count, 1)
 
     def test_card_image_does_not_deduplicate_across_dates(self):
         base = {

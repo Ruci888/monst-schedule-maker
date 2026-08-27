@@ -16,7 +16,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.11"
+APP_VERSION = "v1.1.0-beta.9.12"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -30,6 +30,7 @@ FEATURED_DIFFICULTIES = [
 
 NORMAL_DIFFICULTIES = [
     "爆絶",
+    "超絶・廻",
     "超絶",
     "激究極",
     "究極",
@@ -67,6 +68,7 @@ SCHEDULE_DIFFICULTY_ORDER = [
     "超究極",
     "超究極・兵",
     "爆絶",
+    "超絶・廻",
     "超絶",
     "激究極",
     "究極",
@@ -200,7 +202,7 @@ def latest_confirmation(items):
 
 def render_schedule_preview(selected_schedules, schedule_mode):
     if schedule_mode == SCHEDULE_MODE_NORMAL:
-        left_difficulties = {"爆絶", "超絶", "激究極"}
+        left_difficulties = {"爆絶", "超絶・廻", "超絶", "激究極"}
         left_schedules = [
             schedule
             for schedule in selected_schedules

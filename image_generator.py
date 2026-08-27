@@ -92,6 +92,7 @@ def get_difficulty_color(difficulty):
         "超究極": "#8A3FFC",
         "超究極・兵": "#166534",
         "爆絶": "#B45309",
+        "超絶・廻": "#6D28D9",
         "超絶": "#6D28D9",
         "激究極": "#047857",
         "究極": "#475569",
@@ -233,7 +234,7 @@ def generate_normal_schedule_image(schedules, design, start_date=None):
     schedules = sorted(schedules, key=parse_schedule_datetime)
     first_day = start_date or schedule_game_day(schedules[0])
     days = [first_day + timedelta(days=offset) for offset in range(7)]
-    left_difficulties = {"爆絶", "超絶", "激究極"}
+    left_difficulties = {"爆絶", "超絶・廻", "超絶", "激究極"}
     schedule_by_date = {
         day: {"upper": [], "lower": []}
         for day in days

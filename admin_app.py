@@ -37,6 +37,7 @@ from quest_master import (
     master_expired,
     normalize_quest_master,
     normalize_quest_master_record,
+    parse_master_bulk_text,
     quest_master_key,
     schedule_from_master,
     search_quest_master,
@@ -47,6 +48,7 @@ from video_schedule_extractor import (
     OCR_MODE_PRECISE,
     VideoScheduleError,
     candidate_identity as pending_candidate_identity,
+    deduplicate_resolved_candidates,
     extract_screenshot_schedule_candidates,
     extract_video_schedule_candidates,
 )
@@ -66,6 +68,7 @@ DIFFICULTIES = [
     "超究極",
     "超究極・兵",
     "爆絶",
+    "超絶・廻",
     "超絶",
     "激究極",
     "究極",
@@ -435,6 +438,165 @@ def render_quest_master_management():
         except GitHubStorageError as error:
             st.error(str(error))
 
+    st.markdown("#### 抽出前に降臨をマスターへ先行登録")
+    st.caption(
+        "通常降臨は名前・属性・難易度・降臨カテゴリだけで登録できます。"
+        "登録後のスクリーンショット抽出から補正候補として使用します。"
+    )
+    single_tab, bulk_tab = st.tabs(["1体ずつ登録", "まとめて登録"])
+    with single_tab:
+        with st.form("manual_quest_master_form", clear_on_submit=True):
+            manual_name = st.text_input("名前")
+            manual_attribute = st.selectbox("属性", ATTRIBUTES)
+            manual_difficulty = st.selectbox("難易度", DIFFICULTIES)
+            manual_category = st.selectbox(
+                "降臨カテゴリ",
+                SCHEDULE_CATEGORIES,
+                index=SCHEDULE_CATEGORIES.index("通常降臨"),
+            )
+            manual_group = st.text_input(
+                "掲載グループ（コラボ・期間限定のみ任意）"
+            )
+            manual_period_end = st.text_input(
+                "期間終了日（コラボ・期間限定のみ／YYYY-MM-DD）"
+            )
+            manual_submit = st.form_submit_button(
+                "この降臨をマスターへ登録",
+                type="primary",
+            )
+        if manual_submit:
+            errors = []
+            if not manual_name.strip():
+                errors.append("名前を入力してください。")
+            limited = manual_category in LIMITED_MASTER_CATEGORIES
+            if limited and manual_period_end and not validate_date(
+                manual_period_end
+            ):
+                errors.append(
+                    "期間終了日はYYYY-MM-DD形式で入力してください。"
+                )
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                additions = [{
+                    "name": manual_name,
+                    "attribute": manual_attribute,
+                    "difficulty": manual_difficulty,
+                    "category": manual_category,
+                    "group_name": manual_group if limited else "",
+                    "availability_type": AVAILABILITY_SCHEDULED,
+                    "period_end_date": manual_period_end if limited else "",
+                    "source_type": "manual",
+                    "published": True,
+                }]
+                merged, added, updated, skipped = upsert_quest_master(
+                    records,
+                    additions,
+                )
+                try:
+                    message = save_quest_master_records(
+                        merged,
+                        "Register quest master before extraction",
+                    )
+                    st.session_state["admin_flash_success"] = (
+                        f"{message} {manual_name}をマスターへ"
+                        f"{'追加' if added else '更新'}しました。"
+                    )
+                    st.rerun()
+                except GitHubStorageError as error:
+                    st.error(str(error))
+
+    with bulk_tab:
+        with st.form("bulk_quest_master_form", clear_on_submit=True):
+            bulk_category = st.selectbox(
+                "省略時の降臨カテゴリ",
+                SCHEDULE_CATEGORIES,
+                index=SCHEDULE_CATEGORIES.index("通常降臨"),
+                key="bulk_master_default_category",
+            )
+            bulk_group = st.text_input(
+                "共通の掲載グループ（任意）",
+                key="bulk_master_group",
+            )
+            bulk_period_end = st.text_input(
+                "共通の期間終了日（任意／YYYY-MM-DD）",
+                key="bulk_master_period_end",
+            )
+            bulk_text = st.text_area(
+                "1行に1体入力",
+                placeholder=(
+                    "スノーマン｜木｜究極\n"
+                    "ストラテジー｜水｜爆絶｜高難易度・注目"
+                ),
+                help=(
+                    "名前｜属性｜難易度の順です。4項目目に降臨カテゴリも"
+                    "指定できます。縦線の代わりにカンマも使用できます。"
+                ),
+                height=180,
+            )
+            bulk_submit = st.form_submit_button(
+                "入力した降臨をまとめて登録",
+                type="primary",
+            )
+        if bulk_submit:
+            additions, errors = parse_master_bulk_text(
+                bulk_text,
+                bulk_category,
+            )
+            if not additions and not errors:
+                errors.append("登録する降臨を入力してください。")
+            for index, addition in enumerate(additions, 1):
+                if addition.get("attribute") not in ATTRIBUTES:
+                    errors.append(
+                        f"{index}件目：属性は火・水・木・光・闇から選んでください。"
+                    )
+                if addition.get("difficulty") not in DIFFICULTIES:
+                    errors.append(
+                        f"{index}件目：難易度が登録対象外です。"
+                    )
+                if addition.get("category") not in SCHEDULE_CATEGORIES:
+                    errors.append(
+                        f"{index}件目：降臨カテゴリが不正です。"
+                    )
+            if bulk_period_end and not validate_date(bulk_period_end):
+                errors.append(
+                    "共通の期間終了日はYYYY-MM-DD形式で入力してください。"
+                )
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                prepared = []
+                for addition in additions:
+                    limited = (
+                        addition["category"] in LIMITED_MASTER_CATEGORIES
+                    )
+                    prepared.append({
+                        **addition,
+                        "group_name": bulk_group if limited else "",
+                        "availability_type": AVAILABILITY_SCHEDULED,
+                        "period_end_date": bulk_period_end if limited else "",
+                        "source_type": "manual",
+                        "published": True,
+                    })
+                merged, added, updated, skipped = upsert_quest_master(
+                    records,
+                    prepared,
+                )
+                try:
+                    message = save_quest_master_records(
+                        merged,
+                        "Bulk register quest master before extraction",
+                    )
+                    st.session_state["admin_flash_success"] = (
+                        f"{message} マスター追加{added}件・更新{updated}件"
+                        f"・対象外{skipped}件。"
+                    )
+                    st.rerun()
+                except GitHubStorageError as error:
+                    st.error(str(error))
+
     st.markdown("#### 登録済み降臨を検索して日程へ追加")
     search_column, expired_column = st.columns([3, 1])
     with search_column:
@@ -769,6 +931,71 @@ def render_video_review_candidates():
         )
     else:
         st.info("この候補には確認画像がありません。")
+
+    try:
+        available_master = search_quest_master(
+            load_admin_json("quest_master.json", load_quest_master),
+            include_expired=False,
+        )
+    except GitHubStorageError:
+        available_master = []
+    if available_master:
+        selected_master_id = st.selectbox(
+            "マスターからこの候補を補正（任意）",
+            options=[""] + [
+                record["quest_id"] for record in available_master
+            ],
+            format_func=lambda value: (
+                "名前を入力して検索できます"
+                if not value
+                else quest_master_label(next(
+                    record
+                    for record in available_master
+                    if record["quest_id"] == value
+                ))
+            ),
+            key=f"review_master_choice_{ensure_candidate_id(preview_candidate, preview_index)}",
+        )
+        if st.button(
+            "選択したマスターをこの候補へ適用",
+            disabled=not selected_master_id,
+            key=f"apply_review_master_{ensure_candidate_id(preview_candidate, preview_index)}",
+        ):
+            selected_master = next(
+                record
+                for record in available_master
+                if record["quest_id"] == selected_master_id
+            )
+            for field in (
+                "quest_id",
+                "name",
+                "quest_name",
+                "attribute",
+                "difficulty",
+                "category",
+                "group_name",
+            ):
+                preview_candidate[field] = selected_master.get(field, "")
+            preview_candidate["master_match_score"] = 100.0
+            preview_candidate["review_mode"] = "マスター選択"
+            preview_candidate["ocr_status"] = "マスター手動選択・要確認"
+            candidates[preview_index] = preview_candidate
+            candidates, duplicate_count = deduplicate_resolved_candidates(
+                candidates
+            )
+            st.session_state["video_review_candidates"] = candidates
+            st.session_state["video_review_preview_index"] = min(
+                preview_index,
+                len(candidates) - 1,
+            )
+            st.session_state["admin_flash_success"] = (
+                f"{selected_master['name']}のマスターを適用しました。"
+                + (
+                    f"同一日付の重複候補{duplicate_count}件も統合しました。"
+                    if duplicate_count else ""
+                )
+            )
+            st.rerun()
 
     candidate_id = ensure_candidate_id(preview_candidate, preview_index)
     current_save = bool(preview_candidate.get("_selected_for_save", False))
