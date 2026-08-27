@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 import pandas as pd
 import streamlit as st
@@ -899,17 +899,16 @@ def reset_schedule_candidate_editor():
 def show_video_extraction_result(result):
     source_kind = st.session_state.get("capture_review_source", "video")
     is_screenshot = source_kind == "screenshot"
-    columns = st.columns(6)
-    values = (
-        ("自動補正", result.recognized_count),
-        ("画像確認", result.manual_review_count),
-        ("確認候補", len(result.candidates)),
-        ("公開済み重複", result.published_duplicate_count),
-        ("承認待ち重複", result.pending_duplicate_count),
-        ("完全除外", result.rejected_candidate_count),
+    st.markdown(
+        "　".join((
+            f"**候補 {len(result.candidates)}**",
+            f"自動補正 {result.recognized_count}",
+            f"画像確認 {result.manual_review_count}",
+            f"公開済み重複 {result.published_duplicate_count}",
+            f"承認待ち重複 {result.pending_duplicate_count}",
+            f"除外 {result.rejected_candidate_count}",
+        ))
     )
-    for column, (label, value) in zip(columns, values):
-        column.metric(label, value)
     st.caption(
         f"確認{'画像' if is_screenshot else 'フレーム'} "
         f"{result.sampled_frame_count}枚／"
@@ -933,6 +932,12 @@ def clear_video_review_state():
         "admin_candidate_tab_active",
     ):
         st.session_state.pop(key, None)
+    for key in list(st.session_state):
+        if key.startswith((
+            "video_review_save_",
+            "video_review_overview_save_",
+        )):
+            st.session_state.pop(key, None)
 
 
 def keep_candidate_tab_active():
@@ -946,7 +951,9 @@ def mark_all_video_review_candidates_selected():
     for index, candidate in enumerate(candidates):
         candidate_id = ensure_candidate_id(candidate, index)
         candidate["_selected_for_save"] = True
-        st.session_state[f"video_review_save_{candidate_id}"] = True
+        st.session_state[
+            f"video_review_overview_save_{candidate_id}"
+        ] = True
     st.session_state["video_review_candidates"] = candidates
     st.session_state["admin_candidate_tab_active"] = True
 
@@ -956,6 +963,42 @@ def video_review_candidate_label(candidate, index):
     name = candidate.get("name") or "名前未確定"
     mode = candidate.get("review_mode", "画像確認")
     return f"{index + 1}. {date_value}｜{name}｜{mode}"
+
+
+def render_video_review_candidate_overview(candidates):
+    """画像マスター割り当てとは分けて、保存対象を一覧選択する。"""
+    with st.expander(
+        f"抽出候補一覧・承認待ち保存（{len(candidates)}件）",
+        expanded=True,
+    ):
+        st.caption(
+            "承認待ちへ保存する候補だけチェックしてください。"
+            "画像マスターへの登録とは別に選択できます。"
+        )
+        st.button(
+            "全候補を保存対象にする",
+            key="video_review_select_all_button",
+            on_click=mark_all_video_review_candidates_selected,
+        )
+        for index, candidate in enumerate(candidates):
+            candidate_id = ensure_candidate_id(candidate, index)
+            label = (
+                f"{index + 1}. {candidate.get('date') or '日付未確定'}｜"
+                f"{candidate.get('name') or '名前未確定'}｜"
+                f"{candidate.get('attribute') or '属性未確定'}｜"
+                f"{candidate.get('difficulty') or '難易度未確定'}｜"
+                f"{normalize_schedule_category(candidate.get('category'))}"
+            )
+            candidate["_selected_for_save"] = st.checkbox(
+                label,
+                value=bool(candidate.get("_selected_for_save", False)),
+                key=f"video_review_overview_save_{candidate_id}",
+            )
+    st.session_state["video_review_candidates"] = candidates
+    return sum(
+        bool(candidate.get("_selected_for_save", False))
+        for candidate in candidates
+    )
 
 
 def render_video_review_candidates():
@@ -973,6 +1016,29 @@ def render_video_review_candidates():
     )
     if result is not None:
         show_video_extraction_result(result)
+
+    selected_count = render_video_review_candidate_overview(candidates)
+    st.caption(f"承認待ちへの保存対象：{selected_count}/{len(candidates)}件")
+    save_column, discard_column = st.columns(2)
+    with save_column:
+        save_clicked = st.button(
+            "選択した候補を承認待ちへ保存",
+            type="primary",
+            key="save_selected_video_review_candidates",
+        )
+    with discard_column:
+        discard_clicked = st.button(
+            "今回の一時候補を破棄",
+            key="discard_video_review_candidates",
+        )
+
+    if discard_clicked:
+        st.session_state["reset_video_review_state"] = True
+        st.session_state["admin_flash_success"] = (
+            f"{source_label}の一時確認候補を破棄しました。"
+            "JSONは変更していません。"
+        )
+        st.rerun()
 
     try:
         preview_index = int(
@@ -1181,15 +1247,7 @@ def render_video_review_candidates():
         )
 
     candidate_id = ensure_candidate_id(preview_candidate, preview_index)
-    current_save = bool(preview_candidate.get("_selected_for_save", False))
-    save_current = st.checkbox(
-        "この候補を保存対象にする",
-        value=current_save,
-        key=f"video_review_save_{candidate_id}",
-    )
-    # 「修正を反映」を押さなくても、保存対象チェックは直ちに保持する。
-    preview_candidate["_selected_for_save"] = save_current
-    st.session_state["video_review_candidates"] = candidates
+    save_current = bool(preview_candidate.get("_selected_for_save", False))
 
     row = {
         "date": preview_candidate.get("date", ""),
@@ -1218,18 +1276,10 @@ def render_video_review_candidates():
         },
     )
 
-    apply_column, all_column = st.columns(2)
-    with apply_column:
-        apply_clicked = st.button(
-            "この候補の修正を反映",
-            key=f"apply_video_review_{candidate_id}",
-        )
-    with all_column:
-        st.button(
-            "全候補を保存対象にする",
-            key="video_review_select_all_button",
-            on_click=mark_all_video_review_candidates_selected,
-        )
+    apply_clicked = st.button(
+        "この候補の修正を反映",
+        key=f"apply_video_review_{candidate_id}",
+    )
 
     if apply_clicked:
         edited = editor.iloc[0].to_dict()
@@ -1251,29 +1301,6 @@ def render_video_review_candidates():
         )
         st.session_state["video_review_candidates"] = candidates
         st.success("この候補の修正を一時反映しました。")
-
-    selected_count = sum(
-        bool(candidate.get("_selected_for_save", False))
-        for candidate in candidates
-    )
-    st.caption(f"保存対象：{selected_count}/{len(candidates)}件")
-
-    save_column, discard_column = st.columns(2)
-    with save_column:
-        save_clicked = st.button(
-            "選択した修正済み候補を承認待ちへ保存",
-            type="primary",
-        )
-    with discard_column:
-        discard_clicked = st.button("今回の一時候補を破棄")
-
-    if discard_clicked:
-        st.session_state["reset_video_review_state"] = True
-        st.session_state["admin_flash_success"] = (
-            f"{source_label}の一時確認候補を破棄しました。"
-            "JSONは変更していません。"
-        )
-        st.rerun()
 
     if not save_clicked:
         return
@@ -1387,30 +1414,20 @@ def import_schedule_candidates_from_screenshots():
         "PNG・JPEGを一度に10枚まで選択できます。"
         "重なって写った同じカードは画像で判定してまとめます。"
         "画像は処理後に保存されず、候補だけを下の確認画面へ渡します。"
+        "日程の基準は現在日前後の約1週間から自動判定します。"
     )
-    left, right = st.columns([1, 3])
-    with left:
-        screenshot_start_date = st.date_input(
-            "画像内の最初の日程",
-            value=date.today(),
-            key="screenshot_start_date",
-            help=(
-                "最初のスクリーンショットに表示されるゲーム日を指定します。"
-                "この日から14日を外れたOCR日付は未確定として確認画面へ送ります。"
-            ),
-        )
-    with right:
-        uploaded_screenshots = st.file_uploader(
-            "モンストアプリのスケジュール画面スクリーンショット",
-            type=["png", "jpg", "jpeg"],
-            accept_multiple_files=True,
-            key="schedule_screenshot_uploader",
-            on_change=keep_candidate_tab_active,
-            help=(
-                "縦向きのまま、カード全体と日付が読める画像を選択してください。"
-                "隣の画像と1～2枚分重ねても重複候補にはしません。"
-            ),
-        )
+    screenshot_reference_date = date.today() - timedelta(days=7)
+    uploaded_screenshots = st.file_uploader(
+        "モンストアプリのスケジュール画面スクリーンショット",
+        type=["png", "jpg", "jpeg"],
+        accept_multiple_files=True,
+        key="schedule_screenshot_uploader",
+        on_change=keep_candidate_tab_active,
+        help=(
+            "縦向きのまま、カード全体と日付が読める画像を選択してください。"
+            "隣の画像と1～2枚分重ねても重複候補にはしません。"
+        ),
+    )
 
     if st.button(
         "スクリーンショットから降臨候補を抽出",
@@ -1441,8 +1458,8 @@ def import_schedule_candidates_from_screenshots():
             with st.spinner("スクリーンショットを解析しています…"):
                 result = extract_screenshot_schedule_candidates(
                     screenshot_files=screenshot_files,
-                    year=screenshot_start_date.year,
-                    recording_start_date=screenshot_start_date,
+                    year=screenshot_reference_date.year,
+                    recording_start_date=screenshot_reference_date,
                     published_schedules=published,
                     pending_candidates=pending,
                     quest_master=quest_master_records,
@@ -1860,20 +1877,19 @@ candidate_tab_active = bool(
     st.session_state.get("admin_candidate_tab_active")
     or st.session_state.get("video_review_candidates")
 )
-if candidate_tab_active:
-    candidate_tab, master_tab, schedule_tab, event_tab = st.tabs([
-        "自動取得候補・失敗ログ",
-        "降臨マスター",
-        "降臨日程",
-        "イベント管理",
-    ])
-else:
-    master_tab, schedule_tab, event_tab, candidate_tab = st.tabs([
-        "降臨マスター",
-        "降臨日程",
-        "イベント管理",
-        "自動取得候補・失敗ログ",
-    ])
+tab_labels = [
+    "降臨マスター",
+    "降臨日程",
+    "イベント管理",
+    "自動取得候補・失敗ログ",
+]
+master_tab, schedule_tab, event_tab, candidate_tab = st.tabs(
+    tab_labels,
+    default=(
+        "自動取得候補・失敗ログ"
+        if candidate_tab_active else "降臨マスター"
+    ),
+)
 
 
 with master_tab:
