@@ -455,8 +455,12 @@ def normalize_candidate_recording_date(
     return normalized
 
 
-def build_known_schedule_master(published_schedules, pending_candidates):
-    """承認済み・公式候補から名前補正に利用できる既知データを作る。"""
+def build_known_schedule_master(
+    published_schedules,
+    pending_candidates,
+    quest_master=None,
+):
+    """永続マスターを優先し、既存日程も補助データとして利用する。"""
     master = {}
 
     def add(item):
@@ -468,8 +472,14 @@ def build_known_schedule_master(published_schedules, pending_candidates):
         normalized_name = normalize_identity_name(item.get("name"))
         if len(normalized_name) < 2:
             return
-        master.setdefault(normalized_name, dict(item))
+        difficulty = str(item.get("difficulty", "")).strip()
+        master.setdefault((normalized_name, difficulty), dict(item))
 
+    # quest_master.jsonの確定値を最優先にする。setdefaultを使うため、
+    # 同名候補が日程や承認待ち側にあってもマスター値を上書きしない。
+    for known in quest_master or []:
+        if known.get("published", True):
+            add(known)
     for schedule in published_schedules or []:
         add(schedule)
     for candidate in pending_candidates or []:
@@ -525,18 +535,35 @@ def find_known_schedule_match(candidate, known_master):
     if not variants or not known_master:
         return None, 0.0
 
+    candidate_difficulty = str(candidate.get("difficulty", "")).strip()
     ranked = []
     for known in known_master:
         score = max(
             _name_similarity(variant, known.get("name", ""))
             for variant in variants
         )
+        known_difficulty = str(known.get("difficulty", "")).strip()
+        if candidate_difficulty and known_difficulty:
+            if candidate_difficulty == known_difficulty:
+                score = min(1.0, score + 0.05)
+            else:
+                score = max(0.0, score - 0.08)
         ranked.append((score, known))
     ranked.sort(key=lambda item: item[0], reverse=True)
     best_score, best = ranked[0]
     second_score = ranked[1][0] if len(ranked) > 1 else 0.0
     if best_score < 0.72:
         return None, best_score
+    if len(ranked) > 1 and best_score - second_score < 0.02:
+        second = ranked[1][1]
+        same_name = normalize_identity_name(
+            best.get("name")
+        ) == normalize_identity_name(second.get("name"))
+        different_difficulty = best.get("difficulty") != second.get(
+            "difficulty"
+        )
+        if same_name and different_difficulty:
+            return None, best_score
     if best_score < 0.88 and best_score - second_score < 0.06:
         return None, best_score
     return best, best_score
@@ -564,6 +591,7 @@ def resolve_candidate_with_master(candidate, known_master):
     resolved["quest_name"] = str(match.get("quest_name", "")).strip()
     resolved["category"] = _normalized_category(match.get("category"))
     resolved["group_name"] = str(match.get("group_name", "")).strip()
+    resolved["quest_id"] = str(match.get("quest_id", "")).strip()
     resolved["master_match_score"] = round(score * 100, 1)
     resolved["ocr_status"] = "既知データ一致・要確認"
     resolved["review_reason"] = (
@@ -632,10 +660,12 @@ def postprocess_video_candidates(
     recording_start_date,
     published_schedules=None,
     pending_candidates=None,
+    quest_master=None,
 ):
     known_master = build_known_schedule_master(
         published_schedules or [],
         pending_candidates or [],
+        quest_master=quest_master or [],
     )
     accepted = []
     rejected_count = 0
@@ -674,12 +704,14 @@ def prepare_video_review_candidates(
     recording_start_date,
     published_schedules=None,
     pending_candidates=None,
+    quest_master=None,
 ):
     """OCR候補を捨てず、画像を見ながら直せる一時確認候補へ変換する。"""
     recording_start = _coerce_recording_start_date(recording_start_date)
     known_master = build_known_schedule_master(
         published_schedules or [],
         pending_candidates or [],
+        quest_master=quest_master or [],
     )
     review_candidates = []
     rejected_count = 0
@@ -762,7 +794,15 @@ def prepare_video_review_candidates(
 
 
 def _similar_candidate(left, right):
-    # OCRの日付や名前が別の文字に化けても、同じ切り出し画像なら先にまとめる。
+    # 日付をまたいで同じキャラが並ぶことがあるため、画像が似ていても
+    # 開催日が一致しない候補は絶対にまとめない。
+    if (
+        int(left.get("year", 0)) != int(right.get("year", 0))
+        or left.get("date") != right.get("date")
+        or left.get("start_time") != right.get("start_time")
+    ):
+        return False
+
     left_card_signature = str(left.get("card_signature", ""))
     right_card_signature = str(right.get("card_signature", ""))
     if left_card_signature and right_card_signature:
@@ -771,7 +811,7 @@ def _similar_candidate(left, right):
                 int(left_card_signature, 16)
                 ^ int(right_card_signature, 16)
             ).bit_count()
-            if distance <= 20:
+            if distance <= 10:
                 return True
         except ValueError:
             if left_card_signature == right_card_signature:
@@ -781,18 +821,12 @@ def _similar_candidate(left, right):
     right_portrait = str(right.get("portrait_signature", ""))
     if left_portrait and right_portrait:
         try:
-            if (int(left_portrait, 16) ^ int(right_portrait, 16)).bit_count() <= 16:
+            if (int(left_portrait, 16) ^ int(right_portrait, 16)).bit_count() <= 8:
                 return True
         except ValueError:
             if left_portrait == right_portrait:
                 return True
 
-    if (
-        int(left.get("year", 0)) != int(right.get("year", 0))
-        or left.get("date") != right.get("date")
-        or left.get("start_time") != right.get("start_time")
-    ):
-        return False
     left_signature = str(left.get("visual_signature", ""))
     right_signature = str(right.get("visual_signature", ""))
     if left_signature and right_signature:
@@ -1226,9 +1260,10 @@ def _ocr_name_variant(pytesseract, image):
 
 def _extract_character_name(cv2, pytesseract, card, attribute):
     height, width = card.shape[:2]
+    # 左のドクロ・宝箱と右の難易度ラベルを避け、名前の文字列だけを読む。
     name_region = card[
-        int(height * 0.47): int(height * 0.92),
-        int(width * 0.055): int(width * 0.66),
+        int(height * 0.52): int(height * 0.91),
+        int(width * 0.135): int(width * 0.61),
     ]
     if name_region.size == 0:
         return "", "", 0.0, "名前認識失敗"
@@ -1357,8 +1392,8 @@ def _extract_card_difficulty(cv2, pytesseract, card):
     """条件説明ではなく、カード右側の実難易度ラベルだけを読む。"""
     height, width = card.shape[:2]
     region = card[
-        int(height * 0.30): int(height * 0.78),
-        int(width * 0.50): int(width * 0.72),
+        int(height * 0.38): int(height * 0.72),
+        int(width * 0.545): int(width * 0.685),
     ]
     if region.size == 0:
         return "", ""
@@ -1421,8 +1456,8 @@ def _infer_attribute(cv2, card):
     # 左端の赤いドクロ・黄色い宝箱と右端の予約ボタンを除き、
     # 属性色で描かれたキャラ名の領域だけを見る。
     region = card[
-        int(height * 0.47): int(height * 0.92),
-        int(width * 0.055): int(width * 0.62),
+        int(height * 0.52): int(height * 0.91),
+        int(width * 0.135): int(width * 0.61),
     ]
     if region.size == 0:
         return ""
@@ -1521,11 +1556,13 @@ def _collect_unique_cards_from_frame(
         ]
         portrait_signature = _image_signature(cv2, portrait)
         sharpness = _frame_sharpness(cv2, card)
+        # スクリーンショット間では、同じ見た目のカードが別日にも存在する。
+        # OCR前には同一画像内だけを整理し、画像間の統合は日付認識後に行う。
         matching = next(
             (
                 item
                 for item in unique_cards
-                if (
+                if source_index in item.get("source_indexes", set()) and (
                     card_signatures_match(
                         item.get("card_signature", ""), signature
                     )
@@ -1665,8 +1702,8 @@ def _extract_card_candidate(
     card_signature = card_signature or _image_signature(cv2, card)
     height, width = card.shape[:2]
     name_region = card[
-        int(height * 0.47): int(height * 0.92),
-        int(width * 0.055): int(width * 0.66),
+        int(height * 0.52): int(height * 0.91),
+        int(width * 0.135): int(width * 0.61),
     ]
     visual_signature = _image_signature(cv2, name_region)
     attribute = _infer_attribute(cv2, card)
@@ -1877,6 +1914,7 @@ def extract_screenshot_schedule_candidates(
     recording_start_date=None,
     published_schedules=None,
     pending_candidates=None,
+    quest_master=None,
     progress_callback=None,
 ):
     """複数スクリーンショットから、重複しない承認待ち候補を返す。"""
@@ -1979,6 +2017,7 @@ def extract_screenshot_schedule_candidates(
         recording_start,
         published_schedules=published_schedules or [],
         pending_candidates=pending_candidates or [],
+        quest_master=quest_master or [],
     )
     image_duplicate_count += resolved_duplicate_count
     fetched_at = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -2019,6 +2058,7 @@ def extract_video_schedule_candidates(
     recording_start_date=None,
     published_schedules=None,
     pending_candidates=None,
+    quest_master=None,
     ocr_mode=OCR_MODE_FAST,
     progress_callback=None,
 ):
@@ -2168,6 +2208,7 @@ def extract_video_schedule_candidates(
             recording_start,
             published_schedules=published_schedules or [],
             pending_candidates=pending_candidates or [],
+            quest_master=quest_master or [],
     )
     video_duplicate_count += resolved_duplicate_count
     for candidate in processed_candidates:

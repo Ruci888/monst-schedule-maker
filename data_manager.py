@@ -26,6 +26,10 @@ def load_events():
     return load_json("events.json")
 
 
+def load_quest_master():
+    return load_json("quest_master.json")
+
+
 def save_json(filename, data):
     """JSONを壊さずに保存し、変更前データをbackupsへ退避する。"""
     file_path = BASE_DIR / filename
@@ -50,3 +54,7 @@ def save_schedules(schedules):
 
 def save_events(events):
     save_json("events.json", events)
+
+
+def save_quest_master(records):
+    save_json("quest_master.json", records)

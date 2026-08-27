@@ -9,9 +9,11 @@ from auth_manager import require_admin_authentication
 from data_manager import (
     load_events,
     load_json,
+    load_quest_master,
     load_schedules,
     save_events,
     save_json,
+    save_quest_master,
     save_schedules,
 )
 from auto_updater import run_update
@@ -28,6 +30,17 @@ from schedule_utils import (
     SCHEDULE_CATEGORIES,
     normalize_availability_type,
     normalize_schedule_category,
+)
+from quest_master import (
+    LIMITED_MASTER_CATEGORIES,
+    delete_quest_master,
+    master_expired,
+    normalize_quest_master,
+    normalize_quest_master_record,
+    quest_master_key,
+    schedule_from_master,
+    search_quest_master,
+    upsert_quest_master,
 )
 from video_schedule_extractor import (
     OCR_MODE_FAST,
@@ -144,6 +157,8 @@ def schedule_rows_from_editor(editor_data):
         source_type = normalize_text(row.get("source_type")) or "manual"
         source_url = normalize_text(row.get("source_url"))
         published = bool(row.get("published", True))
+        quest_id = normalize_text(row.get("quest_id"))
+        end_next_day = bool(row.get("end_next_day", False))
 
         try:
             datetime.strptime(f"{year}/{date_value}", "%Y/%m/%d")
@@ -185,10 +200,12 @@ def schedule_rows_from_editor(editor_data):
                     pass
 
         rows.append({
+            "quest_id": quest_id,
             "year": year,
             "date": date_value,
             "start_time": start_time,
             "end_time": end_time,
+            "end_next_day": end_next_day,
             "name": name,
             "quest_name": quest_name,
             "attribute": attribute,
@@ -260,6 +277,8 @@ def event_rows_from_editor(editor_data):
 
 def ensure_schedule_columns(schedules):
     defaults = {
+        "quest_id": "",
+        "end_next_day": False,
         "quest_name": "",
         "group_name": "",
         "availability_type": AVAILABILITY_SCHEDULED,
@@ -309,7 +328,8 @@ def schedule_identity(schedule):
         int(schedule["year"]),
         schedule["date"],
         schedule["start_time"],
-        schedule["name"],
+        schedule.get("quest_id") or schedule["name"],
+        schedule.get("difficulty", ""),
     )
 
 
@@ -344,6 +364,310 @@ def save_schedule_candidates(candidates):
         lambda data: save_json("schedule_candidates.json", data),
         "Add descent candidates from game recording",
     )
+
+
+def save_quest_master_records(records, commit_message="Update quest master"):
+    return save_admin_json(
+        "quest_master.json",
+        normalize_quest_master(records),
+        save_quest_master,
+        commit_message,
+    )
+
+
+def quest_master_label(record):
+    group = f"｜{record['group_name']}" if record.get("group_name") else ""
+    expired = "｜期限切れ" if master_expired(record) else ""
+    return (
+        f"{record.get('name', '')}｜{record.get('attribute', '')}｜"
+        f"{record.get('difficulty', '')}｜{record.get('category', '')}"
+        f"{group}{expired}"
+    )
+
+
+def render_quest_master_management():
+    try:
+        records = normalize_quest_master(
+            load_admin_json("quest_master.json", load_quest_master)
+        )
+        schedules = ensure_schedule_columns(
+            load_admin_json("schedules.json", load_schedules)
+        )
+    except GitHubStorageError as error:
+        st.error(str(error))
+        return
+
+    st.subheader("降臨マスター")
+    st.caption(
+        "一度承認した降臨を名前・属性・難易度・カテゴリと一緒に保存します。"
+        "次回からは検索して、掲載日と開始時間だけで日程へ追加できます。"
+    )
+    expired_count = sum(master_expired(record) for record in records)
+    normal_count = sum(
+        record.get("category") not in LIMITED_MASTER_CATEGORIES
+        for record in records
+    )
+    limited_count = len(records) - normal_count
+    metric_columns = st.columns(4)
+    for column, (label, value) in zip(metric_columns, (
+        ("登録数", len(records)),
+        ("通常・高難易度", normal_count),
+        ("コラボ・期間限定", limited_count),
+        ("期限切れ", expired_count),
+    )):
+        column.metric(label, value)
+
+    if st.button("公開済み降臨からマスターを初期登録・補完"):
+        merged, added, updated, skipped = upsert_quest_master(
+            records,
+            schedules,
+        )
+        try:
+            message = save_quest_master_records(
+                merged,
+                "Initialize quest master from published schedules",
+            )
+            st.session_state["admin_flash_success"] = (
+                f"{message} マスター追加{added}件・更新{updated}件"
+                f"・対象外{skipped}件。"
+            )
+            st.rerun()
+        except GitHubStorageError as error:
+            st.error(str(error))
+
+    st.markdown("#### 登録済み降臨を検索して日程へ追加")
+    search_column, expired_column = st.columns([3, 1])
+    with search_column:
+        query = st.text_input(
+            "名前・難易度・カテゴリで検索",
+            key="quest_master_search",
+        )
+    with expired_column:
+        include_expired = st.checkbox(
+            "期限切れも表示",
+            key="quest_master_include_expired",
+        )
+    matches = search_quest_master(
+        records,
+        query=query,
+        include_expired=include_expired,
+    )
+    if not matches:
+        st.info(
+            "条件に合う登録済み降臨がありません。"
+            "初回は上のボタンで公開済み降臨をマスターへ登録してください。"
+        )
+        return
+
+    selected_id = st.selectbox(
+        "使用する登録済み降臨",
+        options=[record["quest_id"] for record in matches],
+        format_func=lambda value: quest_master_label(next(
+            record for record in matches if record["quest_id"] == value
+        )),
+        key="quest_master_selected_id",
+    )
+    selected = next(
+        record for record in records if record["quest_id"] == selected_id
+    )
+    date_column, time_column = st.columns(2)
+    with date_column:
+        game_date = st.date_input(
+            "掲載日",
+            value=date.today(),
+            key="quest_master_schedule_date",
+        )
+    with time_column:
+        start_time = st.time_input(
+            "開始時間",
+            value=time(12, 0),
+            key="quest_master_schedule_start_time",
+        )
+    st.caption("終了時間は翌日11:59に自動設定します。")
+    if st.button(
+        "この登録済み降臨を日程へ追加",
+        type="primary",
+        key="add_schedule_from_quest_master",
+    ):
+        try:
+            addition = schedule_from_master(selected, game_date, start_time)
+            merged = merge_unique(schedules, [addition], schedule_identity)
+            message = save_admin_json(
+                "schedules.json",
+                merged,
+                save_schedules,
+                "Add descent schedule from quest master",
+            )
+            st.session_state.pop("schedule_editor", None)
+            st.session_state["admin_flash_success"] = (
+                f"{message} {addition['date']} {addition['start_time']}の"
+                f"{addition['name']}を追加しました。"
+            )
+            st.rerun()
+        except (GitHubStorageError, ValueError) as error:
+            st.error(str(error))
+
+    with st.expander("選択中マスターの詳細設定", expanded=False):
+        detail_name = st.text_input(
+            "名前",
+            value=selected.get("name", ""),
+            key=f"master_name_{selected_id}",
+        )
+        detail_quest_name = st.text_input(
+            "クエスト名（任意）",
+            value=selected.get("quest_name", ""),
+            key=f"master_quest_name_{selected_id}",
+        )
+        detail_attribute = st.selectbox(
+            "属性",
+            options=ATTRIBUTES,
+            index=ATTRIBUTES.index(selected.get("attribute"))
+            if selected.get("attribute") in ATTRIBUTES else 0,
+            key=f"master_attribute_{selected_id}",
+        )
+        detail_difficulty = st.selectbox(
+            "難易度",
+            options=DIFFICULTIES,
+            index=DIFFICULTIES.index(selected.get("difficulty"))
+            if selected.get("difficulty") in DIFFICULTIES else 0,
+            key=f"master_difficulty_{selected_id}",
+        )
+        detail_category = st.selectbox(
+            "降臨カテゴリ",
+            options=SCHEDULE_CATEGORIES,
+            index=SCHEDULE_CATEGORIES.index(selected.get("category"))
+            if selected.get("category") in SCHEDULE_CATEGORIES else 0,
+            key=f"master_category_{selected_id}",
+        )
+        detail_group = st.text_input(
+            "掲載グループ（任意）",
+            value=selected.get("group_name", ""),
+            key=f"master_group_{selected_id}",
+        )
+        limited = detail_category in LIMITED_MASTER_CATEGORIES
+        detail_availability = st.selectbox(
+            "開催方式",
+            options=AVAILABILITY_TYPES,
+            index=AVAILABILITY_TYPES.index(
+                normalize_availability_type(selected.get("availability_type"))
+            ),
+            disabled=not limited,
+            key=f"master_availability_{selected_id}",
+        )
+        detail_period_end = st.text_input(
+            "期間終了日（YYYY-MM-DD）",
+            value=selected.get("period_end_date", "") if limited else "",
+            disabled=not limited,
+            help="コラボ・期間限定だけで使用します。期限後は削除対象にできます。",
+            key=f"master_period_end_{selected_id}",
+        )
+        detail_source_url = st.text_input(
+            "情報源URL（任意）",
+            value=selected.get("source_url", ""),
+            key=f"master_source_url_{selected_id}",
+        )
+        if st.button(
+            "詳細設定を保存",
+            key=f"save_master_details_{selected_id}",
+        ):
+            errors = []
+            if not detail_name.strip():
+                errors.append("名前を入力してください。")
+            if limited and detail_period_end and not validate_date(
+                detail_period_end
+            ):
+                errors.append("期間終了日はYYYY-MM-DD形式で入力してください。")
+            proposed = {
+                **selected,
+                "name": detail_name,
+                "quest_name": detail_quest_name,
+                "attribute": detail_attribute,
+                "difficulty": detail_difficulty,
+                "category": detail_category,
+                "group_name": detail_group,
+                "availability_type": (
+                    detail_availability if limited else AVAILABILITY_SCHEDULED
+                ),
+                "period_end_date": detail_period_end if limited else "",
+                "source_url": detail_source_url,
+                "updated_at": datetime.now().astimezone().isoformat(
+                    timespec="seconds"
+                ),
+            }
+            proposed_key = quest_master_key(proposed)
+            duplicate = any(
+                record["quest_id"] != selected_id
+                and quest_master_key(record) == proposed_key
+                for record in records
+            )
+            if duplicate:
+                errors.append("同じ名前＋難易度のマスターが既にあります。")
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                updated_record = normalize_quest_master_record(proposed)
+                updated_records = [
+                    updated_record
+                    if record["quest_id"] == selected_id else record
+                    for record in records
+                ]
+                try:
+                    message = save_quest_master_records(
+                        updated_records,
+                        "Update quest master details",
+                    )
+                    st.session_state["admin_flash_success"] = message
+                    st.rerun()
+                except GitHubStorageError as error:
+                    st.error(str(error))
+
+    if st.button(
+        "このマスターの削除確認へ",
+        key=f"prepare_delete_master_{selected_id}",
+    ):
+        st.session_state["quest_master_delete_id"] = selected_id
+        st.rerun()
+
+    delete_id = st.session_state.get("quest_master_delete_id")
+    if delete_id:
+        delete_record = next(
+            (record for record in records if record["quest_id"] == delete_id),
+            None,
+        )
+        if delete_record is None:
+            st.session_state.pop("quest_master_delete_id", None)
+        else:
+            st.warning(
+                f"{quest_master_label(delete_record)}を本当に削除しますか？"
+            )
+            delete_answer = st.radio(
+                "削除確認",
+                options=["いいえ", "はい"],
+                horizontal=True,
+                key=f"confirm_delete_master_{delete_id}",
+            )
+            if st.button(
+                "回答を確定",
+                key=f"execute_delete_master_{delete_id}",
+            ):
+                if delete_answer == "はい":
+                    remaining = delete_quest_master(records, {delete_id})
+                    try:
+                        message = save_quest_master_records(
+                            remaining,
+                            "Delete quest master after confirmation",
+                        )
+                        st.session_state.pop("quest_master_delete_id", None)
+                        st.session_state["admin_flash_success"] = (
+                            f"{message} {delete_record['name']}を削除しました。"
+                        )
+                        st.rerun()
+                    except GitHubStorageError as error:
+                        st.error(str(error))
+                else:
+                    st.session_state.pop("quest_master_delete_id", None)
+                    st.info("削除を取り消しました。")
 
 
 def ensure_candidate_id(candidate, index=0):
@@ -446,56 +770,32 @@ def render_video_review_candidates():
     else:
         st.info("この候補には確認画像がありません。")
 
-    select_all = st.checkbox(
-        "確認候補をすべて保存対象にする",
-        key="video_review_select_all",
+    candidate_id = ensure_candidate_id(preview_candidate, preview_index)
+    current_save = bool(preview_candidate.get("_selected_for_save", False))
+    save_current = st.checkbox(
+        "この候補を保存対象にする",
+        value=current_save,
+        key=f"video_review_save_{candidate_id}",
     )
-    last_select_all = st.session_state.get("video_review_last_select_all")
-    if last_select_all is not None and last_select_all != select_all:
-        st.session_state.pop("video_review_editor", None)
-    st.session_state["video_review_last_select_all"] = select_all
+    # 「修正を反映」を押さなくても、保存対象チェックは直ちに保持する。
+    preview_candidate["_selected_for_save"] = save_current
+    st.session_state["video_review_candidates"] = candidates
 
-    rows = []
-    for index, candidate in enumerate(candidates):
-        rows.append({
-            "save": select_all,
-            "candidate_id": ensure_candidate_id(candidate, index),
-            "year": candidate.get("year"),
-            "date": candidate.get("date", ""),
-            "start_time": candidate.get("start_time", "12:00"),
-            "end_time": candidate.get("end_time", "11:59"),
-            "name": candidate.get("name", ""),
-            "quest_name": candidate.get("quest_name", ""),
-            "attribute": candidate.get("attribute", ""),
-            "difficulty": candidate.get("difficulty", ""),
-            "category": normalize_schedule_category(
-                candidate.get("category")
-            ),
-            "group_name": candidate.get("group_name", ""),
-            "availability_type": normalize_availability_type(
-                candidate.get("availability_type")
-            ),
-            "period_end_date": candidate.get("period_end_date", ""),
-            "review_mode": candidate.get("review_mode", "画像確認"),
-            "ocr_status": candidate.get("ocr_status", ""),
-            "source_type": "game",
-            "source_url": "",
-            "confirmed_at": "",
-            "published": False,
-        })
-
+    row = {
+        "date": preview_candidate.get("date", ""),
+        "name": preview_candidate.get("name", ""),
+        "attribute": preview_candidate.get("attribute", ""),
+        "difficulty": preview_candidate.get("difficulty", ""),
+        "category": normalize_schedule_category(
+            preview_candidate.get("category")
+        ),
+    }
     editor = st.data_editor(
-        pd.DataFrame(rows),
+        pd.DataFrame([row]),
         use_container_width=True,
         hide_index=True,
-        key="video_review_editor",
+        key=f"video_review_editor_{candidate_id}",
         column_config={
-            "save": st.column_config.CheckboxColumn("保存対象"),
-            "candidate_id": None,
-            "year": None,
-            "start_time": None,
-            "end_time": None,
-            "quest_name": None,
             "attribute": st.column_config.SelectboxColumn(
                 "属性", options=[""] + ATTRIBUTES
             ),
@@ -503,23 +803,53 @@ def render_video_review_candidates():
                 "難易度", options=[""] + DIFFICULTIES
             ),
             "category": st.column_config.SelectboxColumn(
-                "カテゴリ", options=SCHEDULE_CATEGORIES
+                "降臨カテゴリ", options=SCHEDULE_CATEGORIES
             ),
-            "group_name": None,
-            "period_end_date": None,
-            "availability_type": None,
-            "review_mode": st.column_config.TextColumn(
-                "判定方法", disabled=True
-            ),
-            "ocr_status": st.column_config.TextColumn(
-                "確認項目", disabled=True
-            ),
-            "source_type": None,
-            "source_url": None,
-            "confirmed_at": None,
-            "published": None,
         },
     )
+
+    apply_column, all_column = st.columns(2)
+    with apply_column:
+        apply_clicked = st.button(
+            "この候補の修正を反映",
+            key=f"apply_video_review_{candidate_id}",
+        )
+    with all_column:
+        select_all_clicked = st.button("全候補を保存対象にする")
+
+    if apply_clicked:
+        edited = editor.iloc[0].to_dict()
+        for field, value in edited.items():
+            preview_candidate[field] = "" if pd.isna(value) else value
+        preview_candidate["_selected_for_save"] = save_current
+        missing = [
+            label
+            for field, label in (
+                ("date", "日付要修正"),
+                ("name", "名前要入力"),
+                ("attribute", "属性要確認"),
+                ("difficulty", "難易度要確認"),
+            )
+            if not preview_candidate.get(field)
+        ]
+        preview_candidate["ocr_status"] = "・".join(
+            ["画像確認"] + missing
+        )
+        st.session_state["video_review_candidates"] = candidates
+        st.success("この候補の修正を一時反映しました。")
+
+    if select_all_clicked:
+        for candidate in candidates:
+            candidate["_selected_for_save"] = True
+        st.session_state["video_review_candidates"] = candidates
+        st.session_state[f"video_review_save_{candidate_id}"] = True
+        st.rerun()
+
+    selected_count = sum(
+        bool(candidate.get("_selected_for_save", False))
+        for candidate in candidates
+    )
+    st.caption(f"保存対象：{selected_count}/{len(candidates)}件")
 
     save_column, discard_column = st.columns(2)
     with save_column:
@@ -541,14 +871,40 @@ def render_video_review_candidates():
     if not save_clicked:
         return
 
-    selected = editor[editor["save"] == True].copy()
-    if selected.empty:
+    selected_candidates = [
+        candidate
+        for candidate in candidates
+        if candidate.get("_selected_for_save", False)
+    ]
+    if not selected_candidates:
         st.warning("承認待ちへ保存する候補を選択してください。")
         return
 
-    selected_core = selected.drop(
-        columns=["save", "review_mode", "ocr_status"]
-    )
+    rows = []
+    for index, candidate in enumerate(selected_candidates):
+        rows.append({
+            "candidate_id": ensure_candidate_id(candidate, index),
+            "quest_id": candidate.get("quest_id", ""),
+            "year": candidate.get("year"),
+            "date": candidate.get("date", ""),
+            "start_time": candidate.get("start_time", "12:00"),
+            "end_time": candidate.get("end_time", "11:59"),
+            "name": candidate.get("name", ""),
+            "quest_name": candidate.get("quest_name", ""),
+            "attribute": candidate.get("attribute", ""),
+            "difficulty": candidate.get("difficulty", ""),
+            "category": normalize_schedule_category(candidate.get("category")),
+            "group_name": candidate.get("group_name", ""),
+            "availability_type": normalize_availability_type(
+                candidate.get("availability_type")
+            ),
+            "period_end_date": candidate.get("period_end_date", ""),
+            "source_type": "game",
+            "source_url": "",
+            "confirmed_at": "",
+            "published": False,
+        })
+    selected_core = pd.DataFrame(rows)
     additions, errors = schedule_rows_from_editor(selected_core)
     if errors:
         for error in errors:
@@ -559,7 +915,7 @@ def render_video_review_candidates():
         ensure_candidate_id(candidate, index): candidate
         for index, candidate in enumerate(candidates)
     }
-    selected_records = selected.to_dict("records")
+    selected_records = rows
     metadata_fields = (
         "candidate_id",
         "review_reason",
@@ -656,6 +1012,9 @@ def import_schedule_candidates_from_screenshots():
                 load_admin_json("schedules.json", load_schedules)
             )
             pending = load_admin_json("schedule_candidates.json")
+            quest_master_records = normalize_quest_master(
+                load_admin_json("quest_master.json", load_quest_master)
+            )
             progress_bar = st.progress(0.0)
             progress_text = st.empty()
 
@@ -670,6 +1029,7 @@ def import_schedule_candidates_from_screenshots():
                     recording_start_date=screenshot_start_date,
                     published_schedules=published,
                     pending_candidates=pending,
+                    quest_master=quest_master_records,
                     progress_callback=update_screenshot_progress,
                 )
             progress_bar.progress(1.0)
@@ -790,58 +1150,28 @@ def import_schedule_candidates_from_video():
             )
 
 def review_schedule_candidates():
-    if st.session_state.pop("reset_schedule_candidate_bulk_delete", False):
-        st.session_state.pop("schedule_candidate_delete_all", None)
-        st.session_state.pop("schedule_candidate_editor", None)
-
     candidates = load_admin_json("schedule_candidates.json")
     if not candidates:
         st.info("降臨の自動取得候補はまだありません。")
         return
-
-    delete_all = st.checkbox(
-        "公開しない候補をすべて削除対象にする",
-        key="schedule_candidate_delete_all",
-        on_change=reset_schedule_candidate_editor,
-    )
     st.caption(
-        "一括選択後も、残したい候補の「削除」チェックは個別に外せます。"
+        "日常確認に必要な6項目だけを表示しています。"
+        "OCR原文・情報源・開催方式などの内部情報は候補データ内に保持します。"
     )
 
     rows = []
     for index, candidate in enumerate(candidates):
         candidate_id = ensure_candidate_id(candidate, index)
         rows.append({
-            "approve": False,
-            "delete": delete_all,
+            "save": False,
             "candidate_id": candidate_id,
-            "year": candidate.get("year"),
             "date": candidate.get("date", ""),
-            "start_time": candidate.get("start_time", ""),
-            "end_time": candidate.get("end_time", ""),
             "name": candidate.get("name", ""),
-            "quest_name": candidate.get("quest_name", ""),
             "attribute": candidate.get("attribute", ""),
             "difficulty": candidate.get("difficulty", ""),
-            "category": candidate.get("category", "high_difficulty"),
-            "group_name": candidate.get("group_name", ""),
-            "availability_type": normalize_availability_type(
-                candidate.get("availability_type")
+            "category": normalize_schedule_category(
+                candidate.get("category")
             ),
-            "period_end_date": candidate.get("period_end_date", ""),
-            "source_type": candidate.get("source_type", "official"),
-            "source_url": candidate.get("source_url", ""),
-            "ocr_raw_name": candidate.get("ocr_raw_name", ""),
-            "ocr_raw_difficulty": candidate.get(
-                "ocr_raw_difficulty", ""
-            ),
-            "ocr_raw_date": candidate.get("ocr_raw_date", ""),
-            "ocr_confidence": candidate.get("ocr_confidence"),
-            "ocr_status": candidate.get("ocr_status", ""),
-            "ocr_votes": candidate.get("ocr_votes"),
-            "review_reason": candidate.get("review_reason", ""),
-            "confirmed_at": candidate.get("confirmed_at", ""),
-            "published": True,
         })
 
     editor = st.data_editor(
@@ -850,108 +1180,50 @@ def review_schedule_candidates():
         hide_index=True,
         key="schedule_candidate_editor",
         column_config={
-            "approve": st.column_config.CheckboxColumn("承認"),
-            "delete": st.column_config.CheckboxColumn("削除"),
+            "save": st.column_config.CheckboxColumn("保存対象"),
             "candidate_id": None,
+            "date": st.column_config.TextColumn("日付"),
+            "name": st.column_config.TextColumn("名前"),
             "attribute": st.column_config.SelectboxColumn("属性", options=ATTRIBUTES),
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
-                "カテゴリ", options=SCHEDULE_CATEGORIES
-            ),
-            "group_name": st.column_config.TextColumn(
-                "掲載グループ",
-                help="例：ブルーロックコラボ、モンスト夏休み2026",
-            ),
-            "availability_type": st.column_config.SelectboxColumn(
-                "開催方式", options=AVAILABILITY_TYPES
-            ),
-            "period_end_date": st.column_config.TextColumn(
-                "最終掲載日",
-                help=(
-                    "期間中常設の場合のみ入力します。"
-                    "2026-08-19なら、8/19 12:00～翌11:59の行まで掲載します。"
-                ),
-            ),
-            "source_url": st.column_config.LinkColumn("公式記事"),
-            "ocr_raw_name": st.column_config.TextColumn(
-                "OCR原文",
-                disabled=True,
-                help="キャラ名領域を複数の方法で読み取った元データです。",
-            ),
-            "ocr_confidence": st.column_config.NumberColumn(
-                "OCR内部評価",
-                disabled=True,
-                format="%.1f",
-                help=(
-                    "OCR処理内の比較用数値で、"
-                    "キャラ名の正答率を保証する値ではありません。"
-                ),
-            ),
-            "ocr_status": st.column_config.TextColumn(
-                "OCR判定",
-                disabled=True,
-            ),
-            "ocr_votes": st.column_config.NumberColumn(
-                "検出回数",
-                disabled=True,
-                format="%d",
-            ),
-            "ocr_raw_difficulty": st.column_config.TextColumn(
-                "難易度OCR原文",
-                disabled=True,
-            ),
-            "ocr_raw_date": st.column_config.TextColumn(
-                "日時OCR原文",
-                disabled=True,
-            ),
-            "review_reason": st.column_config.TextColumn(
-                "確認理由", disabled=True
+                "降臨カテゴリ", options=SCHEDULE_CATEGORIES
             ),
         },
     )
-    selected = editor[editor["approve"] == True].drop(
-        columns=["approve", "delete"]
-    )
-    selected_delete_ids = set(
-        editor.loc[editor["delete"] == True, "candidate_id"].astype(str)
-    )
-
-    approve_column, delete_column = st.columns(2)
-    with approve_column:
-        approve_clicked = st.button(
-            "選択した降臨候補を承認・公開",
-            type="primary",
-        )
-    with delete_column:
-        delete_clicked = st.button("選択した承認待ち候補を削除")
-
-    if delete_clicked:
-        if not selected_delete_ids:
-            st.warning("削除する承認待ち候補を選択してください。")
-            return
-        remaining = [
-            candidate
-            for index, candidate in enumerate(candidates)
-            if ensure_candidate_id(candidate, index) not in selected_delete_ids
-        ]
-        try:
-            message = save_schedule_candidates(remaining)
-            st.session_state.pop("schedule_candidate_editor", None)
-            st.session_state["reset_schedule_candidate_bulk_delete"] = True
-            st.session_state["admin_flash_success"] = (
-                f"{message} 承認待ち候補を"
-                f"{len(candidates) - len(remaining)}件削除しました。"
-            )
-            st.rerun()
-        except GitHubStorageError as error:
-            st.error(str(error))
-        return
-
-    if approve_clicked:
+    selected = editor[editor["save"] == True]
+    if st.button(
+        "保存対象を承認・公開してマスターへ登録",
+        type="primary",
+    ):
         if selected.empty:
             st.warning("承認する候補を選択してください。")
             return
-        additions, errors = schedule_rows_from_editor(selected)
+        candidate_lookup = {
+            ensure_candidate_id(candidate, index): dict(candidate)
+            for index, candidate in enumerate(candidates)
+        }
+        selected_records = []
+        for edited in selected.to_dict("records"):
+            candidate_id = str(edited["candidate_id"])
+            original = candidate_lookup[candidate_id]
+            original.update({
+                "candidate_id": candidate_id,
+                "date": normalize_text(edited.get("date")),
+                "name": normalize_text(edited.get("name")),
+                "attribute": normalize_text(edited.get("attribute")),
+                "difficulty": normalize_text(edited.get("difficulty")),
+                "category": normalize_schedule_category(
+                    edited.get("category")
+                ),
+                "start_time": original.get("start_time") or "12:00",
+                "end_time": original.get("end_time") or "11:59",
+                "published": True,
+            })
+            selected_records.append(original)
+        additions, errors = schedule_rows_from_editor(
+            pd.DataFrame(selected_records)
+        )
         if errors:
             for error in errors:
                 st.error(error)
@@ -963,27 +1235,115 @@ def review_schedule_candidates():
             addition["source_type"] = "verified"
             addition["published"] = True
 
-        current = ensure_schedule_columns(
-            load_admin_json("schedules.json", load_schedules)
-        )
-        merged = merge_unique(current, additions, schedule_identity)
-        message = save_admin_json(
-            "schedules.json",
-            merged,
-            save_schedules,
-            "Approve descent schedule candidates",
-        )
-        approved_ids = set(selected["candidate_id"].astype(str))
-        remaining = [
-            candidate
+        try:
+            current_master = normalize_quest_master(
+                load_admin_json("quest_master.json", load_quest_master)
+            )
+            merged_master, added, updated, skipped = upsert_quest_master(
+                current_master,
+                additions,
+            )
+            master_by_key = {
+                quest_master_key(record): record
+                for record in merged_master
+            }
+            for addition in additions:
+                master_record = master_by_key[quest_master_key(addition)]
+                addition["quest_id"] = master_record["quest_id"]
+            save_quest_master_records(
+                merged_master,
+                "Register approved candidates in quest master",
+            )
+
+            current = ensure_schedule_columns(
+                load_admin_json("schedules.json", load_schedules)
+            )
+            merged = merge_unique(current, additions, schedule_identity)
+            message = save_admin_json(
+                "schedules.json",
+                merged,
+                save_schedules,
+                "Approve descent schedule candidates",
+            )
+            approved_ids = set(selected["candidate_id"].astype(str))
+            remaining = [
+                candidate
+                for index, candidate in enumerate(candidates)
+                if ensure_candidate_id(candidate, index) not in approved_ids
+            ]
+            save_schedule_candidates(remaining)
+            st.session_state.pop("schedule_editor", None)
+            st.session_state.pop("schedule_candidate_editor", None)
+            st.session_state["admin_flash_success"] = (
+                f"{message} マスター追加{added}件・更新{updated}件"
+                f"・対象外{skipped}件。"
+            )
+            st.rerun()
+        except GitHubStorageError as error:
+            st.error(str(error))
+
+    st.markdown("##### 承認待ち候補の削除")
+    candidate_ids = [
+        ensure_candidate_id(candidate, index)
+        for index, candidate in enumerate(candidates)
+    ]
+    delete_id = st.selectbox(
+        "削除する候補",
+        options=[""] + candidate_ids,
+        format_func=lambda value: "選択してください" if not value else next(
+            (
+                f"{candidate.get('date', '')}｜{candidate.get('name', '')}｜"
+                f"{candidate.get('difficulty', '')}"
+            )
             for index, candidate in enumerate(candidates)
-            if ensure_candidate_id(candidate, index) not in approved_ids
-        ]
-        save_schedule_candidates(remaining)
-        st.session_state.pop("schedule_editor", None)
-        st.session_state.pop("schedule_candidate_editor", None)
-        st.session_state["admin_flash_success"] = message
+            if ensure_candidate_id(candidate, index) == value
+        ),
+        key="schedule_candidate_delete_id",
+    )
+    if st.button(
+        "この候補の削除確認へ",
+        disabled=not delete_id,
+        key="prepare_schedule_candidate_delete",
+    ):
+        st.session_state["schedule_candidate_delete_confirm_id"] = delete_id
         st.rerun()
+
+    confirm_id = st.session_state.get("schedule_candidate_delete_confirm_id")
+    if confirm_id:
+        st.warning("選択した承認待ち候補を本当に削除しますか？")
+        answer = st.radio(
+            "削除確認",
+            options=["いいえ", "はい"],
+            horizontal=True,
+            key=f"confirm_schedule_candidate_delete_{confirm_id}",
+        )
+        if st.button(
+            "回答を確定",
+            key=f"execute_schedule_candidate_delete_{confirm_id}",
+        ):
+            if answer == "はい":
+                remaining = [
+                    candidate
+                    for index, candidate in enumerate(candidates)
+                    if ensure_candidate_id(candidate, index) != confirm_id
+                ]
+                try:
+                    message = save_schedule_candidates(remaining)
+                    st.session_state.pop(
+                        "schedule_candidate_delete_confirm_id", None
+                    )
+                    st.session_state.pop("schedule_candidate_editor", None)
+                    st.session_state["admin_flash_success"] = (
+                        f"{message} 承認待ち候補を1件削除しました。"
+                    )
+                    st.rerun()
+                except GitHubStorageError as error:
+                    st.error(str(error))
+            else:
+                st.session_state.pop(
+                    "schedule_candidate_delete_confirm_id", None
+                )
+                st.info("削除を取り消しました。")
 
 
 def review_event_candidates():
@@ -1080,11 +1440,16 @@ if github_is_configured():
 else:
     st.info("ローカル保存モード：GitHub連携は未設定です。")
 
-schedule_tab, event_tab, candidate_tab = st.tabs([
-    "降臨管理",
+master_tab, schedule_tab, event_tab, candidate_tab = st.tabs([
+    "降臨マスター",
+    "降臨日程",
     "イベント管理",
     "自動取得候補・失敗ログ",
 ])
+
+
+with master_tab:
+    render_quest_master_management()
 
 
 with schedule_tab:
@@ -1103,6 +1468,8 @@ with schedule_tab:
         hide_index=True,
         key="schedule_editor",
         column_config={
+            "quest_id": None,
+            "end_next_day": None,
             "attribute": st.column_config.SelectboxColumn("属性", options=ATTRIBUTES),
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
@@ -1140,13 +1507,37 @@ with schedule_tab:
     with left:
         if st.button("降臨データを保存", type="primary", disabled=bool(schedule_errors)):
             try:
+                current_master = normalize_quest_master(
+                    load_admin_json("quest_master.json", load_quest_master)
+                )
+                merged_master, added, updated, skipped = upsert_quest_master(
+                    current_master,
+                    schedule_rows,
+                )
+                master_by_key = {
+                    quest_master_key(record): record
+                    for record in merged_master
+                }
+                for schedule in schedule_rows:
+                    master_record = master_by_key.get(
+                        quest_master_key(schedule)
+                    )
+                    if master_record:
+                        schedule["quest_id"] = master_record["quest_id"]
+                save_quest_master_records(
+                    merged_master,
+                    "Sync manually edited schedules to quest master",
+                )
                 message = save_admin_json(
                     "schedules.json",
                     schedule_rows,
                     save_schedules,
                     "Update descent schedules from admin",
                 )
-                st.success(message)
+                st.success(
+                    f"{message} マスター追加{added}件・更新{updated}件"
+                    f"・対象外{skipped}件。"
+                )
             except GitHubStorageError as error:
                 st.error(str(error))
     with right:
@@ -1224,8 +1615,6 @@ with event_tab:
 with candidate_tab:
     st.subheader("自動取得候補")
     import_schedule_candidates_from_screenshots()
-    with st.expander("実験機能：画面録画から取得", expanded=False):
-        import_schedule_candidates_from_video()
     render_video_review_candidates()
     st.divider()
     st.markdown("#### 公式ニュースから取得")

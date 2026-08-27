@@ -8,6 +8,7 @@ import streamlit as st
 ALLOWED_UPDATE_FILES = {
     "schedules.json",
     "events.json",
+    "quest_master.json",
     "schedule_candidates.json",
     "event_candidates.json",
     "fetch_errors.json",

@@ -72,7 +72,7 @@ def schedule_end_datetime(schedule):
         start.date(),
         datetime.strptime(schedule["end_time"], "%H:%M").time(),
     )
-    if end <= start:
+    if schedule.get("end_next_day") or end <= start:
         end += timedelta(days=1)
     return end
 

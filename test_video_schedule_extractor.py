@@ -279,7 +279,7 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         self.assertEqual(len(unique), 2)
         self.assertEqual(duplicate_count, 0)
 
-    def test_card_image_deduplicates_even_when_ocr_dates_differ(self):
+    def test_card_image_does_not_deduplicate_across_dates(self):
         base = {
             "year": 2026,
             "start_time": "12:00",
@@ -295,8 +295,8 @@ class VideoScheduleExtractorTests(unittest.TestCase):
             {**base, "date": "8/20", "candidate_id": "second"},
         ]
         unique, duplicate_count = deduplicate_video_candidates(candidates)
-        self.assertEqual(len(unique), 1)
-        self.assertEqual(duplicate_count, 1)
+        self.assertEqual(len(unique), 2)
+        self.assertEqual(duplicate_count, 0)
 
     def test_keeps_failed_ocr_as_image_review_candidate(self):
         candidate = {
@@ -415,6 +415,60 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         self.assertEqual(resolved["attribute"], "闇")
         self.assertEqual(resolved["difficulty"], "黎絶")
         self.assertEqual(resolved["category"], "高難易度・注目")
+
+    def test_persistent_master_has_priority_over_old_schedule_data(self):
+        old_schedule = [{
+            "name": "ペグイル",
+            "attribute": "光",
+            "difficulty": "黎絶",
+            "category": "high_difficulty",
+        }]
+        persistent = [{
+            "quest_id": "quest_peguil",
+            "name": "ペグイル",
+            "attribute": "闇",
+            "difficulty": "黎絶",
+            "category": "高難易度・注目",
+            "published": True,
+        }]
+        master = build_known_schedule_master(
+            old_schedule,
+            [],
+            quest_master=persistent,
+        )
+        resolved, matched = resolve_candidate_with_master(
+            {"name": "ペクイル", "ocr_raw_name": "ペグイル"},
+            master,
+        )
+        self.assertTrue(matched)
+        self.assertEqual(resolved["attribute"], "闇")
+        self.assertEqual(resolved["quest_id"], "quest_peguil")
+
+    def test_same_name_master_uses_difficulty_to_select_quest_id(self):
+        persistent = [
+            {
+                "quest_id": "quest_normal",
+                "name": "同名キャラ",
+                "attribute": "火",
+                "difficulty": "究極",
+                "category": "通常降臨",
+            },
+            {
+                "quest_id": "quest_special",
+                "name": "同名キャラ",
+                "attribute": "闇",
+                "difficulty": "超究極",
+                "category": "高難易度・注目",
+            },
+        ]
+        master = build_known_schedule_master([], [], quest_master=persistent)
+        resolved, matched = resolve_candidate_with_master(
+            {"name": "同名キャラ", "difficulty": "超究極"},
+            master,
+        )
+        self.assertTrue(matched)
+        self.assertEqual(resolved["quest_id"], "quest_special")
+        self.assertEqual(resolved["attribute"], "闇")
 
     def test_quality_gate_rejects_incomplete_one_frame_noise(self):
         candidate = {
