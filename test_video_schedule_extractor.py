@@ -15,6 +15,7 @@ from video_schedule_extractor import (
     filter_existing_candidates,
     find_date_time,
     find_difficulty,
+    find_visual_master_match,
     infer_schedule_category,
     normalize_candidate_recording_date,
     normalize_identity_name,
@@ -351,6 +352,84 @@ class VideoScheduleExtractorTests(unittest.TestCase):
         unique, duplicate_count = deduplicate_resolved_candidates(candidates)
         self.assertEqual(len(unique), 1)
         self.assertEqual(duplicate_count, 1)
+
+    def test_keeps_unresolved_same_ocr_name_separate(self):
+        candidates = [
+            {
+                "candidate_id": "first",
+                "year": 2026,
+                "date": "8/24",
+                "name": "誤認識",
+            },
+            {
+                "candidate_id": "second",
+                "year": 2026,
+                "date": "8/24",
+                "name": "誤認識",
+            },
+        ]
+        unique, duplicate_count = deduplicate_resolved_candidates(candidates)
+        self.assertEqual(len(unique), 2)
+        self.assertEqual(duplicate_count, 0)
+
+    def test_visual_master_match_does_not_need_ocr_name(self):
+        master = [{
+            "quest_id": "quest_snowman",
+            "name": "スノーマン",
+            "attribute": "木",
+            "difficulty": "究極",
+            "image_references": [{
+                "portrait_signature": "0" * 64,
+            }],
+        }]
+        near_signature = f"{(1 << 10) - 1:064x}"
+        match, score = find_visual_master_match(
+            {
+                "name": "全く違うOCR結果",
+                "portrait_signature": near_signature,
+                "card_complete": False,
+            },
+            master,
+        )
+        self.assertEqual(match["quest_id"], "quest_snowman")
+        self.assertGreater(score, 0.9)
+
+        resolved, matched = resolve_candidate_with_master(
+            {
+                "name": "全く違うOCR結果",
+                "attribute": "",
+                "difficulty": "",
+                "portrait_signature": near_signature,
+            },
+            master,
+        )
+        self.assertTrue(matched)
+        self.assertEqual(resolved["name"], "スノーマン")
+        self.assertEqual(resolved["attribute"], "木")
+        self.assertEqual(resolved["difficulty"], "究極")
+        self.assertEqual(resolved["master_match_method"], "image")
+
+    def test_visual_master_match_rejects_ambiguous_portraits(self):
+        candidate_signature = "0" * 64
+        master = [
+            {
+                "quest_id": "quest_one",
+                "image_references": [{
+                    "portrait_signature": f"{(1 << 8) - 1:064x}",
+                }],
+            },
+            {
+                "quest_id": "quest_two",
+                "image_references": [{
+                    "portrait_signature": f"{(1 << 10) - 1:064x}",
+                }],
+            },
+        ]
+        match, _ = find_visual_master_match(
+            {"portrait_signature": candidate_signature},
+            master,
+        )
+        self.assertIsNone(match)
 
     def test_card_image_does_not_deduplicate_across_dates(self):
         base = {

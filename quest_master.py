@@ -15,6 +15,7 @@ LIMITED_MASTER_CATEGORIES = {
     CATEGORY_COLLABORATION,
     CATEGORY_LIMITED_EVENT,
 }
+MAX_IMAGE_REFERENCES_PER_QUEST = 8
 
 
 def normalize_master_name(value):
@@ -52,6 +53,126 @@ def is_limited_master(record):
     ) in LIMITED_MASTER_CATEGORIES
 
 
+def normalize_image_reference(reference, now=None):
+    timestamp = _timestamp(now)
+    normalized = {
+        "reference_id": str(reference.get("reference_id", "")).strip(),
+        "portrait_signature": str(
+            reference.get("portrait_signature", "")
+        ).strip(),
+        "visual_signature": str(
+            reference.get("visual_signature", "")
+        ).strip(),
+        "card_signature": str(
+            reference.get("card_signature", "")
+        ).strip(),
+        "source_capture_type": str(
+            reference.get("source_capture_type", "screenshot")
+        ).strip() or "screenshot",
+        "created_at": str(reference.get("created_at", "")).strip()
+        or timestamp,
+    }
+    if not normalized["reference_id"]:
+        digest_source = "\x1f".join((
+            normalized["portrait_signature"],
+            normalized["visual_signature"],
+            normalized["card_signature"],
+        ))
+        normalized["reference_id"] = "image_" + hashlib.sha1(
+            digest_source.encode("utf-8")
+        ).hexdigest()[:16]
+    return normalized
+
+
+def normalize_image_references(references, now=None):
+    normalized = []
+    seen = set()
+    for reference in references or []:
+        if not isinstance(reference, dict):
+            continue
+        item = normalize_image_reference(reference, now=now)
+        if not item["portrait_signature"]:
+            continue
+        identity = item["reference_id"]
+        if identity in seen:
+            continue
+        seen.add(identity)
+        normalized.append(item)
+    return normalized[-MAX_IMAGE_REFERENCES_PER_QUEST:]
+
+
+def card_reference_is_learnable(candidate):
+    """完全な切り出しカードだけ画像マスターへの登録を許可する。"""
+    if not bool(candidate.get("card_complete", False)):
+        return False, str(
+            candidate.get("card_completeness_reason")
+            or "カードの一部が欠けています。"
+        )
+    try:
+        visible_ratio = float(candidate.get("card_visible_ratio", 0) or 0)
+        sharpness = float(candidate.get("card_sharpness", 0) or 0)
+    except (TypeError, ValueError):
+        return False, "カード品質を確認できません。"
+    if visible_ratio < 0.98:
+        return False, "カード全体が表示されていません。"
+    if sharpness < 15.0:
+        return False, "カード画像が不鮮明です。"
+    if not str(candidate.get("portrait_signature", "")).strip():
+        return False, "キャラ肖像を識別できません。"
+    return True, "画像マスターへ登録できます。"
+
+
+def add_candidate_image_reference(records, quest_id, candidate, now=None):
+    """候補の画像特徴を指定マスターへ追加する。画像バイト列は保存しない。"""
+    learnable, reason = card_reference_is_learnable(candidate)
+    normalized_records = normalize_quest_master(records, now=now)
+    if not learnable:
+        return normalized_records, False, reason
+
+    reference = normalize_image_reference({
+        "portrait_signature": candidate.get("portrait_signature", ""),
+        "visual_signature": candidate.get("visual_signature", ""),
+        "card_signature": candidate.get("card_signature", ""),
+        "source_capture_type": candidate.get(
+            "source_capture_type", "screenshot"
+        ),
+    }, now=now)
+    found = False
+    added = False
+    updated_records = []
+    for record in normalized_records:
+        if str(record.get("quest_id")) != str(quest_id):
+            updated_records.append(record)
+            continue
+        found = True
+        references = list(record.get("image_references", []))
+        if any(
+            item.get("reference_id") == reference["reference_id"]
+            for item in references
+        ):
+            updated_records.append(record)
+            continue
+        references.append(reference)
+        updated = {
+            **record,
+            "image_references": normalize_image_references(
+                references,
+                now=now,
+            ),
+            "updated_at": _timestamp(now),
+        }
+        updated_records.append(normalize_quest_master_record(updated, now=now))
+        added = True
+    if not found:
+        return normalized_records, False, "選択したマスターが見つかりません。"
+    return (
+        updated_records,
+        added,
+        "画像特徴をマスターへ登録しました。"
+        if added else "同じ画像特徴は登録済みです。",
+    )
+
+
 def normalize_quest_master_record(record, now=None):
     category = normalize_schedule_category(record.get("category"))
     limited = category in LIMITED_MASTER_CATEGORIES
@@ -77,6 +198,10 @@ def normalize_quest_master_record(record, now=None):
         "source_type": str(record.get("source_type", "manual")).strip()
         or "manual",
         "source_url": str(record.get("source_url", "")).strip(),
+        "image_references": normalize_image_references(
+            record.get("image_references", []),
+            now=now,
+        ),
         "published": bool(record.get("published", True)),
         "created_at": str(record.get("created_at", "")).strip()
         or timestamp,

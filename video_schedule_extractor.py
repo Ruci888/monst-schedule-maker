@@ -29,6 +29,8 @@ CARD_DEDUPE_THRESHOLD = 10
 CROSS_IMAGE_CARD_THRESHOLD = 18
 CROSS_IMAGE_PORTRAIT_THRESHOLD = 36
 CROSS_IMAGE_NAME_THRESHOLD = 28
+VISUAL_MASTER_AUTO_THRESHOLD = 18
+VISUAL_MASTER_AMBIGUITY_MARGIN = 6
 MAX_SCREENSHOT_COUNT = 10
 MAX_SCREENSHOT_BYTES = 15 * 1024 * 1024
 MAX_SCREENSHOT_BATCH_BYTES = 80 * 1024 * 1024
@@ -618,6 +620,58 @@ def find_known_schedule_match(candidate, known_master):
     return best, best_score
 
 
+def _hex_signature_distance(left, right):
+    if not left or not right:
+        return None
+    try:
+        return (int(str(left), 16) ^ int(str(right), 16)).bit_count()
+    except (TypeError, ValueError):
+        return 0 if str(left) == str(right) else None
+
+
+def find_visual_master_match(candidate, known_master):
+    """OCR文字列ではなく、登録済みの肖像特徴からマスターを探す。"""
+    portrait_signature = str(
+        candidate.get("portrait_signature", "")
+    ).strip()
+    if not portrait_signature or not known_master:
+        return None, 0.0
+
+    best_by_quest = {}
+    for known in known_master:
+        quest_id = str(known.get("quest_id", "")).strip()
+        if not quest_id:
+            continue
+        distances = [
+            _hex_signature_distance(
+                portrait_signature,
+                reference.get("portrait_signature", ""),
+            )
+            for reference in known.get("image_references", [])
+            if isinstance(reference, dict)
+        ]
+        distances = [value for value in distances if value is not None]
+        if not distances:
+            continue
+        distance = min(distances)
+        current = best_by_quest.get(quest_id)
+        if current is None or distance < current[0]:
+            best_by_quest[quest_id] = (distance, known)
+
+    if not best_by_quest:
+        return None, 0.0
+    ranked = sorted(best_by_quest.values(), key=lambda item: item[0])
+    best_distance, best = ranked[0]
+    score = max(0.0, 1.0 - best_distance / 256.0)
+    if best_distance > VISUAL_MASTER_AUTO_THRESHOLD:
+        return None, score
+    if len(ranked) > 1:
+        second_distance = ranked[1][0]
+        if second_distance - best_distance < VISUAL_MASTER_AMBIGUITY_MARGIN:
+            return None, score
+    return best, score
+
+
 def _normalized_category(value):
     aliases = {
         "collaboration": "コラボ",
@@ -629,7 +683,11 @@ def _normalized_category(value):
 
 
 def resolve_candidate_with_master(candidate, known_master):
-    match, score = find_known_schedule_match(candidate, known_master)
+    match, score = find_visual_master_match(candidate, known_master)
+    match_method = "image" if match is not None else ""
+    if match is None:
+        match, score = find_known_schedule_match(candidate, known_master)
+        match_method = "text" if match is not None else ""
     if match is None:
         return dict(candidate), False
 
@@ -642,11 +700,19 @@ def resolve_candidate_with_master(candidate, known_master):
     resolved["group_name"] = str(match.get("group_name", "")).strip()
     resolved["quest_id"] = str(match.get("quest_id", "")).strip()
     resolved["master_match_score"] = round(score * 100, 1)
-    resolved["ocr_status"] = "既知データ一致・要確認"
-    resolved["review_reason"] = (
-        "録画の日時を確認し、キャラ名・属性・難易度は"
-        "承認済みまたは公式候補の既知データで補正しました。"
-    )
+    resolved["master_match_method"] = match_method
+    if match_method == "image":
+        resolved["ocr_status"] = "画像マスター一致・要確認"
+        resolved["review_reason"] = (
+            "登録済みのカード画像特徴からキャラを識別し、"
+            "名前・属性・難易度・カテゴリを補正しました。"
+        )
+    else:
+        resolved["ocr_status"] = "既知データ一致・要確認"
+        resolved["review_reason"] = (
+            "日時を確認し、キャラ名・属性・難易度は"
+            "承認済みまたは公式候補の既知データで補正しました。"
+        )
     return resolved, True
 
 
@@ -671,20 +737,26 @@ def deduplicate_resolved_candidates(candidates):
     for candidate in candidates:
         normalized_name = normalize_identity_name(candidate.get("name", ""))
         master_identity = str(candidate.get("quest_id", "")).strip()
-        resolved_identity = master_identity or normalized_name
-        if candidate.get("date") and resolved_identity:
+        matched_by_master = bool(candidate.get("master_match_method"))
+        if candidate.get("date") and master_identity:
             key = (
                 "schedule",
                 int(candidate.get("year", 0)),
                 str(candidate.get("date", "")),
-                resolved_identity,
+                master_identity,
+            )
+        elif candidate.get("date") and matched_by_master and normalized_name:
+            key = (
+                "matched_name",
+                int(candidate.get("year", 0)),
+                str(candidate.get("date", "")),
+                normalized_name,
             )
         else:
             key = (
-                "image",
-                str(candidate.get("card_signature", ""))
-                or str(candidate.get("visual_signature", ""))
-                or str(candidate.get("candidate_id", "")),
+                "unresolved",
+                str(candidate.get("candidate_id", ""))
+                or hashlib.sha1(repr(candidate).encode("utf-8")).hexdigest(),
             )
         existing = selected_by_key.get(key)
         if existing is None:
@@ -1593,6 +1665,56 @@ def _detect_card_regions(cv2, frame):
     ]
 
 
+def _assess_card_learning_quality(cv2, frame, region):
+    """カード全体が安全に画像マスターへ登録できるか判定する。"""
+    frame_height, frame_width = frame.shape[:2]
+    card = region["image"]
+    card_height, card_width = card.shape[:2]
+    expected_height = max(1, int(frame_height * 0.112))
+    expected_width = max(1, int(frame_width * 0.95))
+    visible_ratio = min(
+        1.0,
+        card_height / expected_height,
+        card_width / expected_width,
+    )
+    reasons = []
+    if int(region.get("top", 0)) < 0:
+        reasons.append("上端欠け")
+    if int(region.get("bottom", 0)) > int(frame_height * 0.875):
+        reasons.append("下端またはメニュー被り")
+    if visible_ratio < 0.98:
+        reasons.append("表示範囲不足")
+
+    gray = cv2.cvtColor(card, cv2.COLOR_BGR2GRAY)
+    top_band = gray[:max(2, int(card_height * 0.10)), :]
+    bottom_band = gray[int(card_height * 0.84):, :]
+    portrait = gray[
+        int(card_height * 0.05): int(card_height * 0.92),
+        int(card_width * 0.68): int(card_width * 0.88),
+    ]
+    top_border_ratio = float((top_band >= 120).mean()) if top_band.size else 0.0
+    bottom_variation = float(bottom_band.std()) if bottom_band.size else 0.0
+    portrait_variation = float(portrait.std()) if portrait.size else 0.0
+    sharpness = _frame_sharpness(cv2, card)
+    if top_border_ratio < 0.18:
+        reasons.append("カード上端未検出")
+    if bottom_variation < 9.0:
+        reasons.append("カード下端不鮮明")
+    if portrait_variation < 12.0:
+        reasons.append("肖像領域不足")
+    if sharpness < 15.0:
+        reasons.append("画像不鮮明")
+
+    return {
+        "card_complete": not reasons,
+        "card_visible_ratio": round(visible_ratio, 3),
+        "card_sharpness": round(sharpness, 1),
+        "card_completeness_reason": (
+            "完全なカードです。" if not reasons else "・".join(reasons)
+        ),
+    }
+
+
 def _collect_unique_cards_from_frame(
     cv2, frame, unique_cards, source_index=None
 ):
@@ -1601,6 +1723,7 @@ def _collect_unique_cards_from_frame(
     for region in _detect_card_regions_with_positions(cv2, frame):
         card = region["image"]
         card_top = int(region["top"])
+        quality = _assess_card_learning_quality(cv2, frame, region)
         signature = _image_signature(cv2, card)
         card_height, card_width = card.shape[:2]
         portrait = card[
@@ -1641,6 +1764,8 @@ def _collect_unique_cards_from_frame(
                 matching["image"] = card.copy()
                 matching["card_signature"] = signature
                 matching["sharpness"] = sharpness
+                matching["portrait_signature"] = portrait_signature
+                matching.update(quality)
             continue
         if len(unique_cards) >= MAX_UNIQUE_CARDS:
             break
@@ -1649,6 +1774,7 @@ def _collect_unique_cards_from_frame(
             "card_signature": signature,
             "sharpness": sharpness,
             "portrait_signature": portrait_signature,
+            **quality,
             "source_indexes": {source_index},
             "source_positions": [{
                 "source_index": source_index,
@@ -2041,6 +2167,13 @@ def extract_screenshot_schedule_candidates(
         candidate["portrait_signature"] = item.get(
             "portrait_signature", ""
         )
+        for field in (
+            "card_complete",
+            "card_visible_ratio",
+            "card_sharpness",
+            "card_completeness_reason",
+        ):
+            candidate[field] = item.get(field)
         candidate["source_indexes"] = sorted(
             index for index in item.get("source_indexes", set())
             if index is not None
@@ -2057,10 +2190,10 @@ def extract_screenshot_schedule_candidates(
         )
 
     apply_screenshot_date_context(all_candidates, recording_start)
-    unique_candidates, image_duplicate_count = deduplicate_video_candidates(
-        all_candidates
-    )
-    image_duplicate_count += pre_ocr_duplicate_count
+    # 画像間の広い類似判定は別キャラを消す危険がある。スクリーンショット
+    # では、同一画像内の完全一致と、マスター確定後のquest_idだけで統合する。
+    unique_candidates = all_candidates
+    image_duplicate_count = pre_ocr_duplicate_count
     (
         processed_candidates,
         recognized_count,
@@ -2240,6 +2373,16 @@ def extract_video_schedule_candidates(
             card_signature=item["card_signature"],
             ocr_mode=mode,
         )
+        candidate["portrait_signature"] = item.get(
+            "portrait_signature", ""
+        )
+        for field in (
+            "card_complete",
+            "card_visible_ratio",
+            "card_sharpness",
+            "card_completeness_reason",
+        ):
+            candidate[field] = item.get(field)
         all_candidates.append(candidate)
         ocr_error_count += int(failed)
         _notify_progress(

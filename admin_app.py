@@ -33,6 +33,8 @@ from schedule_utils import (
 )
 from quest_master import (
     LIMITED_MASTER_CATEGORIES,
+    add_candidate_image_reference,
+    card_reference_is_learnable,
     delete_quest_master,
     master_expired,
     normalize_quest_master,
@@ -51,6 +53,7 @@ from video_schedule_extractor import (
     deduplicate_resolved_candidates,
     extract_screenshot_schedule_candidates,
     extract_video_schedule_candidates,
+    resolve_candidate_with_master,
 )
 
 
@@ -381,10 +384,12 @@ def save_quest_master_records(records, commit_message="Update quest master"):
 def quest_master_label(record):
     group = f"｜{record['group_name']}" if record.get("group_name") else ""
     expired = "｜期限切れ" if master_expired(record) else ""
+    image_count = len(record.get("image_references", []))
+    image_text = f"｜画像{image_count}件" if image_count else "｜画像未登録"
     return (
         f"{record.get('name', '')}｜{record.get('attribute', '')}｜"
         f"{record.get('difficulty', '')}｜{record.get('category', '')}"
-        f"{group}{expired}"
+        f"{group}{image_text}{expired}"
     )
 
 
@@ -631,6 +636,11 @@ def render_quest_master_management():
     )
     selected = next(
         record for record in records if record["quest_id"] == selected_id
+    )
+    image_reference_count = len(selected.get("image_references", []))
+    st.caption(
+        f"画像照合データ：{image_reference_count}件。"
+        "完全な切り出しカードを候補確認画面で割り当てると追加されます。"
     )
     date_column, time_column = st.columns(2)
     with date_column:
@@ -911,14 +921,37 @@ def render_video_review_candidates():
     if result is not None:
         show_video_extraction_result(result)
 
-    preview_index = st.selectbox(
-        "確認する切り出し画像",
-        options=list(range(len(candidates))),
-        format_func=lambda index: video_review_candidate_label(
-            candidates[index], index
-        ),
-        key="video_review_preview_index",
-    )
+    try:
+        preview_index = int(
+            st.session_state.get("video_review_preview_index", 0)
+        )
+    except (TypeError, ValueError):
+        preview_index = 0
+    preview_index = max(0, min(preview_index, len(candidates) - 1))
+    st.session_state["video_review_preview_index"] = preview_index
+    previous_column, position_column, next_column = st.columns([1, 3, 1])
+    with previous_column:
+        if st.button(
+            "← 前へ",
+            disabled=preview_index <= 0,
+            key="video_review_previous",
+        ):
+            st.session_state["video_review_preview_index"] = preview_index - 1
+            st.rerun()
+    with position_column:
+        st.markdown(
+            f"**確認中：{preview_index + 1}/{len(candidates)}件**  "
+            f"{video_review_candidate_label(candidates[preview_index], preview_index)}"
+        )
+        st.progress((preview_index + 1) / len(candidates))
+    with next_column:
+        if st.button(
+            "次へ →",
+            disabled=preview_index >= len(candidates) - 1,
+            key="video_review_next",
+        ):
+            st.session_state["video_review_preview_index"] = preview_index + 1
+            st.rerun()
     preview_candidate = candidates[preview_index]
     preview_image = preview_candidate.get("_preview_image")
     if preview_image:
@@ -933,15 +966,32 @@ def render_video_review_candidates():
         st.info("この候補には確認画像がありません。")
 
     try:
+        all_master_records = normalize_quest_master(
+            load_admin_json("quest_master.json", load_quest_master)
+        )
         available_master = search_quest_master(
-            load_admin_json("quest_master.json", load_quest_master),
+            all_master_records,
             include_expired=False,
         )
     except GitHubStorageError:
+        all_master_records = []
         available_master = []
     if available_master:
+        learnable, learnable_reason = card_reference_is_learnable(
+            preview_candidate
+        )
+        if learnable:
+            st.success(
+                "このカードは全体が写っているため、"
+                "選択したマスターの画像照合データへ登録できます。"
+            )
+        else:
+            st.warning(
+                "このカードは画像マスターへ保存しません："
+                f"{learnable_reason} 既存マスターの適用だけは可能です。"
+            )
         selected_master_id = st.selectbox(
-            "マスターからこの候補を補正（任意）",
+            "このカードへ割り当てるマスター",
             options=[""] + [
                 record["quest_id"] for record in available_master
             ],
@@ -956,8 +1006,18 @@ def render_video_review_candidates():
             ),
             key=f"review_master_choice_{ensure_candidate_id(preview_candidate, preview_index)}",
         )
+        learn_image_reference = st.checkbox(
+            "完全なカードの画像特徴をマスターへ登録する",
+            value=learnable,
+            disabled=not learnable,
+            key=f"learn_review_master_{ensure_candidate_id(preview_candidate, preview_index)}",
+        )
         if st.button(
-            "選択したマスターをこの候補へ適用",
+            (
+                "マスターを適用して画像特徴を登録"
+                if learnable and learn_image_reference
+                else "マスターをこの候補へ適用"
+            ),
             disabled=not selected_master_id,
             key=f"apply_review_master_{ensure_candidate_id(preview_candidate, preview_index)}",
         ):
@@ -966,6 +1026,28 @@ def render_video_review_candidates():
                 for record in available_master
                 if record["quest_id"] == selected_master_id
             )
+            learning_message = ""
+            reference_added = False
+            updated_master_records = all_master_records
+            if learnable and learn_image_reference:
+                (
+                    updated_master_records,
+                    reference_added,
+                    learning_message,
+                ) = add_candidate_image_reference(
+                    all_master_records,
+                    selected_master_id,
+                    preview_candidate,
+                )
+                if reference_added:
+                    try:
+                        save_quest_master_records(
+                            updated_master_records,
+                            "Register card image reference in quest master",
+                        )
+                    except GitHubStorageError as error:
+                        st.error(str(error))
+                        return
             for field in (
                 "quest_id",
                 "name",
@@ -977,9 +1059,32 @@ def render_video_review_candidates():
             ):
                 preview_candidate[field] = selected_master.get(field, "")
             preview_candidate["master_match_score"] = 100.0
+            preview_candidate["master_match_method"] = "manual_image_assignment"
             preview_candidate["review_mode"] = "マスター選択"
-            preview_candidate["ocr_status"] = "マスター手動選択・要確認"
+            preview_candidate["ocr_status"] = (
+                "マスター手動選択・画像登録済み・要確認"
+                if learnable and learn_image_reference
+                else "マスター手動選択・要確認"
+            )
             candidates[preview_index] = preview_candidate
+            if reference_added:
+                refreshed_candidates = []
+                for candidate in candidates:
+                    selected_for_save = candidate.get(
+                        "_selected_for_save", False
+                    )
+                    refreshed, matched = resolve_candidate_with_master(
+                        candidate,
+                        updated_master_records,
+                    )
+                    if matched and refreshed.get(
+                        "master_match_method"
+                    ) == "image":
+                        refreshed["_selected_for_save"] = selected_for_save
+                        refreshed_candidates.append(refreshed)
+                    else:
+                        refreshed_candidates.append(candidate)
+                candidates = refreshed_candidates
             candidates, duplicate_count = deduplicate_resolved_candidates(
                 candidates
             )
@@ -990,12 +1095,18 @@ def render_video_review_candidates():
             )
             st.session_state["admin_flash_success"] = (
                 f"{selected_master['name']}のマスターを適用しました。"
+                + (f" {learning_message}" if learning_message else "")
                 + (
                     f"同一日付の重複候補{duplicate_count}件も統合しました。"
                     if duplicate_count else ""
                 )
             )
             st.rerun()
+    else:
+        st.warning(
+            "割り当て可能な降臨マスターがありません。"
+            "先に「降臨マスター」タブで登録してください。"
+        )
 
     candidate_id = ensure_candidate_id(preview_candidate, preview_index)
     current_save = bool(preview_candidate.get("_selected_for_save", False))
@@ -1155,6 +1266,13 @@ def render_video_review_candidates():
         "ocr_votes",
         "visual_signature",
         "card_signature",
+        "portrait_signature",
+        "card_complete",
+        "card_visible_ratio",
+        "card_sharpness",
+        "card_completeness_reason",
+        "master_match_method",
+        "master_match_score",
         "video_fingerprint",
         "screenshot_batch_fingerprint",
         "source_capture_type",

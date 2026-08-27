@@ -2,6 +2,8 @@ import unittest
 from datetime import date, datetime, timezone
 
 from quest_master import (
+    add_candidate_image_reference,
+    card_reference_is_learnable,
     delete_quest_master,
     master_expired,
     parse_master_bulk_text,
@@ -210,6 +212,83 @@ class QuestMasterTests(unittest.TestCase):
         self.assertEqual(len(records), 17)
         self.assertEqual(records[0]["name"], "U-20日本代表 士道龍聖")
         self.assertEqual(records[11]["difficulty"], "超絶・廻")
+
+    def test_adds_only_complete_card_to_master_image_references(self):
+        master, *_ = upsert_quest_master(
+            [],
+            [{
+                "name": "スノーマン",
+                "attribute": "木",
+                "difficulty": "究極",
+                "category": "通常降臨",
+            }],
+            now=NOW,
+        )
+        candidate = {
+            "card_complete": True,
+            "card_visible_ratio": 1.0,
+            "card_sharpness": 80,
+            "portrait_signature": "0" * 64,
+            "visual_signature": "1" * 64,
+            "card_signature": "2" * 64,
+            "source_capture_type": "screenshot",
+        }
+        updated, added, message = add_candidate_image_reference(
+            master,
+            master[0]["quest_id"],
+            candidate,
+            now=NOW,
+        )
+        self.assertTrue(added)
+        self.assertIn("登録", message)
+        self.assertEqual(len(updated[0]["image_references"]), 1)
+        self.assertNotIn("_preview_image", updated[0]["image_references"][0])
+
+        updated_again, added_again, _ = add_candidate_image_reference(
+            updated,
+            master[0]["quest_id"],
+            candidate,
+            now=NOW,
+        )
+        self.assertFalse(added_again)
+        self.assertEqual(len(updated_again[0]["image_references"]), 1)
+
+    def test_rejects_clipped_card_from_master_learning(self):
+        candidate = {
+            "card_complete": False,
+            "card_visible_ratio": 0.72,
+            "card_sharpness": 90,
+            "portrait_signature": "0" * 64,
+            "card_completeness_reason": "下端またはメニュー被り",
+        }
+        learnable, reason = card_reference_is_learnable(candidate)
+        self.assertFalse(learnable)
+        self.assertIn("下端", reason)
+
+    def test_partial_card_can_never_be_added_even_with_portrait(self):
+        master, *_ = upsert_quest_master(
+            [],
+            [{
+                "name": "仙丹",
+                "attribute": "木",
+                "difficulty": "超絶",
+                "category": "通常降臨",
+            }],
+            now=NOW,
+        )
+        updated, added, _ = add_candidate_image_reference(
+            master,
+            master[0]["quest_id"],
+            {
+                "card_complete": False,
+                "card_visible_ratio": 0.95,
+                "card_sharpness": 100,
+                "portrait_signature": "a" * 64,
+            },
+            now=NOW,
+        )
+        self.assertFalse(added)
+        self.assertEqual(updated[0]["image_references"], [])
 
 
 if __name__ == "__main__":
