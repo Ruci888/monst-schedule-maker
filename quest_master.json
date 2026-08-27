@@ -389,11 +389,19 @@
                 "card_signature": "0b51435f4f5d1001a400d4b1b4ae94639414940a540aac0095299d89600dfc05",
                 "source_capture_type": "screenshot",
                 "created_at": "2026-08-27T10:34:39+00:00"
+            },
+            {
+                "reference_id": "image_130b261dc9c17024",
+                "portrait_signature": "200c207020c1e0004a5452d411e970917a6971aa66e6f6ac50b25484560daf03",
+                "visual_signature": "00b500b500bd00bd00ad000000000000000000000000000109b4052c04ca075a",
+                "card_signature": "06036403541f141e7400d404a4af94a3b402540b64036c0094cb8c296009ec05",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-08-27T14:05:28+00:00"
             }
         ],
         "published": true,
         "created_at": "2026-08-27T03:12:44+00:00",
-        "updated_at": "2026-08-27T10:34:39+00:00"
+        "updated_at": "2026-08-27T14:05:28+00:00"
     },
     {
         "quest_id": "quest_5fe36e261f1ef83f",
