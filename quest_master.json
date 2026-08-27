@@ -2,6 +2,7 @@
     {
         "quest_id": "quest_a00d0d02510f4b5a",
         "name": "ペグイル",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "黎絶",
@@ -19,6 +20,7 @@
     {
         "quest_id": "quest_41940ed6b2536583",
         "name": "ユビレギリ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "轟絶",
@@ -36,6 +38,7 @@
     {
         "quest_id": "quest_a8f1bb37e6ed43ed",
         "name": "コンサリジオ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "黎絶",
@@ -53,6 +56,7 @@
     {
         "quest_id": "quest_0317422bc8b6c3e4",
         "name": "カカゴセデク",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "轟絶",
@@ -70,6 +74,7 @@
     {
         "quest_id": "quest_fb1dab1c51c55c96",
         "name": "ビリミスク",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "黎絶",
@@ -87,6 +92,7 @@
     {
         "quest_id": "quest_417aa3ad301944e6",
         "name": "アイクモ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "轟絶",
@@ -104,6 +110,7 @@
     {
         "quest_id": "quest_a79fff2f25d5fa2d",
         "name": "スケアトラ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "轟絶",
@@ -121,6 +128,7 @@
     {
         "quest_id": "quest_ff5a5fc49c0f18b3",
         "name": "ハービセル",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "轟絶",
@@ -138,6 +146,7 @@
     {
         "quest_id": "quest_2bdc031610c6da9b",
         "name": "サバイール",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
@@ -155,6 +164,7 @@
     {
         "quest_id": "quest_5b16666aece348c9",
         "name": "デティアカル",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "黎絶",
@@ -181,6 +191,7 @@
     {
         "quest_id": "quest_d78361a90d101742",
         "name": "コディエゴス",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "黎絶",
@@ -198,6 +209,7 @@
     {
         "quest_id": "quest_d9495f133b1b62fd",
         "name": "ベジテパラ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "轟絶",
@@ -215,6 +227,7 @@
     {
         "quest_id": "quest_afe088497ad455da",
         "name": "イブエクティ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "黎絶",
@@ -232,6 +245,7 @@
     {
         "quest_id": "quest_cff1ef80aa15205e",
         "name": "カルニベ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
@@ -249,6 +263,7 @@
     {
         "quest_id": "quest_2ebac46dd5a895c2",
         "name": "ディジェン",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
@@ -266,6 +281,7 @@
     {
         "quest_id": "quest_2f1b11b9ac1dd484",
         "name": "ディクエクス",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "轟絶",
@@ -283,6 +299,7 @@
     {
         "quest_id": "quest_77a98cb6245a8979",
         "name": "馬狼照英",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "究極",
@@ -300,6 +317,7 @@
     {
         "quest_id": "quest_527915336f433317",
         "name": "烏 旅人",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "究極",
@@ -326,6 +344,7 @@
     {
         "quest_id": "quest_876adbd37a25659e",
         "name": "蟻生十兵衛",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "究極",
@@ -352,6 +371,7 @@
     {
         "quest_id": "quest_eac600282e0fba45",
         "name": "剣城斬鉄",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "極",
@@ -378,6 +398,7 @@
     {
         "quest_id": "quest_5fe36e261f1ef83f",
         "name": "二子一揮",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "極",
@@ -412,6 +433,7 @@
     {
         "quest_id": "quest_f3eac6c70e2de6aa",
         "name": "士道龍聖",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "超究極",
@@ -438,6 +460,7 @@
     {
         "quest_id": "quest_40ab021dba254b18",
         "name": "糸師冴",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "超究極",
@@ -455,6 +478,7 @@
     {
         "quest_id": "quest_44ac0a32636aecc3",
         "name": "甘露",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "超絶",
@@ -472,6 +496,7 @@
     {
         "quest_id": "quest_b63878b7959e9766",
         "name": "桃源郷",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "爆絶",
@@ -489,6 +514,7 @@
     {
         "quest_id": "quest_6b66b89296b28011",
         "name": "アマダンタイト廻",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "超絶",
@@ -506,6 +532,7 @@
     {
         "quest_id": "quest_d4e590425ca9a775",
         "name": "ギスイッカ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "究極",
@@ -523,6 +550,7 @@
     {
         "quest_id": "quest_5f38b1c145e56e9d",
         "name": "長命寺アズキ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "究極",
@@ -540,6 +568,7 @@
     {
         "quest_id": "quest_6326c3a6367327e6",
         "name": "Dr.マター",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "星5制限",
@@ -557,6 +586,7 @@
     {
         "quest_id": "quest_df79a36f389ad618",
         "name": "おちせ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "激究極",
@@ -574,6 +604,7 @@
     {
         "quest_id": "quest_e7555bd7ba1481bc",
         "name": "検非違使",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "極",
@@ -591,6 +622,7 @@
     {
         "quest_id": "quest_ffe2220365c39b5c",
         "name": "ジャッカローブ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "極",
@@ -608,6 +640,7 @@
     {
         "quest_id": "quest_29dbec28e92ecfc1",
         "name": "ジョゴス",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "星5制限",
@@ -625,6 +658,7 @@
     {
         "quest_id": "quest_7489b88944cd2b5b",
         "name": "ビッグクランチ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "爆絶",
@@ -642,6 +676,7 @@
     {
         "quest_id": "quest_3c4c612321188d25",
         "name": "七草ゆか",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "究極",
@@ -659,6 +694,7 @@
     {
         "quest_id": "quest_dec2821a5a50c33d",
         "name": "ゼクス",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "超絶",
@@ -676,6 +712,7 @@
     {
         "quest_id": "quest_5c2fe2a5433fe561",
         "name": "ティファレト廻",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "超絶",
@@ -693,6 +730,7 @@
     {
         "quest_id": "quest_bd0f80687c2abdf7",
         "name": "杉田玄白",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "極",
@@ -710,6 +748,7 @@
     {
         "quest_id": "quest_3f0734b0e98891d7",
         "name": "黒瀬もゆる",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "星5制限",
@@ -727,6 +766,7 @@
     {
         "quest_id": "quest_4167fffc5d02086c",
         "name": "司馬懿",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "激究極",
@@ -744,6 +784,7 @@
     {
         "quest_id": "quest_7aca685a25561c2e",
         "name": "ピンポンパンダ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "極",
@@ -761,6 +802,7 @@
     {
         "quest_id": "quest_3d85a0fc4c2b94ce",
         "name": "クリシュナ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "究極",
@@ -778,6 +820,7 @@
     {
         "quest_id": "quest_5fa31b5a3a9d595c",
         "name": "イゴーロナク",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "激究極",
@@ -795,6 +838,7 @@
     {
         "quest_id": "quest_6e06e9c91c3b9097",
         "name": "ボルカノザーラ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "究極",
@@ -812,6 +856,7 @@
     {
         "quest_id": "quest_61e1f306fc01ec95",
         "name": "ロール",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "爆絶",
@@ -829,6 +874,7 @@
     {
         "quest_id": "quest_0355c5b43a3134a0",
         "name": "アアル",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "爆絶",
@@ -846,6 +892,7 @@
     {
         "quest_id": "quest_99cdbec032f78322",
         "name": "ノイン",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "超絶",
@@ -863,6 +910,7 @@
     {
         "quest_id": "quest_592cbf92c4a627e3",
         "name": "ウォフ・マナフ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "究極",
@@ -880,6 +928,7 @@
     {
         "quest_id": "quest_f4663771b2cbd06c",
         "name": "曳手＆単節",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "星5制限",
@@ -897,6 +946,7 @@
     {
         "quest_id": "quest_6dcb0af6c183a693",
         "name": "風魔小太郎",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "激究極",
@@ -914,6 +964,7 @@
     {
         "quest_id": "quest_fbc4273238d2c305",
         "name": "スペードエース",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "極",
@@ -931,6 +982,7 @@
     {
         "quest_id": "quest_32bd159342f663cc",
         "name": "ロダン",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "極",
@@ -948,6 +1000,7 @@
     {
         "quest_id": "quest_50b7e599318f9c53",
         "name": "カモノドン",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "星5制限",
@@ -974,6 +1027,7 @@
     {
         "quest_id": "quest_50cc06765b4b44fd",
         "name": "エレボス",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "激究極",
@@ -1000,6 +1054,7 @@
     {
         "quest_id": "quest_004a3f8b5667e447",
         "name": "ロイガー＆ツァール",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "究極",
@@ -1026,6 +1081,7 @@
     {
         "quest_id": "quest_5ef91c5c6b700d35",
         "name": "ミスターテルテル",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "究極",
@@ -1052,6 +1108,7 @@
     {
         "quest_id": "quest_c212b6140432f3a3",
         "name": "紂王",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "極",
@@ -1069,6 +1126,7 @@
     {
         "quest_id": "quest_2aac42d0a6a31179",
         "name": "サテライト",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "究極",
@@ -1095,6 +1153,7 @@
     {
         "quest_id": "quest_938446d8a70f85af",
         "name": "イヌガミ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "極",
@@ -1112,6 +1171,7 @@
     {
         "quest_id": "quest_a68eae1b69e35d4c",
         "name": "ケセド廻",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "超絶",
@@ -1138,6 +1198,7 @@
     {
         "quest_id": "quest_fd11093e950a4d6c",
         "name": "エリクサー",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "超絶",
@@ -1164,6 +1225,7 @@
     {
         "quest_id": "quest_332777b6ae3d7dad",
         "name": "ラブ",
+        "name_reading": "",
         "quest_name": "",
         "attribute": "光",
         "difficulty": "爆絶",
@@ -1186,5 +1248,185 @@
         "published": true,
         "created_at": "2026-08-27T12:18:22+00:00",
         "updated_at": "2026-08-27T12:24:13+00:00"
+    },
+    {
+        "quest_id": "quest_9fa66c036602824e",
+        "name": "タモアンチャン",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "爆絶",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_7080132d2bb3f3c9",
+        "name": "焔摩天廻",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "超絶",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_2d62add367e5d5bf",
+        "name": "山南敬助",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "光",
+        "difficulty": "星5制限",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_421d8661a2455819",
+        "name": "ビシャーチャ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_8f8bcfd174a49e8f",
+        "name": "デュラハン",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "木",
+        "difficulty": "究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_003c10353114383c",
+        "name": "バロジカ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "激究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_0eba48643e15262f",
+        "name": "ハートの女王",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_44b549e5f415d4fd",
+        "name": "醜いアヒルの子 ダギー",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_cb7ba82a25f339cc",
+        "name": "ショゴス",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "木",
+        "difficulty": "星5制限",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
+    },
+    {
+        "quest_id": "quest_abbf6a13a419ebe7",
+        "name": "アメノサギリ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "超絶",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-08-27T13:50:36+00:00",
+        "updated_at": "2026-08-27T13:50:36+00:00"
     }
 ]
