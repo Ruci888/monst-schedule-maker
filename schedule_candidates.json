@@ -1,28 +1,6 @@
 [
     {
         "year": 2026,
-        "date": "8/22",
-        "start_time": "19:00",
-        "end_time": "11:59",
-        "name": "グノーシス",
-        "quest_name": "物質世界の脱却を目指す天才少女",
-        "attribute": "木",
-        "difficulty": "超究極・兵",
-        "category": "高難易度・注目",
-        "group_name": "超究極・兵",
-        "availability_type": "期間中常設",
-        "period_end_date": "2026-10-26",
-        "source_type": "official",
-        "source_url": "https://www.monster-strike.com/news/20260813_4.html",
-        "fetched_at": "2026-08-28T04:55:15+09:00",
-        "period_label": "クエスト出現期間",
-        "review_status": "needs_review",
-        "review_reason": "公式記事の「クエスト出現期間」から降臨候補を抽出しました。",
-        "published": false,
-        "candidate_id": "21f38ea582eb422ea1cc"
-    },
-    {
-        "year": 2026,
         "date": "8/18",
         "start_time": "19:00",
         "end_time": "11:59",
@@ -36,12 +14,11 @@
         "period_end_date": "2026-09-01",
         "source_type": "official",
         "source_url": "https://www.monster-strike.com/news/20260813_2.html",
-        "fetched_at": "2026-08-28T04:55:15+09:00",
+        "fetched_at": "2026-08-31T19:32:28+09:00",
         "period_label": "出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false,
-        "candidate_id": "8e6772cb3358f33086e3"
+        "published": false
     },
     {
         "year": 2026,
@@ -58,11 +35,31 @@
         "period_end_date": "2026-09-01",
         "source_type": "official",
         "source_url": "https://www.monster-strike.com/news/20260813_2.html",
-        "fetched_at": "2026-08-28T04:55:15+09:00",
+        "fetched_at": "2026-08-31T19:32:28+09:00",
         "period_label": "出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false,
-        "candidate_id": "6989b614e8bf79cb8295"
+        "published": false
+    },
+    {
+        "year": 2026,
+        "date": "8/28",
+        "start_time": "19:00",
+        "end_time": "11:59",
+        "name": "糸師 凛",
+        "quest_name": "",
+        "attribute": "",
+        "difficulty": "超究極",
+        "category": "コラボ",
+        "group_name": "ブルーロックコラボ",
+        "availability_type": "期間中常設",
+        "period_end_date": "2026-09-01",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260813_2.html",
+        "fetched_at": "2026-08-31T19:32:28+09:00",
+        "period_label": "出現期間",
+        "review_status": "needs_review",
+        "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 属性・クエスト名を確認してください。",
+        "published": false
     }
 ]
