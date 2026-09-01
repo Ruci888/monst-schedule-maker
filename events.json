@@ -1,20 +1,10 @@
 [
     {
-        "start_time": "",
-        "end_time": "",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "manual",
-        "source_url": "",
-        "confirmed_at": "",
-        "published": false,
         "name": "ブルーロックコラボ",
         "short_name": "ブルーロック",
         "category": "コラボ・期間限定",
         "start_date": "2026-08-16",
-        "end_date": "2026-08-31"
-    },
-    {
+        "end_date": "2026-08-31",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -22,14 +12,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": false,
+        "published": false
+    },
+    {
         "name": "モンスト夏休み2026",
         "short_name": "夏休み2026",
         "category": "コラボ・期間限定",
         "start_date": "2026-08-02",
-        "end_date": "2026-08-31"
-    },
-    {
+        "end_date": "2026-08-31",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -37,14 +27,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": true,
+        "published": false
+    },
+    {
         "name": "天魔の孤城",
         "short_name": "天魔の孤城",
         "category": "定期コンテンツ",
         "start_date": "2026-08-01",
-        "end_date": "2026-08-31"
-    },
-    {
+        "end_date": "2026-08-31",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -52,14 +42,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "破界の星墓",
         "short_name": "破界の星墓",
         "category": "定期コンテンツ",
         "start_date": "2026-08-27",
-        "end_date": "2026-09-20"
-    },
-    {
+        "end_date": "2026-09-20",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -67,14 +57,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": false,
+        "published": true
+    },
+    {
         "name": "英雄の神殿 わくわくの実キャンペーン",
         "short_name": "神殿CP",
         "category": "育成キャンペーン",
         "start_date": "2026-08-18",
-        "end_date": "2026-08-22"
-    },
-    {
+        "end_date": "2026-08-22",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -82,14 +72,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": false,
+        "published": false
+    },
+    {
         "name": "追憶の書庫キャンペーン",
         "short_name": "書庫CP",
         "category": "育成キャンペーン",
         "start_date": "2026-08-21",
-        "end_date": "2026-08-25"
-    },
-    {
+        "end_date": "2026-08-25",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -97,14 +87,14 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": false,
+        "published": false
+    },
+    {
         "name": "激・獣神祭",
         "short_name": "激・獣神祭",
         "category": "ガチャ",
         "start_date": "2026-08-16",
-        "end_date": "2026-08-19"
-    },
-    {
+        "end_date": "2026-08-19",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -112,14 +102,29 @@
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
-        "published": false,
+        "published": false
+    },
+    {
         "name": "獣神化・改 解禁",
         "short_name": "獣神化・改",
         "category": "獣神化情報",
         "start_date": "2026-08-25",
-        "end_date": "2026-08-25"
+        "end_date": "2026-08-25",
+        "start_time": "",
+        "end_time": "",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": false
     },
     {
+        "name": "未開の幻洞",
+        "short_name": "未開の幻洞",
+        "category": "定期コンテンツ",
+        "start_date": "2026-08-14",
+        "end_date": "2026-08-29",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -127,14 +132,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260806_7.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
-        "name": "未開の幻洞",
-        "short_name": "未開の幻洞",
-        "category": "定期コンテンツ",
-        "start_date": "2026-08-14",
-        "end_date": "2026-08-29"
+        "published": true
     },
     {
+        "name": "覇者の塔",
+        "short_name": "覇者の塔",
+        "category": "定期コンテンツ",
+        "start_date": "2026-08-07",
+        "end_date": "2026-08-25",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -142,14 +147,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260805_1.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
-        "name": "覇者の塔",
-        "short_name": "覇者の塔",
-        "category": "定期コンテンツ",
-        "start_date": "2026-08-07",
-        "end_date": "2026-08-25"
+        "published": true
     },
     {
+        "name": "モネ",
+        "short_name": "モネ、獣神化・改",
+        "category": "獣神化情報",
+        "start_date": "2026-08-18",
+        "end_date": "2026-08-18",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -157,29 +162,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_5.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
-        "name": "モネ",
-        "short_name": "モネ、獣神化・改",
-        "category": "獣神化情報",
-        "start_date": "2026-08-18",
-        "end_date": "2026-08-18"
+        "published": true
     },
     {
-        "start_time": "",
-        "end_time": "",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "verified",
-        "source_url": "https://www.monster-strike.com/news/20260813_3.html",
-        "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
         "name": "マルチ・スタミナバックキャンペーン",
         "short_name": "マルチ・スタミナバックCP",
         "category": "マルチキャンペーン",
         "start_date": "2026-08-16",
-        "end_date": "2026-08-22"
-    },
-    {
+        "end_date": "2026-08-22",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -187,14 +177,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_3.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "英雄の神殿 わくわくの実2個（第1期間）",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-08-17",
-        "end_date": "2026-08-18"
-    },
-    {
+        "end_date": "2026-08-18",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -202,14 +192,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_3.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "英雄の神殿 わくわくの実2個（第2期間）",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-08-24",
-        "end_date": "2026-08-25"
-    },
-    {
+        "end_date": "2026-08-25",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -217,14 +207,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_3.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "クエストサーチミッション",
         "short_name": "サーチミッション",
         "category": "ミッション",
         "start_date": "2026-08-19",
-        "end_date": "2026-08-24"
-    },
-    {
+        "end_date": "2026-08-24",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -232,14 +222,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_3.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "タイムシフトミッション",
         "short_name": "タイムシフトミッション",
         "category": "ミッション",
         "start_date": "2026-08-24",
-        "end_date": "2026-08-29"
+        "end_date": "2026-08-29",
+        "start_time": "",
+        "end_time": "",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260813_3.html",
+        "confirmed_at": "2026-08-17T05:40:22+00:00",
+        "published": true
     },
     {
+        "name": "追憶の書庫 金卵排出率2倍",
+        "short_name": "書庫卵2倍CP(闇・木・光・水・火)",
+        "category": "育成キャンペーン",
+        "start_date": "2026-08-25",
+        "end_date": "2026-08-29",
         "start_time": "00:00",
         "end_time": "23:59",
         "daily_labels": "闇・木・光・水・火",
@@ -247,14 +252,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_3.html",
         "confirmed_at": "2026-08-27T19:56:37+00:00",
-        "published": true,
-        "name": "追憶の書庫 金卵排出率2倍",
-        "short_name": "書庫卵2倍CP(闇・木・光・水・火)",
-        "category": "育成キャンペーン",
-        "start_date": "2026-08-25",
-        "end_date": "2026-08-29"
+        "published": true
     },
     {
+        "name": "ブルーロックコラボガチャ",
+        "short_name": "ブルーロックコラボガチャ",
+        "category": "コラボガチャ",
+        "start_date": "2026-08-16",
+        "end_date": "2026-09-02",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -262,29 +267,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_2.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
-        "name": "ブルーロックコラボガチャ",
-        "short_name": "ブルーロックコラボガチャ",
-        "category": "コラボガチャ",
-        "start_date": "2026-08-16",
-        "end_date": "2026-09-02"
+        "published": true
     },
     {
-        "start_time": "",
-        "end_time": "",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "verified",
-        "source_url": "https://www.monster-strike.com/news/20260813_2.html",
-        "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
         "name": "その他クリアミッション",
         "short_name": "その他クリアミッション",
         "category": "コラボミッション",
         "start_date": "2026-08-18",
-        "end_date": "2026-09-05"
-    },
-    {
+        "end_date": "2026-09-05",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -292,14 +282,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_2.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "コラボミッション",
         "short_name": "コラボミッション",
         "category": "コラボミッション",
         "start_date": "2026-08-16",
-        "end_date": "2026-09-05"
-    },
-    {
+        "end_date": "2026-09-05",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -307,14 +297,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_2.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "ブルーロックコラボ",
         "short_name": "ブルーロックコラボ",
         "category": "コラボ・期間限定",
         "start_date": "2026-08-16",
-        "end_date": "2026-09-02"
+        "end_date": "2026-09-02",
+        "start_time": "",
+        "end_time": "",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260813_2.html",
+        "confirmed_at": "2026-08-17T05:40:22+00:00",
+        "published": true
     },
     {
+        "name": "アゲインガチャ",
+        "short_name": "アゲインガチャ",
+        "category": "周年CP",
+        "start_date": "2026-08-10",
+        "end_date": "2026-08-20",
         "start_time": "",
         "end_time": "",
         "daily_labels": "",
@@ -322,14 +327,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260806_6.html",
         "confirmed_at": "2026-08-17T05:40:22+00:00",
-        "published": true,
-        "name": "アゲインガチャ",
-        "short_name": "アゲインガチャ",
-        "category": "周年CP",
-        "start_date": "2026-08-10",
-        "end_date": "2026-08-20"
+        "published": true
     },
     {
+        "name": "アラジン",
+        "short_name": "アラジン、獣神化",
+        "category": "獣神化情報",
+        "start_date": "2026-09-01",
+        "end_date": "2026-09-01",
         "start_time": "12:00",
         "end_time": "12:00",
         "daily_labels": "",
@@ -337,29 +342,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_3.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
-        "name": "アラジン",
-        "short_name": "アラジン、獣神化",
-        "category": "獣神化情報",
-        "start_date": "2026-09-01",
-        "end_date": "2026-09-01"
+        "published": true
     },
     {
+        "name": "追憶の書庫 金卵排出率2倍",
+        "short_name": "書庫CP",
+        "category": "育成キャンペーン",
+        "start_date": "2026-09-11",
+        "end_date": "2026-09-15",
         "start_time": "00:00",
         "end_time": "23:59",
-        "daily_labels": "",
+        "daily_labels": "闇・光・木・火・水",
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_2.html",
         "confirmed_at": "2026-08-27T19:56:37+00:00",
-        "published": true,
-        "name": "追憶の書庫キャンペーン",
-        "short_name": "書庫CP",
-        "category": "育成キャンペーン",
-        "start_date": "2026-09-11",
-        "end_date": "2026-09-15"
+        "published": true
     },
     {
+        "name": "破界の星墓",
+        "short_name": "破界の星墓",
+        "category": "定期コンテンツ",
+        "start_date": "2026-08-27",
+        "end_date": "2026-09-20",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -367,14 +372,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260826_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
-        "name": "破界の星墓",
-        "short_name": "破界の星墓",
-        "category": "定期コンテンツ",
-        "start_date": "2026-08-27",
-        "end_date": "2026-09-21"
+        "published": true
     },
     {
+        "name": "モンコレDX",
+        "short_name": "モンコレDX",
+        "category": "ガチャ",
+        "start_date": "2026-08-26",
+        "end_date": "2026-08-30",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -382,29 +387,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260825_1.html",
         "confirmed_at": "2026-08-27T19:56:37+00:00",
-        "published": true,
-        "name": "モンコレDX",
-        "short_name": "モンコレDX",
-        "category": "ガチャ",
-        "start_date": "2026-08-26",
-        "end_date": "2026-08-30"
+        "published": true
     },
     {
-        "start_time": "00:00",
-        "end_time": "23:59",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "verified",
-        "source_url": "https://www.monster-strike.com/news/20260828_1.html",
-        "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
         "name": "英雄の神殿 わくわくの実2個",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-08-30",
-        "end_date": "2026-09-01"
+        "end_date": "2026-09-01",
+        "start_time": "00:00",
+        "end_time": "23:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260828_1.html",
+        "confirmed_at": "2026-08-31T10:36:01+00:00",
+        "published": true
     },
     {
+        "name": "超・獣神祭",
+        "short_name": "超・獣神祭",
+        "category": "ガチャ",
+        "start_date": "2026-08-30",
+        "end_date": "2026-09-02",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -412,29 +417,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260828_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
-        "name": "超・獣神祭",
-        "short_name": "超・獣神祭",
-        "category": "ガチャ",
-        "start_date": "2026-08-30",
-        "end_date": "2026-09-02"
+        "published": true
     },
     {
-        "start_time": "00:00",
-        "end_time": "23:59",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "verified",
-        "source_url": "https://www.monster-strike.com/news/20260827_2.html",
-        "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
         "name": "英雄の神殿 わくわくの実2個（第1期間）",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-09-02",
-        "end_date": "2026-09-03"
-    },
-    {
+        "end_date": "2026-09-03",
         "start_time": "00:00",
         "end_time": "23:59",
         "daily_labels": "",
@@ -442,14 +432,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_2.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "英雄の神殿 わくわくの実2個（第2期間）",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-09-07",
-        "end_date": "2026-09-08"
-    },
-    {
+        "end_date": "2026-09-08",
         "start_time": "00:00",
         "end_time": "23:59",
         "daily_labels": "",
@@ -457,29 +447,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_2.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "英雄の神殿 わくわくの実2個（第3期間）",
         "short_name": "神殿CP・わくわく×2",
         "category": "育成キャンペーン",
         "start_date": "2026-09-14",
-        "end_date": "2026-09-15"
-    },
-    {
-        "start_time": "04:00",
-        "end_time": "03:59",
+        "end_date": "2026-09-15",
+        "start_time": "00:00",
+        "end_time": "23:59",
         "daily_labels": "",
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_2.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "クエストサーチミッション",
         "short_name": "サーチミッション",
         "category": "ミッション",
         "start_date": "2026-09-04",
-        "end_date": "2026-09-09"
-    },
-    {
+        "end_date": "2026-09-09",
         "start_time": "04:00",
         "end_time": "03:59",
         "daily_labels": "",
@@ -487,14 +477,29 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_2.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
+        "published": true
+    },
+    {
         "name": "タイムシフトミッション",
         "short_name": "タイムシフトミッション",
         "category": "ミッション",
         "start_date": "2026-09-09",
-        "end_date": "2026-09-14"
+        "end_date": "2026-09-14",
+        "start_time": "04:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260827_2.html",
+        "confirmed_at": "2026-08-31T10:36:01+00:00",
+        "published": true
     },
     {
+        "name": "μ'sミッションでコラボキャラや衣装解放などを獲得！",
+        "short_name": "ラブライブμ'sミッション",
+        "category": "コラボミッション",
+        "start_date": "2026-09-01",
+        "end_date": "2026-09-19",
         "start_time": "12:00",
         "end_time": "03:59",
         "daily_labels": "",
@@ -502,14 +507,14 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
-        "name": "μ'sミッションでコラボキャラや衣装解放などを獲得！",
-        "short_name": "ラブライブμ'sミッション",
-        "category": "コラボミッション",
-        "start_date": "2026-09-01",
-        "end_date": "2026-09-19"
+        "published": true
     },
     {
+        "name": "ラブライブ！シリーズコラボ",
+        "short_name": "ラブライブ！シリーズコラボ",
+        "category": "コラボ・期間限定",
+        "start_date": "2026-09-01",
+        "end_date": "2026-09-18",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -517,12 +522,7 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": true,
-        "name": "ラブライブ！シリーズコラボ",
-        "short_name": "ラブライブ！シリーズコラボ",
-        "category": "コラボ・期間限定",
-        "start_date": "2026-09-01",
-        "end_date": "2026-09-18"
+        "published": true
     },
     {
         "name": "破界に響く星歌",
