@@ -1,27 +1,6 @@
 [
     {
         "year": 2026,
-        "date": "8/18",
-        "start_time": "19:00",
-        "end_time": "11:59",
-        "name": "士道龍聖",
-        "quest_name": "",
-        "attribute": "光",
-        "difficulty": "超究極",
-        "category": "コラボ",
-        "group_name": "ブルーロックコラボ",
-        "availability_type": "期間中常設",
-        "period_end_date": "2026-09-01",
-        "source_type": "official",
-        "source_url": "https://www.monster-strike.com/news/20260813_2.html",
-        "fetched_at": "2026-09-02T07:32:22+09:00",
-        "period_label": "出現期間",
-        "review_status": "needs_review",
-        "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false
-    },
-    {
-        "year": 2026,
         "date": "8/21",
         "start_time": "19:00",
         "end_time": "11:59",
@@ -39,7 +18,8 @@
         "period_label": "出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false
+        "published": false,
+        "candidate_id": "e5733edcc58a5d1a521e"
     },
     {
         "year": 2026,
@@ -60,6 +40,7 @@
         "period_label": "出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 属性・クエスト名を確認してください。",
-        "published": false
+        "published": false,
+        "candidate_id": "c205b8016150b4ef06d7"
     }
 ]
