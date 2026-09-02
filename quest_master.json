@@ -1826,11 +1826,19 @@
                 "card_signature": "137f0b560357035c7400e404a413ac13a4026a006600640094adac294809ec05",
                 "source_capture_type": "screenshot",
                 "created_at": "2026-08-27T23:04:55+00:00"
+            },
+            {
+                "reference_id": "image_06e1c7b4eb5fc5e7",
+                "portrait_signature": "201020410260e09041ac428c0b13770e7d6948ca6f5ae5586ac25a6464adb583",
+                "visual_signature": "00bd00bd00b900390031000000000000000000000000000100400022001a0016",
+                "card_signature": "060f641f541f14167400e404a413ac13a4026a0066006c0094adac294809ec05",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-02T00:02:17+00:00"
             }
         ],
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
-        "updated_at": "2026-08-28T01:08:36+00:00"
+        "updated_at": "2026-09-02T00:02:17+00:00"
     },
     {
         "quest_id": "quest_afe088497ad455da",
