@@ -249,7 +249,7 @@
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -275,7 +275,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_2ebac46dd5a895c2",
@@ -284,7 +284,7 @@
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -293,7 +293,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_2f1b11b9ac1dd484",
@@ -302,7 +302,7 @@
         "quest_name": "",
         "attribute": "光",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -320,7 +320,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_77a98cb6245a8979",
@@ -1894,7 +1894,7 @@
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "黎絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1903,7 +1903,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_48d74178fca0a23c",
@@ -1912,7 +1912,7 @@
         "quest_name": "",
         "attribute": "木",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1921,7 +1921,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_3e3e75b6ad9ec540",
@@ -1930,7 +1930,7 @@
         "quest_name": "",
         "attribute": "水",
         "difficulty": "黎絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1939,7 +1939,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_8a475499d3891145",
@@ -1948,7 +1948,7 @@
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1957,7 +1957,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_dfa0406c57983b64",
@@ -1966,7 +1966,7 @@
         "quest_name": "",
         "attribute": "木",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1975,7 +1975,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_8a34402a87e8aa23",
@@ -1984,7 +1984,7 @@
         "quest_name": "",
         "attribute": "光",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -1993,7 +1993,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_c8708c122fe5a669",
@@ -2002,7 +2002,7 @@
         "quest_name": "",
         "attribute": "火",
         "difficulty": "黎絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -2011,7 +2011,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_cd2a5223596c999b",
@@ -2020,7 +2020,7 @@
         "quest_name": "",
         "attribute": "水",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -2029,7 +2029,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_b3e5160c29a893e8",
@@ -2038,7 +2038,7 @@
         "quest_name": "",
         "attribute": "闇",
         "difficulty": "黎絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -2047,7 +2047,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_38bcff48b17e93f8",
@@ -2056,7 +2056,7 @@
         "quest_name": "",
         "attribute": "火",
         "difficulty": "轟絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -2065,7 +2065,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_1170820515c62064",
@@ -2200,7 +2200,7 @@
         "quest_name": "",
         "attribute": "光",
         "difficulty": "黎絶",
-        "category": "通常降臨",
+        "category": "高難易度・注目",
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
@@ -2209,7 +2209,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T02:51:25+00:00",
-        "updated_at": "2026-09-02T02:51:25+00:00"
+        "updated_at": "2026-09-02T03:10:11+00:00"
     },
     {
         "quest_id": "quest_dcbe2dfedd52e43b",
