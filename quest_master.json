@@ -2106,7 +2106,7 @@
     {
         "quest_id": "quest_5daec8bb0bc182fe",
         "name": "小泉花陽",
-        "name_reading": "",
+        "name_reading": "こ",
         "quest_name": "",
         "attribute": "木",
         "difficulty": "究極",
@@ -2128,12 +2128,12 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-02T00:04:35+00:00"
+        "updated_at": "2026-09-02T02:53:36+00:00"
     },
     {
         "quest_id": "quest_cc8e21648b9c869a",
         "name": "絢瀬絵里",
-        "name_reading": "",
+        "name_reading": "あ",
         "quest_name": "",
         "attribute": "水",
         "difficulty": "究極",
@@ -2146,12 +2146,12 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-01T23:52:01+00:00"
+        "updated_at": "2026-09-02T02:53:36+00:00"
     },
     {
         "quest_id": "quest_6b40ea8afe00b55a",
         "name": "矢澤にこ",
-        "name_reading": "",
+        "name_reading": "や",
         "quest_name": "",
         "attribute": "火",
         "difficulty": "究極",
@@ -2173,7 +2173,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-02T00:03:09+00:00"
+        "updated_at": "2026-09-02T02:53:36+00:00"
     },
     {
         "quest_id": "quest_edf1c693c37c0ace",
