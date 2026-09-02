@@ -2141,9 +2141,18 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_0f8de81a0e3970f2",
+                "portrait_signature": "c5044a04100083801cb80a7212b26092517b5a7458c8f1ba6d5a7ad57a2dba03",
+                "visual_signature": "c6b9c2e9c2e982e980a10000000000000000000000000005b8a449aa254a150c",
+                "card_signature": "4b5703554a5d00053400b404a593b4ab9402520a5609640094adac297001ec01",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-02T00:03:09+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-01T23:52:01+00:00"
+        "updated_at": "2026-09-02T00:03:09+00:00"
     }
 ]
