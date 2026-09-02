@@ -1927,10 +1927,19 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_17f9e2f624f4621c",
+                "portrait_signature": "025800560003e020524452841b7359da56d854d85a36d8365a325ab46d6db99b",
+                "visual_signature": "001c001c001c001c0008000000000000000000000000000000810054013400a4",
+                "card_signature": "10031803080808087400e402a423ac1bac04565562c55400b4ad8c295001fc01",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-02T00:14:29+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-01T23:13:57+00:00"
+        "updated_at": "2026-09-02T00:14:29+00:00"
     },
     {
         "quest_id": "quest_2d0000d60f35289a",
