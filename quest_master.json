@@ -1807,11 +1807,19 @@
                 "card_signature": "22130603240f04153400b404ac2ba40bac024c005c00640094ad9c29580d7c05",
                 "source_capture_type": "screenshot",
                 "created_at": "2026-08-27T23:03:49+00:00"
+            },
+            {
+                "reference_id": "image_2f7ac87a8625cf38",
+                "portrait_signature": "02140088001883805c520b2e34a96ab24dad656d6d3bf65a706d551449cdb147",
+                "visual_signature": "000c000c000c000c000c00000000000000000000000000010084004400440164",
+                "card_signature": "08030803080808085400b404a40ba40bac024c005c00640094ad9c295809ec05",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-02T00:05:56+00:00"
             }
         ],
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
-        "updated_at": "2026-08-28T01:08:36+00:00"
+        "updated_at": "2026-09-02T00:05:56+00:00"
     },
     {
         "quest_id": "quest_419b22fa7b79cfa1",
