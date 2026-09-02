@@ -6,6 +6,7 @@ from quest_master import (
     card_reference_is_learnable,
     delete_quest_master,
     master_expired,
+    parse_master_bulk_entries,
     parse_master_bulk_text,
     quest_master_kana_group,
     quest_master_key,
@@ -168,7 +169,7 @@ class QuestMasterTests(unittest.TestCase):
     def test_parses_mobile_friendly_bulk_master_input(self):
         records, errors = parse_master_bulk_text(
             "スノーマン｜木｜究極\n"
-            "ストラテジー,水,爆絶,高難易度・注目",
+            "ストラテジー,水,爆絶,す",
             "通常降臨",
         )
         self.assertEqual(errors, [])
@@ -179,11 +180,12 @@ class QuestMasterTests(unittest.TestCase):
             "difficulty": "究極",
             "category": "通常降臨",
         })
-        self.assertEqual(records[1]["category"], "高難易度・注目")
+        self.assertEqual(records[1]["category"], "通常降臨")
+        self.assertEqual(records[1]["name_reading"], "す")
 
     def test_parses_optional_reading_for_kana_browse(self):
         records, errors = parse_master_bulk_text(
-            "仙丹｜木｜超絶｜通常降臨｜せ",
+            "仙丹｜木｜超絶｜せ",
             "通常降臨",
         )
         self.assertEqual(errors, [])
@@ -224,13 +226,32 @@ class QuestMasterTests(unittest.TestCase):
         self.assertEqual(records, [])
         self.assertIn("1行目", errors[0])
 
+    def test_bulk_master_rejects_per_line_category_columns(self):
+        records, errors = parse_master_bulk_text(
+            "仙丹｜木｜超絶｜通常降臨｜せ",
+            "通常降臨",
+        )
+        self.assertEqual(records, [])
+        self.assertIn("カテゴリは上部の選択", errors[0])
+
+    def test_bulk_master_entries_keep_line_numbers_and_errors(self):
+        entries = parse_master_bulk_entries(
+            "スノーマン｜木｜究極\n名前だけ\n仙丹｜木｜超絶｜せ",
+            "通常降臨",
+        )
+        self.assertEqual([entry["line_number"] for entry in entries], [1, 2, 3])
+        self.assertEqual(entries[0]["record"]["category"], "通常降臨")
+        self.assertIsNone(entries[1]["record"])
+        self.assertIn("2行目", entries[1]["error"])
+        self.assertEqual(entries[2]["record"]["name_reading"], "せ")
+
     def test_parses_all_unique_quests_from_reported_screenshot_batch(self):
         records, errors = parse_master_bulk_text(
-            "U-20日本代表 士道龍聖｜光｜超究極｜コラボ\n"
-            "TOP3 蟻生十兵衛｜木｜究極｜コラボ\n"
-            "殺し屋 烏旅人｜水｜究極｜コラボ\n"
-            "チームY 二子一揮｜闇｜極｜コラボ\n"
-            "チームV 剣城斬鉄｜光｜極｜コラボ\n"
+            "U-20日本代表 士道龍聖｜光｜超究極\n"
+            "TOP3 蟻生十兵衛｜木｜究極\n"
+            "殺し屋 烏旅人｜水｜究極\n"
+            "チームY 二子一揮｜闇｜極\n"
+            "チームV 剣城斬鉄｜光｜極\n"
             "イゴーロナク｜光｜激究極\n"
             "スタバーン｜光｜轟絶\n"
             "ジョルノ・ロキア｜水｜激究極\n"

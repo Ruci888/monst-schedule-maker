@@ -40,7 +40,7 @@ from quest_master import (
     master_expired,
     normalize_quest_master,
     normalize_quest_master_record,
-    parse_master_bulk_text,
+    parse_master_bulk_entries,
     quest_master_kana_group,
     quest_master_key,
     schedule_from_master,
@@ -454,7 +454,14 @@ def render_quest_master_management():
         "通常降臨は名前・属性・難易度・降臨カテゴリだけで登録できます。"
         "登録後のスクリーンショット抽出から補正候補として使用します。"
     )
-    single_tab, bulk_tab = st.tabs(["1体ずつ登録", "まとめて登録"])
+    registration_default_tab = st.session_state.pop(
+        "quest_master_registration_default_tab",
+        "1体ずつ登録",
+    )
+    single_tab, bulk_tab = st.tabs(
+        ["1体ずつ登録", "まとめて登録"],
+        default=registration_default_tab,
+    )
     with single_tab:
         with st.form("manual_quest_master_form", clear_on_submit=True):
             manual_name = st.text_input("名前")
@@ -522,6 +529,7 @@ def render_quest_master_management():
                         f"{message} {manual_name}をマスターへ"
                         f"{'追加' if added else '更新'}しました。"
                     )
+                    st.session_state["admin_force_default_tab"] = "降臨マスター"
                     st.rerun()
                 except GitHubStorageError as error:
                     st.error(str(error))
@@ -529,7 +537,7 @@ def render_quest_master_management():
     with bulk_tab:
         with st.form("bulk_quest_master_form", clear_on_submit=True):
             bulk_category = st.selectbox(
-                "省略時の降臨カテゴリ",
+                "登録する降臨カテゴリ（全行共通）",
                 SCHEDULE_CATEGORIES,
                 index=SCHEDULE_CATEGORIES.index("通常降臨"),
                 key="bulk_master_default_category",
@@ -546,12 +554,12 @@ def render_quest_master_management():
                 "1行に1体入力",
                 placeholder=(
                     "スノーマン｜木｜究極\n"
-                    "仙丹｜木｜超絶｜通常降臨｜せ"
+                    "仙丹｜木｜超絶｜せ"
                 ),
                 help=(
-                    "名前｜属性｜難易度の順です。4項目目に降臨カテゴリも"
-                    "指定できます。5項目目は読みで、先頭1文字だけでも構いません。"
-                    "縦線の代わりにカンマも使用できます。"
+                    "名前｜属性｜難易度の順です。4項目目は任意の読みで、"
+                    "先頭1文字だけでも構いません。降臨カテゴリは上で選んだ"
+                    "内容を全行に適用します。縦線の代わりにカンマも使えます。"
                 ),
                 height=180,
             )
@@ -560,46 +568,103 @@ def render_quest_master_management():
                 type="primary",
             )
         if bulk_submit:
-            additions, errors = parse_master_bulk_text(
+            entries = parse_master_bulk_entries(
                 bulk_text,
                 bulk_category,
             )
-            if not additions and not errors:
-                errors.append("登録する降臨を入力してください。")
-            for index, addition in enumerate(additions, 1):
+            registration_results = []
+            prepared = []
+            existing_keys = {
+                quest_master_key(record)
+                for record in records
+            }
+            seen_input_keys = {}
+            period_error = (
+                bool(bulk_period_end)
+                and not validate_date(bulk_period_end)
+            )
+
+            if not entries:
+                registration_results.append({
+                    "行": "-",
+                    "登録内容": "未入力",
+                    "判定": "エラー",
+                    "詳細": "登録する降臨を入力してください。",
+                })
+
+            for entry in entries:
+                line_number = entry["line_number"]
+                addition = entry.get("record")
+                if addition is None:
+                    registration_results.append({
+                        "行": line_number,
+                        "登録内容": entry.get("name") or entry["raw_line"],
+                        "判定": "エラー",
+                        "詳細": entry.get("error") or "入力形式が不正です。",
+                    })
+                    continue
+
+                registration_text = "｜".join((
+                    addition.get("name", ""),
+                    addition.get("attribute", ""),
+                    addition.get("difficulty", ""),
+                ))
+                row_errors = []
                 if addition.get("attribute") not in ATTRIBUTES:
-                    errors.append(
-                        f"{index}件目：属性は火・水・木・光・闇から選んでください。"
+                    row_errors.append(
+                        "属性は火・水・木・光・闇から選んでください。"
                     )
                 if addition.get("difficulty") not in DIFFICULTIES:
-                    errors.append(
-                        f"{index}件目：難易度が登録対象外です。"
-                    )
+                    row_errors.append("難易度が登録対象外です。")
                 if addition.get("category") not in SCHEDULE_CATEGORIES:
-                    errors.append(
-                        f"{index}件目：降臨カテゴリが不正です。"
+                    row_errors.append("上部で選択した降臨カテゴリが不正です。")
+                if period_error:
+                    row_errors.append(
+                        "共通の期間終了日はYYYY-MM-DD形式で入力してください。"
                     )
-            if bulk_period_end and not validate_date(bulk_period_end):
-                errors.append(
-                    "共通の期間終了日はYYYY-MM-DD形式で入力してください。"
-                )
-            if errors:
-                for error in errors:
-                    st.error(error)
-            else:
-                prepared = []
-                for addition in additions:
-                    limited = (
-                        addition["category"] in LIMITED_MASTER_CATEGORIES
-                    )
-                    prepared.append({
-                        **addition,
-                        "group_name": bulk_group if limited else "",
-                        "availability_type": AVAILABILITY_SCHEDULED,
-                        "period_end_date": bulk_period_end if limited else "",
-                        "source_type": "manual",
-                        "published": True,
+                if row_errors:
+                    registration_results.append({
+                        "行": line_number,
+                        "登録内容": registration_text,
+                        "判定": "エラー",
+                        "詳細": " ".join(row_errors),
                     })
+                    continue
+
+                key = quest_master_key(addition)
+                if key in seen_input_keys:
+                    registration_results.append({
+                        "行": line_number,
+                        "登録内容": registration_text,
+                        "判定": "入力重複",
+                        "詳細": (
+                            f"{seen_input_keys[key]}行目と名前・難易度が重複しています。"
+                        ),
+                    })
+                    continue
+                seen_input_keys[key] = line_number
+
+                limited = addition["category"] in LIMITED_MASTER_CATEGORIES
+                prepared.append({
+                    **addition,
+                    "group_name": bulk_group if limited else "",
+                    "availability_type": AVAILABILITY_SCHEDULED,
+                    "period_end_date": bulk_period_end if limited else "",
+                    "source_type": "manual",
+                    "published": True,
+                })
+                registration_results.append({
+                    "行": line_number,
+                    "登録内容": registration_text,
+                    "判定": "既存更新" if key in existing_keys else "新規追加",
+                    "詳細": (
+                        "同じ名前・難易度の登録内容を更新します。"
+                        if key in existing_keys
+                        else "新しいマスターとして追加します。"
+                    ),
+                })
+
+            if prepared:
                 merged, added, updated, skipped = upsert_quest_master(
                     records,
                     prepared,
@@ -609,13 +674,67 @@ def render_quest_master_management():
                         merged,
                         "Bulk register quest master before extraction",
                     )
+                    st.session_state[
+                        "bulk_master_registration_results"
+                    ] = registration_results
+                    result_counts = {
+                        status: sum(
+                            result["判定"] == status
+                            for result in registration_results
+                        )
+                        for status in (
+                            "新規追加", "既存更新", "入力重複", "エラー"
+                        )
+                    }
                     st.session_state["admin_flash_success"] = (
-                        f"{message} マスター追加{added}件・更新{updated}件"
-                        f"・対象外{skipped}件。"
+                        f"{message} 新規追加{added}件・既存更新{updated}件・"
+                        f"入力重複{result_counts['入力重複']}件・"
+                        f"エラー{result_counts['エラー'] + skipped}件。"
                     )
+                    st.session_state["admin_force_default_tab"] = "降臨マスター"
+                    st.session_state[
+                        "quest_master_registration_default_tab"
+                    ] = "まとめて登録"
                     st.rerun()
                 except GitHubStorageError as error:
+                    for result in registration_results:
+                        if result["判定"] in ("新規追加", "既存更新"):
+                            result["判定"] = "エラー"
+                            result["詳細"] = f"保存できませんでした：{error}"
+                    st.session_state[
+                        "bulk_master_registration_results"
+                    ] = registration_results
                     st.error(str(error))
+            else:
+                st.session_state[
+                    "bulk_master_registration_results"
+                ] = registration_results
+
+        bulk_results = st.session_state.get(
+            "bulk_master_registration_results",
+            [],
+        )
+        if bulk_results:
+            st.markdown("##### 直近のまとめて登録結果")
+            status_counts = {
+                status: sum(
+                    result["判定"] == status
+                    for result in bulk_results
+                )
+                for status in ("新規追加", "既存更新", "入力重複", "エラー")
+            }
+            st.caption(
+                f"新規追加 {status_counts['新規追加']}件 ／ "
+                f"既存更新 {status_counts['既存更新']}件 ／ "
+                f"入力重複 {status_counts['入力重複']}件 ／ "
+                f"エラー {status_counts['エラー']}件"
+            )
+            st.dataframe(
+                pd.DataFrame(bulk_results),
+                use_container_width=True,
+                hide_index=True,
+                height=min(420, 38 * len(bulk_results) + 38),
+            )
 
     st.markdown("#### 登録済み降臨を検索して日程へ追加")
     search_column, kana_column, expired_column = st.columns([2, 1, 1])
@@ -1873,6 +1992,7 @@ if github_is_configured():
 else:
     st.info("ローカル保存モード：GitHub連携は未設定です。")
 
+forced_admin_tab = st.session_state.pop("admin_force_default_tab", "")
 candidate_tab_active = bool(
     st.session_state.get("admin_candidate_tab_active")
     or st.session_state.get("video_review_candidates")
@@ -1886,8 +2006,11 @@ tab_labels = [
 master_tab, schedule_tab, event_tab, candidate_tab = st.tabs(
     tab_labels,
     default=(
-        "自動取得候補・失敗ログ"
-        if candidate_tab_active else "降臨マスター"
+        forced_admin_tab
+        or (
+            "自動取得候補・失敗ログ"
+            if candidate_tab_active else "降臨マスター"
+        )
     ),
 )
 

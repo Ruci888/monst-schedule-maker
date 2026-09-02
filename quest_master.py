@@ -456,10 +456,14 @@ def delete_quest_master(records, quest_ids):
     ]
 
 
-def parse_master_bulk_text(text, default_category):
-    """名前｜属性｜難易度（｜カテゴリ｜読み）の複数行入力を解析する。"""
-    records = []
-    errors = []
+def parse_master_bulk_entries(text, default_category):
+    """一括入力を行番号・エラーを保ったまま解析する。
+
+    降臨カテゴリは画面上部で選択した値を全行へ適用し、各行は
+    「名前｜属性｜難易度（｜読み）」だけを受け付ける。
+    """
+    entries = []
+    category = normalize_schedule_category(default_category)
     for line_number, raw_line in enumerate(str(text or "").splitlines(), 1):
         line = raw_line.strip()
         if not line or line.startswith("#"):
@@ -468,20 +472,51 @@ def parse_master_bulk_text(text, default_category):
         if "|" not in normalized:
             normalized = normalized.replace(",", "|").replace("、", "|")
         parts = [part.strip() for part in normalized.split("|")]
-        if len(parts) not in (3, 4, 5) or not all(parts[:3]):
-            errors.append(
-                f"{line_number}行目：名前｜属性｜難易度"
-                "（｜カテゴリ｜読み）の形式で入力してください。"
-            )
+        name = parts[0] if parts else ""
+        if len(parts) not in (3, 4) or not all(parts[:3]):
+            if len(parts) >= 5:
+                error = (
+                    f"{line_number}行目：降臨カテゴリは上部の選択が"
+                    "全行に適用されます。各行は名前｜属性｜難易度"
+                    "（｜読み）の形式で入力してください。"
+                )
+            else:
+                error = (
+                    f"{line_number}行目：名前｜属性｜難易度"
+                    "（｜読み）の形式で入力してください。"
+                )
+            entries.append({
+                "line_number": line_number,
+                "raw_line": raw_line,
+                "name": name,
+                "record": None,
+                "error": error,
+            })
             continue
-        category = normalize_schedule_category(
-            parts[3] if len(parts) >= 4 and parts[3] else default_category
-        )
-        records.append({
-            "name": parts[0],
-            "name_reading": parts[4] if len(parts) == 5 else "",
+        record = {
+            "name": name,
+            "name_reading": parts[3] if len(parts) == 4 else "",
             "attribute": parts[1],
             "difficulty": parts[2],
             "category": category,
+        }
+        entries.append({
+            "line_number": line_number,
+            "raw_line": raw_line,
+            "name": name,
+            "record": record,
+            "error": "",
         })
+    return entries
+
+
+def parse_master_bulk_text(text, default_category):
+    """一括入力を従来互換のレコード・エラー形式で返す。"""
+    entries = parse_master_bulk_entries(text, default_category)
+    records = [
+        entry["record"]
+        for entry in entries
+        if entry.get("record") is not None
+    ]
+    errors = [entry["error"] for entry in entries if entry.get("error")]
     return records, errors
