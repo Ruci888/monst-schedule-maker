@@ -243,24 +243,6 @@
         "updated_at": "2026-08-28T01:08:36+00:00"
     },
     {
-        "quest_id": "quest_afe088497ad455da",
-        "name": "イブエクティ",
-        "name_reading": "",
-        "quest_name": "",
-        "attribute": "光",
-        "difficulty": "黎絶",
-        "category": "高難易度・注目",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "manual",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-08-27T03:05:51+00:00"
-    },
-    {
         "quest_id": "quest_cff1ef80aa15205e",
         "name": "カルニベ",
         "name_reading": "",
@@ -1904,24 +1886,6 @@
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
         "updated_at": "2026-09-02T00:02:17+00:00"
-    },
-    {
-        "quest_id": "quest_afe088497ad455da",
-        "name": "イプエクティ",
-        "name_reading": "",
-        "quest_name": "",
-        "attribute": "光",
-        "difficulty": "黎絶",
-        "category": "高難易度・注目",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "verified",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-08-28T01:03:36+00:00",
-        "updated_at": "2026-08-28T01:08:36+00:00"
     },
     {
         "quest_id": "quest_e92c6d8abcc2e18c",
