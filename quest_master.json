@@ -2159,11 +2159,19 @@
                 "card_signature": "049154009c009d998c9a9dabb402b20a920a4a0b8c00953596a99c0168013c01",
                 "source_capture_type": "screenshot",
                 "created_at": "2026-09-06T10:47:20+00:00"
+            },
+            {
+                "reference_id": "image_b2ca65c79f35a441",
+                "portrait_signature": "4f00153929170ad75d855465581960b1ab35a12d8ab5d26956f4ccb4e1a5604e",
+                "visual_signature": "00000005000401a427a41f4a335a7d1c3bac13b8969896d01a94380620020000",
+                "card_signature": "040454009c009d999c9a9dabb402920a920a4e0b8c0096ac95bd9401e8017c01",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-06T17:49:39+00:00"
             }
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-06T10:47:20+00:00"
+        "updated_at": "2026-09-06T17:49:39+00:00"
     },
     {
         "quest_id": "quest_cc8e21648b9c869a",
