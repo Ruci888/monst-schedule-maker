@@ -2151,10 +2151,19 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_4453f1c72434beab",
+                "portrait_signature": "83002f253b4b2c497591757151e950d1986996c99655c955547452f4e3537942",
+                "visual_signature": "000000010005e80487a46722374a355c349c37ae52b836985694369454062402",
+                "card_signature": "923554008c00af0ab499b4ab948292149e0a4a0b6c00955495399c835801e801",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-06T10:47:54+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-02T02:53:36+00:00"
+        "updated_at": "2026-09-06T10:47:54+00:00"
     },
     {
         "quest_id": "quest_6b40ea8afe00b55a",
