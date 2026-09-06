@@ -1972,10 +1972,19 @@
         "period_end_date": "",
         "source_type": "manual",
         "source_url": "",
-        "image_references": [],
+        "image_references": [
+            {
+                "reference_id": "image_37e819329896b382",
+                "portrait_signature": "870027b5490d3db579aa769c574c5595a55d9693b52dea595334c994f3b57546",
+                "visual_signature": "000000010000048404c2044202420a2202b604d6025402420462022202420000",
+                "card_signature": "002454009400ac08a4d69413ac028da889ad6ac92c00a57296299c4350017c01",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-06T10:54:24+00:00"
+            }
+        ],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-02T03:10:11+00:00"
+        "updated_at": "2026-09-06T10:54:24+00:00"
     },
     {
         "quest_id": "quest_8a34402a87e8aa23",
