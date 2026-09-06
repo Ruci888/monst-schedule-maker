@@ -2211,11 +2211,19 @@
                 "card_signature": "8400d4009400b518a49a94ab9402920a920a520bb400b5b08669a40160013c01",
                 "source_capture_type": "screenshot",
                 "created_at": "2026-09-06T11:15:25+00:00"
+            },
+            {
+                "reference_id": "image_ade093b9b3823399",
+                "portrait_signature": "c70025b94ab60a72624a60e2597554b296f8b4d0b57af55672daeb2ce4196046",
+                "visual_signature": "000000013004b9a4eba46752175a955c198c17acd8b8aed87694548614060000",
+                "card_signature": "8420d4009400b718a49a94ab9402920a920a520bb400b54c8551a40160013c01",
+                "source_capture_type": "screenshot",
+                "created_at": "2026-09-06T11:24:27+00:00"
             }
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-06T11:15:25+00:00"
+        "updated_at": "2026-09-06T11:24:27+00:00"
     },
     {
         "quest_id": "quest_edf1c693c37c0ace",
