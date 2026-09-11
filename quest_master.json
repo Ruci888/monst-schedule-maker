@@ -394,7 +394,7 @@
         "category": "コラボ",
         "group_name": "",
         "availability_type": "時間指定",
-        "period_end_date": "",
+        "period_end_date": "2026-09-02",
         "source_type": "verified",
         "source_url": "",
         "image_references": [
@@ -409,7 +409,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:12:44+00:00",
-        "updated_at": "2026-09-11T06:26:34+00:00"
+        "updated_at": "2026-09-11T06:33:10+00:00"
     },
     {
         "quest_id": "quest_876adbd37a25659e",
