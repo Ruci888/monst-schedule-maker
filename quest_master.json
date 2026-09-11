@@ -2211,7 +2211,7 @@
         "category": "コラボ",
         "group_name": "",
         "availability_type": "時間指定",
-        "period_end_date": "",
+        "period_end_date": "2026-09-18",
         "source_type": "master",
         "source_url": "",
         "image_references": [
@@ -2242,7 +2242,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-11T06:49:42+00:00"
+        "updated_at": "2026-09-11T13:32:01+00:00"
     },
     {
         "quest_id": "quest_cc8e21648b9c869a",
