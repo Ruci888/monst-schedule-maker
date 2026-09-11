@@ -545,13 +545,13 @@
         "category": "コラボ",
         "group_name": "",
         "availability_type": "時間指定",
-        "period_end_date": "",
+        "period_end_date": "2026-09-02",
         "source_type": "manual",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:12:44+00:00",
-        "updated_at": "2026-08-27T03:12:44+00:00"
+        "updated_at": "2026-09-11T13:31:39+00:00"
     },
     {
         "quest_id": "quest_44ac0a32636aecc3",
