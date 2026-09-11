@@ -1668,24 +1668,6 @@
         "updated_at": "2026-08-27T19:47:31+00:00"
     },
     {
-        "quest_id": "quest_a4cc2a4fac07e144",
-        "name": "test",
-        "name_reading": "",
-        "quest_name": "",
-        "attribute": "火",
-        "difficulty": "極",
-        "category": "コラボ",
-        "group_name": "",
-        "availability_type": "期間中常設",
-        "period_end_date": "2026-08-23",
-        "source_type": "manual",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-08-27T19:22:55+00:00",
-        "updated_at": "2026-08-27T19:47:31+00:00"
-    },
-    {
         "quest_id": "quest_b9e87d97ff9cbcec",
         "name": "ドゥームズデイ",
         "name_reading": "",
