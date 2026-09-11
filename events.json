@@ -1,20 +1,5 @@
 [
     {
-        "name": "破界の星墓",
-        "short_name": "破界の星墓",
-        "category": "定期コンテンツ",
-        "start_date": "2026-08-27",
-        "end_date": "2026-09-20",
-        "start_time": "",
-        "end_time": "",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "manual",
-        "source_url": "",
-        "confirmed_at": "",
-        "published": true
-    },
-    {
         "name": "ブルーロックコラボガチャ",
         "short_name": "ブルーロックコラボガチャ",
         "category": "コラボガチャ",
