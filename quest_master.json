@@ -6302,7 +6302,7 @@
     },
     {
         "quest_id": "quest_558fdf863b40af70",
-        "name": "ケンネル",
+        "name": "ケンネル巡査",
         "name_reading": "",
         "quest_name": "",
         "attribute": "木",
@@ -6316,7 +6316,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-12T22:32:32+00:00"
+        "updated_at": "2026-09-12T22:36:51+00:00"
     },
     {
         "quest_id": "quest_fb08c563c7545588",
