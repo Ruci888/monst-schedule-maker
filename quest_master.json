@@ -6698,7 +6698,7 @@
     },
     {
         "quest_id": "quest_88687f7bd1f0cb76",
-        "name": "わび爺さび爺",
+        "name": "わび爺＆さび爺",
         "name_reading": "",
         "quest_name": "",
         "attribute": "木",
@@ -6712,7 +6712,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-12T22:32:32+00:00"
+        "updated_at": "2026-09-12T22:39:09+00:00"
     },
     {
         "quest_id": "quest_4eb8163030b89a81",
