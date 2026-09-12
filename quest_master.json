@@ -6857,5 +6857,41 @@
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
         "updated_at": "2026-09-12T22:32:32+00:00"
+    },
+    {
+        "quest_id": "quest_327c3349ff5ee5ed",
+        "name": "シュヴァルベ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "木",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:37:01+00:00",
+        "updated_at": "2026-09-12T22:37:01+00:00"
+    },
+    {
+        "quest_id": "quest_0a1f18d80c5ac3e8",
+        "name": "コダマ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "木",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:37:01+00:00",
+        "updated_at": "2026-09-12T22:37:01+00:00"
     }
 ]
