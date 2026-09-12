@@ -2995,7 +2995,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-02T03:04:33+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
     },
     {
         "quest_id": "quest_6514b3704224ab49",
@@ -5542,7 +5542,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
     },
     {
         "quest_id": "quest_9fba162603eb1776",
@@ -5560,7 +5560,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
     },
     {
         "quest_id": "quest_735c57dacc5dd294",
@@ -5578,7 +5578,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
     },
     {
         "quest_id": "quest_2bbc0b4612d5673c",
@@ -5596,7 +5596,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
     },
     {
         "quest_id": "quest_c886ba41589c4f86",
@@ -5614,6 +5614,114 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_532b44875b4c7715",
+        "name": "グローツラング",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_5f97e6684670f58f",
+        "name": "コンモドゥス",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_3970b4f836fcd22f",
+        "name": "セイリュウ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_53e0fb1b6e6e36b2",
+        "name": "ダギー",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_1b3a0de400cd4eaa",
+        "name": "タランチュラス",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
+    },
+    {
+        "quest_id": "quest_42d8bf72189ec074",
+        "name": "ツナデ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-12T22:09:07+00:00",
+        "updated_at": "2026-09-12T22:09:07+00:00"
     }
 ]
