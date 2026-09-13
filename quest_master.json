@@ -5455,24 +5455,6 @@
         "updated_at": "2026-09-12T02:16:11+00:00"
     },
     {
-        "quest_id": "quest_d6555f45805e1380",
-        "name": "オオヤマビコS",
-        "name_reading": "",
-        "quest_name": "",
-        "attribute": "水",
-        "difficulty": "極",
-        "category": "通常降臨",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "manual",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-12T02:16:11+00:00"
-    },
-    {
         "quest_id": "quest_c345d4275a329231",
         "name": "ガイガン",
         "name_reading": "",
