@@ -8234,5 +8234,41 @@
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
         "updated_at": "2026-09-13T06:43:06+00:00"
+    },
+    {
+        "quest_id": "quest_c1dfa12edb0c50db",
+        "name": "サイオア",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-13T07:01:52+00:00",
+        "updated_at": "2026-09-13T07:01:52+00:00"
+    },
+    {
+        "quest_id": "quest_2033e1a79a7a50c1",
+        "name": "榎本武揚",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-13T07:01:52+00:00",
+        "updated_at": "2026-09-13T07:01:52+00:00"
     }
 ]
