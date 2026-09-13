@@ -13796,5 +13796,23 @@
         "published": true,
         "created_at": "2026-09-13T10:38:06+00:00",
         "updated_at": "2026-09-13T10:38:06+00:00"
+    },
+    {
+        "quest_id": "quest_591c8c3f0ce395e2",
+        "name": "園田海未・作詞素材",
+        "name_reading": "そ",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "究極",
+        "category": "コラボ",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "2026-09-18",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-13T10:39:03+00:00",
+        "updated_at": "2026-09-13T10:39:03+00:00"
     }
 ]
