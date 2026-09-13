@@ -1,0 +1,522 @@
+import hashlib
+import unicodedata
+from datetime import date, datetime
+
+from schedule_utils import (
+    AVAILABILITY_SCHEDULED,
+    CATEGORY_COLLABORATION,
+    CATEGORY_LIMITED_EVENT,
+    normalize_availability_type,
+    normalize_schedule_category,
+)
+
+
+LIMITED_MASTER_CATEGORIES = {
+    CATEGORY_COLLABORATION,
+    CATEGORY_LIMITED_EVENT,
+}
+MAX_IMAGE_REFERENCES_PER_QUEST = 8
+KANA_GROUPS = (
+    "あ行",
+    "か行",
+    "さ行",
+    "た行",
+    "な行",
+    "は行",
+    "ま行",
+    "や行",
+    "ら行",
+    "わ行",
+    "英数・その他",
+    "未分類",
+)
+
+
+def normalize_master_name(value):
+    text = unicodedata.normalize("NFKC", str(value or ""))
+    return "".join(text.split()).casefold()
+
+
+def normalize_master_reading(value):
+    """検索・五十音分類用に全角カタカナをひらがなへ揃える。"""
+    text = unicodedata.normalize("NFKC", str(value or "")).strip()
+    converted = []
+    for character in text:
+        codepoint = ord(character)
+        if 0x30A1 <= codepoint <= 0x30F6:
+            character = chr(codepoint - 0x60)
+        converted.append(character)
+    return "".join(converted).casefold()
+
+
+def quest_master_kana_group(record):
+    """登録済みの読み、または仮名で始まる名前から五十音行を返す。"""
+    reading = normalize_master_reading(record.get("name_reading"))
+    if not reading:
+        reading = normalize_master_reading(record.get("name"))
+    if not reading:
+        return "未分類"
+    first = reading[0]
+    groups = {
+        "あ行": "ぁあぃいうぅえぇおゔ",
+        "か行": "かがきぎくぐけげこご",
+        "さ行": "さざしじすずせぜそぞ",
+        "た行": "ただちぢっつづてでとど",
+        "な行": "なにぬねの",
+        "は行": "はばぱひびぴふぶぷへべぺほぼぽ",
+        "ま行": "まみむめも",
+        "や行": "ゃやゅゆょよ",
+        "ら行": "らりるれろ",
+        "わ行": "ゎわをん",
+    }
+    for label, characters in groups.items():
+        if first in characters:
+            return label
+    if first.isascii() and first.isalnum():
+        return "英数・その他"
+    return "未分類"
+
+
+def quest_master_key(record):
+    return (
+        normalize_master_name(record.get("name")),
+        unicodedata.normalize(
+            "NFKC", str(record.get("difficulty", ""))
+        ).strip(),
+    )
+
+
+def make_quest_id(record):
+    name, difficulty = quest_master_key(record)
+    digest = hashlib.sha1(
+        f"{name}\x1f{difficulty}".encode("utf-8")
+    ).hexdigest()[:16]
+    return f"quest_{digest}"
+
+
+def _timestamp(now=None):
+    value = now or datetime.now().astimezone()
+    if isinstance(value, date) and not isinstance(value, datetime):
+        value = datetime.combine(value, datetime.min.time()).astimezone()
+    return value.isoformat(timespec="seconds")
+
+
+def is_limited_master(record):
+    return normalize_schedule_category(
+        record.get("category")
+    ) in LIMITED_MASTER_CATEGORIES
+
+
+def normalize_image_reference(reference, now=None):
+    timestamp = _timestamp(now)
+    normalized = {
+        "reference_id": str(reference.get("reference_id", "")).strip(),
+        "portrait_signature": str(
+            reference.get("portrait_signature", "")
+        ).strip(),
+        "visual_signature": str(
+            reference.get("visual_signature", "")
+        ).strip(),
+        "card_signature": str(
+            reference.get("card_signature", "")
+        ).strip(),
+        "source_capture_type": str(
+            reference.get("source_capture_type", "screenshot")
+        ).strip() or "screenshot",
+        "created_at": str(reference.get("created_at", "")).strip()
+        or timestamp,
+    }
+    if not normalized["reference_id"]:
+        digest_source = "\x1f".join((
+            normalized["portrait_signature"],
+            normalized["visual_signature"],
+            normalized["card_signature"],
+        ))
+        normalized["reference_id"] = "image_" + hashlib.sha1(
+            digest_source.encode("utf-8")
+        ).hexdigest()[:16]
+    return normalized
+
+
+def normalize_image_references(references, now=None):
+    normalized = []
+    seen = set()
+    for reference in references or []:
+        if not isinstance(reference, dict):
+            continue
+        item = normalize_image_reference(reference, now=now)
+        if not item["portrait_signature"]:
+            continue
+        identity = item["reference_id"]
+        if identity in seen:
+            continue
+        seen.add(identity)
+        normalized.append(item)
+    return normalized[-MAX_IMAGE_REFERENCES_PER_QUEST:]
+
+
+def card_reference_is_learnable(candidate):
+    """完全な切り出しカードだけ画像マスターへの登録を許可する。"""
+    if not bool(candidate.get("card_complete", False)):
+        return False, str(
+            candidate.get("card_completeness_reason")
+            or "カードの一部が欠けています。"
+        )
+    try:
+        visible_ratio = float(candidate.get("card_visible_ratio", 0) or 0)
+        sharpness = float(candidate.get("card_sharpness", 0) or 0)
+    except (TypeError, ValueError):
+        return False, "カード品質を確認できません。"
+    if visible_ratio < 0.98:
+        return False, "カード全体が表示されていません。"
+    if sharpness < 15.0:
+        return False, "カード画像が不鮮明です。"
+    if not str(candidate.get("portrait_signature", "")).strip():
+        return False, "キャラ肖像を識別できません。"
+    return True, "画像マスターへ登録できます。"
+
+
+def add_candidate_image_reference(records, quest_id, candidate, now=None):
+    """候補の画像特徴を指定マスターへ追加する。画像バイト列は保存しない。"""
+    learnable, reason = card_reference_is_learnable(candidate)
+    normalized_records = normalize_quest_master(records, now=now)
+    if not learnable:
+        return normalized_records, False, reason
+
+    reference = normalize_image_reference({
+        "portrait_signature": candidate.get("portrait_signature", ""),
+        "visual_signature": candidate.get("visual_signature", ""),
+        "card_signature": candidate.get("card_signature", ""),
+        "source_capture_type": candidate.get(
+            "source_capture_type", "screenshot"
+        ),
+    }, now=now)
+    found = False
+    added = False
+    updated_records = []
+    for record in normalized_records:
+        if str(record.get("quest_id")) != str(quest_id):
+            updated_records.append(record)
+            continue
+        found = True
+        references = list(record.get("image_references", []))
+        if any(
+            item.get("reference_id") == reference["reference_id"]
+            for item in references
+        ):
+            updated_records.append(record)
+            continue
+        references.append(reference)
+        updated = {
+            **record,
+            "image_references": normalize_image_references(
+                references,
+                now=now,
+            ),
+            "updated_at": _timestamp(now),
+        }
+        updated_records.append(normalize_quest_master_record(updated, now=now))
+        added = True
+    if not found:
+        return normalized_records, False, "選択したマスターが見つかりません。"
+    return (
+        updated_records,
+        added,
+        "画像特徴をマスターへ登録しました。"
+        if added else "同じ画像特徴は登録済みです。",
+    )
+
+
+def normalize_quest_master_record(record, now=None):
+    category = normalize_schedule_category(record.get("category"))
+    limited = category in LIMITED_MASTER_CATEGORIES
+    timestamp = _timestamp(now)
+    normalized = {
+        "quest_id": str(record.get("quest_id") or make_quest_id(record)),
+        "name": str(record.get("name", "")).strip(),
+        "name_reading": str(record.get("name_reading", "")).strip(),
+        "quest_name": str(record.get("quest_name", "")).strip(),
+        "attribute": str(record.get("attribute", "")).strip(),
+        "difficulty": str(record.get("difficulty", "")).strip(),
+        "category": category,
+        "group_name": str(record.get("group_name", "")).strip(),
+        "availability_type": (
+            normalize_availability_type(record.get("availability_type"))
+            if limited
+            else AVAILABILITY_SCHEDULED
+        ),
+        "period_end_date": (
+            str(record.get("period_end_date", "")).strip()
+            if limited
+            else ""
+        ),
+        "source_type": str(record.get("source_type", "manual")).strip()
+        or "manual",
+        "source_url": str(record.get("source_url", "")).strip(),
+        "image_references": normalize_image_references(
+            record.get("image_references", []),
+            now=now,
+        ),
+        "published": bool(record.get("published", True)),
+        "created_at": str(record.get("created_at", "")).strip()
+        or timestamp,
+        "updated_at": str(record.get("updated_at", "")).strip()
+        or timestamp,
+    }
+    return normalized
+
+
+def normalize_quest_master(records, now=None):
+    normalized = []
+    positions = {}
+    for record in records or []:
+        item = normalize_quest_master_record(record, now=now)
+        key = quest_master_key(item)
+        if not all(key):
+            continue
+        if key in positions:
+            normalized[positions[key]] = item
+        else:
+            positions[key] = len(normalized)
+            normalized.append(item)
+    return normalized
+
+
+def master_record_from_schedule(schedule, now=None):
+    required = ("name", "attribute", "difficulty", "category")
+    if not all(str(schedule.get(field, "")).strip() for field in required):
+        return None
+    timestamp = _timestamp(now)
+    return normalize_quest_master_record(
+        {
+            "quest_id": schedule.get("quest_id", ""),
+            "name": schedule.get("name", ""),
+            "name_reading": schedule.get("name_reading", ""),
+            "quest_name": schedule.get("quest_name", ""),
+            "attribute": schedule.get("attribute", ""),
+            "difficulty": schedule.get("difficulty", ""),
+            "category": schedule.get("category", ""),
+            "group_name": schedule.get("group_name", ""),
+            "availability_type": schedule.get(
+                "availability_type", AVAILABILITY_SCHEDULED
+            ),
+            "period_end_date": schedule.get("period_end_date", ""),
+            "source_type": schedule.get("source_type", "verified"),
+            "source_url": schedule.get("source_url", ""),
+            "published": True,
+            "created_at": timestamp,
+            "updated_at": timestamp,
+        },
+        now=now,
+    )
+
+
+def upsert_quest_master(records, schedules, now=None):
+    timestamp = _timestamp(now)
+    merged = normalize_quest_master(records, now=now)
+    positions = {
+        quest_master_key(record): index
+        for index, record in enumerate(merged)
+    }
+    added = 0
+    updated = 0
+    skipped = 0
+
+    for schedule in schedules or []:
+        incoming = master_record_from_schedule(schedule, now=now)
+        if incoming is None:
+            skipped += 1
+            continue
+        key = quest_master_key(incoming)
+        position = positions.get(key)
+        if position is None:
+            positions[key] = len(merged)
+            merged.append(incoming)
+            added += 1
+            continue
+
+        current = merged[position]
+        combined = dict(current)
+        for field in (
+            "name",
+            "name_reading",
+            "quest_name",
+            "attribute",
+            "difficulty",
+            "category",
+            "group_name",
+            "availability_type",
+            "period_end_date",
+            "source_type",
+            "source_url",
+        ):
+            value = incoming.get(field)
+            if value not in (None, ""):
+                combined[field] = value
+        combined["published"] = True
+        combined["quest_id"] = current["quest_id"]
+        combined["created_at"] = current["created_at"]
+        combined["updated_at"] = timestamp
+        merged[position] = normalize_quest_master_record(combined, now=now)
+        updated += 1
+
+    return merged, added, updated, skipped
+
+
+def master_expired(record, today=None):
+    if not is_limited_master(record):
+        return False
+    end_text = str(record.get("period_end_date", "")).strip()
+    if not end_text:
+        return False
+    try:
+        end_date = datetime.strptime(end_text, "%Y-%m-%d").date()
+    except ValueError:
+        return False
+    return (today or date.today()) > end_date
+
+
+def search_quest_master(records, query="", include_expired=False, today=None):
+    needle = normalize_master_name(query)
+    matches = []
+    for record in normalize_quest_master(records):
+        if not record.get("published", True):
+            continue
+        if not include_expired and master_expired(record, today=today):
+            continue
+        haystack = normalize_master_name(" ".join(
+            str(record.get(field, ""))
+            for field in (
+                "name",
+                "name_reading",
+                "quest_name",
+                "attribute",
+                "difficulty",
+                "category",
+                "group_name",
+            )
+        ))
+        if needle and needle not in haystack:
+            continue
+        matches.append(record)
+    return sorted(
+        matches,
+        key=lambda item: (
+            item.get("category", ""),
+            item.get("difficulty", ""),
+            item.get("name", ""),
+        ),
+    )
+
+
+def schedule_from_master(record, game_date, start_time="12:00"):
+    master = normalize_quest_master_record(record)
+    if isinstance(game_date, datetime):
+        game_date = game_date.date()
+    if isinstance(game_date, str):
+        game_date = datetime.strptime(game_date, "%Y-%m-%d").date()
+    if not isinstance(game_date, date):
+        raise ValueError("掲載日が不正です。")
+    if hasattr(start_time, "strftime"):
+        start_text = start_time.strftime("%H:%M")
+    else:
+        start_text = str(start_time).strip()
+        datetime.strptime(start_text, "%H:%M")
+
+    return {
+        "quest_id": master["quest_id"],
+        "year": game_date.year,
+        "date": f"{game_date.month}/{game_date.day}",
+        "start_time": start_text,
+        "end_time": "11:59",
+        "end_next_day": True,
+        "name": master["name"],
+        "quest_name": master["quest_name"],
+        "attribute": master["attribute"],
+        "difficulty": master["difficulty"],
+        "category": master["category"],
+        "group_name": master["group_name"],
+        "availability_type": AVAILABILITY_SCHEDULED,
+        "period_end_date": "",
+        "source_type": "master",
+        "source_url": master["source_url"],
+        "confirmed_at": datetime.now().astimezone().isoformat(
+            timespec="seconds"
+        ),
+        "published": True,
+    }
+
+
+def delete_quest_master(records, quest_ids):
+    targets = {str(value) for value in quest_ids}
+    return [
+        record
+        for record in normalize_quest_master(records)
+        if str(record.get("quest_id")) not in targets
+    ]
+
+
+def parse_master_bulk_entries(text, default_category):
+    """一括入力を行番号・エラーを保ったまま解析する。
+
+    降臨カテゴリは画面上部で選択した値を全行へ適用し、各行は
+    「名前｜属性｜難易度（｜読み）」だけを受け付ける。
+    """
+    entries = []
+    category = normalize_schedule_category(default_category)
+    for line_number, raw_line in enumerate(str(text or "").splitlines(), 1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        normalized = line.replace("｜", "|").replace("\t", "|")
+        if "|" not in normalized:
+            normalized = normalized.replace(",", "|").replace("、", "|")
+        parts = [part.strip() for part in normalized.split("|")]
+        name = parts[0] if parts else ""
+        if len(parts) not in (3, 4) or not all(parts[:3]):
+            if len(parts) >= 5:
+                error = (
+                    f"{line_number}行目：降臨カテゴリは上部の選択が"
+                    "全行に適用されます。各行は名前｜属性｜難易度"
+                    "（｜読み）の形式で入力してください。"
+                )
+            else:
+                error = (
+                    f"{line_number}行目：名前｜属性｜難易度"
+                    "（｜読み）の形式で入力してください。"
+                )
+            entries.append({
+                "line_number": line_number,
+                "raw_line": raw_line,
+                "name": name,
+                "record": None,
+                "error": error,
+            })
+            continue
+        record = {
+            "name": name,
+            "name_reading": parts[3] if len(parts) == 4 else "",
+            "attribute": parts[1],
+            "difficulty": parts[2],
+            "category": category,
+        }
+        entries.append({
+            "line_number": line_number,
+            "raw_line": raw_line,
+            "name": name,
+            "record": record,
+            "error": "",
+        })
+    return entries
+
+
+def parse_master_bulk_text(text, default_category):
+    """一括入力を従来互換のレコード・エラー形式で返す。"""
+    entries = parse_master_bulk_entries(text, default_category)
+    records = [
+        entry["record"]
+        for entry in entries
+        if entry.get("record") is not None
+    ]
+    errors = [entry["error"] for entry in entries if entry.get("error")]
+    return records, errors
