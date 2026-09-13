@@ -5176,24 +5176,6 @@
         "updated_at": "2026-09-12T01:10:17+00:00"
     },
     {
-        "quest_id": "quest_2ed6b1d5dc4cc7fe",
-        "name": "ヘルバウンド",
-        "name_reading": "",
-        "quest_name": "",
-        "attribute": "火",
-        "difficulty": "極",
-        "category": "通常降臨",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "manual",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-09-12T01:10:17+00:00",
-        "updated_at": "2026-09-12T01:10:17+00:00"
-    },
-    {
         "quest_id": "quest_baf21fc821012879",
         "name": "マンマ・ハーハ",
         "name_reading": "",
