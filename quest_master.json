@@ -6706,24 +6706,6 @@
         "updated_at": "2026-09-12T22:32:32+00:00"
     },
     {
-        "quest_id": "quest_2bf0ce11f1408bcf",
-        "name": "豆たぬき",
-        "name_reading": "ま",
-        "quest_name": "",
-        "attribute": "木",
-        "difficulty": "極",
-        "category": "通常降臨",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "manual",
-        "source_url": "",
-        "image_references": [],
-        "published": true,
-        "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-12T22:32:32+00:00"
-    },
-    {
         "quest_id": "quest_43038fb827d879ca",
         "name": "銀角",
         "name_reading": "ぎ",
