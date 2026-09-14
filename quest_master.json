@@ -15884,5 +15884,23 @@
         "published": true,
         "created_at": "2026-09-14T05:01:47+00:00",
         "updated_at": "2026-09-14T05:01:47+00:00"
+    },
+    {
+        "quest_id": "quest_2f51c72c0e2c5835",
+        "name": "アダマンタイト廻",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "火",
+        "difficulty": "超絶・廻",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-14T05:02:21+00:00",
+        "updated_at": "2026-09-14T05:02:21+00:00"
     }
 ]
