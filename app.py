@@ -1,6 +1,8 @@
+import base64
 from datetime import date, datetime, timedelta
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from data_manager import load_events, load_schedules
 from event_image_generator import generate_event_image
@@ -16,7 +18,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.16"
+APP_VERSION = "v1.1.0-beta.9.17"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -200,83 +202,72 @@ def latest_confirmation(items):
         return None
 
 
-def render_schedule_preview(selected_schedules, schedule_mode):
-    if schedule_mode == SCHEDULE_MODE_NORMAL:
-        left_difficulties = {"爆絶", "超絶・廻", "超絶", "激究極"}
-        left_schedules = [
-            schedule
-            for schedule in selected_schedules
-            if schedule.get("difficulty") in left_difficulties
-        ]
-        right_schedules = [
-            schedule
-            for schedule in selected_schedules
-            if schedule.get("difficulty") not in left_difficulties
-        ]
-        left_column, right_column = st.columns(2)
-        with left_column:
-            st.markdown("#### 爆絶・超絶・激究極")
-            if not left_schedules:
-                st.caption("選択なし")
-            for schedule in left_schedules:
-                st.write(
-                    f"{schedule['date']}｜{schedule['name']}｜"
-                    f"{schedule['difficulty']}"
-                )
-        with right_column:
-            st.markdown("#### 究極・極・星5制限")
-            if not right_schedules:
-                st.caption("選択なし")
-            for schedule in right_schedules:
-                st.write(
-                    f"{schedule['date']}｜{schedule['name']}｜"
-                    f"{schedule['difficulty']}"
-                )
-        return
+def render_image_save_actions(image_buffer, file_name, caption):
+    """画像を表示し、スマホ向け保存と通常ダウンロードを用意する。"""
+    image_bytes = image_buffer.getvalue()
+    st.image(image_bytes, caption=caption)
 
-    event_schedules = []
-    high_difficulty_schedules = []
+    encoded_image = base64.b64encode(image_bytes).decode("ascii")
+    components.html(
+        f"""
+        <button id="share-image" type="button">写真・フォトに保存</button>
+        <p id="save-guide">
+          iPhoneは共有画面で「画像を保存」、Androidは「フォト」を選択してください。
+        </p>
+        <script>
+          const button = document.getElementById("share-image");
+          const guide = document.getElementById("save-guide");
+          const encoded = "{encoded_image}";
+          const binary = atob(encoded);
+          const bytes = new Uint8Array(binary.length);
+          for (let index = 0; index < binary.length; index += 1) {{
+            bytes[index] = binary.charCodeAt(index);
+          }}
+          const blob = new Blob([bytes], {{ type: "image/png" }});
+          const file = new File([blob], "{file_name}", {{ type: "image/png" }});
 
-    for schedule in selected_schedules:
-        category = normalize_schedule_category(schedule.get("category"))
-        if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
-            event_schedules.append(schedule)
-        elif category == CATEGORY_FEATURED:
-            high_difficulty_schedules.append(schedule)
+          button.addEventListener("click", async () => {{
+            try {{
+              if (navigator.share && (!navigator.canShare || navigator.canShare({{ files: [file] }}))) {{
+                await navigator.share({{ files: [file] }});
+                return;
+              }}
+            }} catch (error) {{
+              if (error.name === "AbortError") return;
+            }}
 
-    event_column, high_column = st.columns(2)
+            const imageUrl = URL.createObjectURL(blob);
+            const opened = window.open(imageUrl, "_blank");
+            if (opened) {{
+              guide.textContent = "画像を長押しして、写真またはフォトへ保存してください。";
+            }} else {{
+              guide.textContent = "下の「PNGファイルとして保存」を使用してください。";
+            }}
+            window.setTimeout(() => URL.revokeObjectURL(imageUrl), 60000);
+          }});
+        </script>
+        <style>
+          body {{ margin: 0; font-family: sans-serif; color: #475569; }}
+          #share-image {{
+            width: 100%; min-height: 48px; padding: 10px 16px;
+            border: 0; border-radius: 8px; cursor: pointer;
+            background: #ff4b4b; color: white; font-size: 16px;
+            font-weight: 600;
+          }}
+          #save-guide {{ margin: 8px 2px 0; font-size: 13px; line-height: 1.5; }}
+        </style>
+        """,
+        height=92,
+    )
 
-    with event_column:
-        st.markdown("#### コラボ・期間限定")
-        if not event_schedules:
-            st.caption("選択なし")
-        for schedule in event_schedules:
-            quest_text = (
-                f"｜{schedule['quest_name']}"
-                if schedule.get("quest_name")
-                else ""
-            )
-            st.write(
-                f"{schedule_period_text(schedule)}｜"
-                f"{schedule['name']}{quest_text}｜"
-                f"{normalize_schedule_category(schedule.get('category'))}｜"
-                f"{schedule['difficulty']}"
-            )
-
-    with high_column:
-        st.markdown("#### 高難易度降臨")
-        if not high_difficulty_schedules:
-            st.caption("選択なし")
-        for schedule in high_difficulty_schedules:
-            quest_text = (
-                f"｜{schedule['quest_name']}"
-                if schedule.get("quest_name")
-                else ""
-            )
-            st.write(
-                f"{schedule_period_text(schedule)}｜"
-                f"{schedule['name']}{quest_text}｜{schedule['difficulty']}"
-            )
+    st.download_button(
+        label="PNGファイルとして保存",
+        data=image_bytes,
+        file_name=file_name,
+        mime="image/png",
+        on_click="ignore",
+        use_container_width=True,
+    )
 
 
 st.title("モンスト スケジュールメーカー")
@@ -337,7 +328,7 @@ with schedule_tab:
                 selected_categories = st.pills(
                     "掲載カテゴリ",
                     options=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
-                    default=[],
+                    default=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
                     selection_mode="multi",
                     key=(
                         "schedule_main_categories_"
@@ -352,7 +343,7 @@ with schedule_tab:
             selected_difficulties = st.pills(
                 "掲載する難易度",
                 options=difficulty_options,
-                default=[],
+                default=difficulty_options,
                 selection_mode="multi",
                 key=(
                     f"schedule_difficulties_{schedule_mode}_"
@@ -442,28 +433,22 @@ with schedule_tab:
             key="schedule_design",
         )
 
-        if st.button("降臨スケジュールを生成", type="primary"):
-            if not selected_schedules:
-                st.warning("予定を1つ以上選択してください。")
-            else:
-                selected_schedules.sort(key=parse_schedule_datetime)
-                st.subheader("生成結果")
-                render_schedule_preview(selected_schedules, schedule_mode)
-
-                schedule_image = generate_schedule_image(
-                    selected_schedules,
-                    schedule_design,
-                    schedule_start_date,
-                    schedule_mode,
-                )
-
-                st.image(schedule_image, caption="生成した降臨スケジュール")
-                st.download_button(
-                    label="PNG画像を保存",
-                    data=schedule_image.getvalue(),
-                    file_name="monst_descent_schedule.png",
-                    mime="image/png",
-                )
+        if not selected_schedules:
+            st.warning("予定を1つ以上選択してください。")
+        else:
+            selected_schedules.sort(key=parse_schedule_datetime)
+            st.subheader("生成結果")
+            schedule_image = generate_schedule_image(
+                selected_schedules,
+                schedule_design,
+                schedule_start_date,
+                schedule_mode,
+            )
+            render_image_save_actions(
+                schedule_image,
+                "monst_descent_schedule.png",
+                "生成した降臨スケジュール",
+            )
 
 
 with event_tab:
@@ -499,7 +484,7 @@ with event_tab:
         selected_categories = st.pills(
             "掲載カテゴリ",
             options=available_categories,
-            default=[],
+            default=available_categories,
             selection_mode="multi",
             format_func=lambda category: EVENT_CATEGORY_LABELS.get(
                 category,
@@ -557,19 +542,17 @@ with event_tab:
             key="event_design",
         )
 
-        if st.button("イベントスケジュールを生成", type="primary"):
-            if not selected_events:
-                st.warning("イベントを1つ以上選択してください。")
-            else:
-                event_image = generate_event_image(
-                    selected_events,
-                    event_design,
-                    start_date,
-                )
-                st.image(event_image, caption="生成したイベントスケジュール")
-                st.download_button(
-                    label="PNG画像を保存",
-                    data=event_image.getvalue(),
-                    file_name="monst_event_schedule.png",
-                    mime="image/png",
-                )
+        if not selected_events:
+            st.warning("イベントを1つ以上選択してください。")
+        else:
+            event_image = generate_event_image(
+                selected_events,
+                event_design,
+                start_date,
+            )
+            st.subheader("生成結果")
+            render_image_save_actions(
+                event_image,
+                "monst_event_schedule.png",
+                "生成したイベントスケジュール",
+            )
