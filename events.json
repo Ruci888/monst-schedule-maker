@@ -343,5 +343,20 @@
         "source_url": "https://www.monster-strike.com/news/20260827_2.html#6",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "「イベントクエスト」を使用回数100回以上のキャラでクリアすると宝箱「＋1」",
+        "short_name": "イベクエ箱+１(使用100回以上)",
+        "category": "ゲーム内キャンペーン",
+        "start_date": "2026-09-12",
+        "end_date": "2026-09-14",
+        "start_time": "0:00",
+        "end_time": "23:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260910_3.html#5",
+        "confirmed_at": "",
+        "published": true
     }
 ]
