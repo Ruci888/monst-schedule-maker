@@ -358,5 +358,20 @@
         "source_url": "https://www.monster-strike.com/news/20260910_3.html#5",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "メンテナンスの実施",
+        "short_name": "メンテナンス",
+        "category": "期限",
+        "start_date": "2026-09-17",
+        "end_date": "2026-09-17",
+        "start_time": "0:00",
+        "end_time": "05:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260911_2.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
