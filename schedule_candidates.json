@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "quest_id": "quest_cf46e4eb467441b6",
+    "year": 2026,
+    "date": "9/20",
+    "start_time": "12:00",
+    "end_time": "11:59",
+    "end_next_day": true,
+    "name": "ハスター",
+    "quest_name": "",
+    "attribute": "光",
+    "difficulty": "激究極",
+    "category": "通常降臨",
+    "group_name": "",
+    "availability_type": "時間指定",
+    "period_end_date": "",
+    "source_type": "master",
+    "source_url": "",
+    "confirmed_at": "",
+    "published": false,
+    "review_reason": "iPhoneで画像を参照して手動選択",
+    "source_capture_type": "manual_reference",
+    "fetched_at": "2026-09-14T05:52:24.912679+00:00",
+    "candidate_id": "iphone_d677c167d18860d885f91d97"
+  }
+]
