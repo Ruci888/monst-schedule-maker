@@ -1,10 +1,12 @@
 [
     {
-        "fetched_at": "2026-08-17T12:34:37+09:00",
-        "article_count": 21,
+        "updater_version": "1.2.0",
+        "fetched_at": "2026-09-16T18:35:35+09:00",
+        "article_count": 24,
         "schedule_candidate_count": 0,
-        "event_candidate_count": 16,
-        "expired_event_count": 7,
+        "event_candidate_count": 7,
+        "expired_schedule_count": 0,
+        "expired_event_count": 20,
         "error_count": 0
     }
 ]
