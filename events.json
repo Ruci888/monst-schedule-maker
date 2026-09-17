@@ -523,5 +523,20 @@
         "source_url": "https://www.monster-strike.com/news/20260917_3.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "招待感謝バッジ報酬",
+        "short_name": "招待感謝バッジ報酬",
+        "category": "コラボ・期間限定",
+        "start_date": "2026-09-18",
+        "end_date": "2026-10-01",
+        "start_time": "04:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260917_1.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
