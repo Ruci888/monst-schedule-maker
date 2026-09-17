@@ -1,1 +1,44 @@
-[]
+[
+    {
+        "year": 2026,
+        "date": "9/18",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "name": "ララバイ",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "超究極",
+        "category": "高難易度・注目",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260917_5.html",
+        "fetched_at": "2026-09-17T20:01:02+09:00",
+        "period_label": "ラベル未判定",
+        "review_status": "needs_review",
+        "review_reason": "公式記事の「ラベル未判定」から降臨候補を抽出しました。 クエスト名を確認してください。",
+        "published": false
+    },
+    {
+        "year": 2026,
+        "date": "9/26",
+        "start_time": "17:00",
+        "end_time": "11:59",
+        "name": "セレボラ",
+        "quest_name": "破ナル約束",
+        "attribute": "火",
+        "difficulty": "黎絶",
+        "category": "高難易度・注目",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260917_3.html",
+        "fetched_at": "2026-09-17T20:01:02+09:00",
+        "period_label": "初出現日時",
+        "review_status": "needs_review",
+        "review_reason": "公式記事の「初出現日時」から降臨候補を抽出しました。",
+        "published": false
+    }
+]
