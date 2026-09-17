@@ -598,5 +598,20 @@
         "source_url": "https://www.monster-strike.com/news/20260917_7.html#5",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "コード・ビブリア４ガチャ",
+        "short_name": "コード・ビブリア４ガチャ",
+        "category": "ガチャ",
+        "start_date": "2026-09-18",
+        "end_date": "2026-10-02",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260917_7.html#5",
+        "confirmed_at": "",
+        "published": true
     }
 ]
