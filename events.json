@@ -583,5 +583,20 @@
         "source_url": "https://www.monster-strike.com/news/20260917_1.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "新イベント「コード・ビブリア４～開かれし伝承～」9/18より開催！",
+        "short_name": "コード・ビブリア４",
+        "category": "コラボ・期間限定",
+        "start_date": "2026-09-18",
+        "end_date": "2026-10-02",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260917_7.html#5",
+        "confirmed_at": "",
+        "published": true
     }
 ]
