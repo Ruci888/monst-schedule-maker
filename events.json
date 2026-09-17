@@ -613,5 +613,35 @@
         "source_url": "https://www.monster-strike.com/news/20260917_7.html#5",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "MONST FREAK 2026 13th Anniversary Party",
+        "short_name": "モンストニュース前半＠モンフリ",
+        "category": "周年CP",
+        "start_date": "2026-09-26",
+        "end_date": "2026-09-26",
+        "start_time": "19:30",
+        "end_time": "19:30",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/entertainment-news/20260917_1.html",
+        "confirmed_at": "",
+        "published": true
+    },
+    {
+        "name": "MONST FREAK 2026 13th Anniversary Party",
+        "short_name": "モンストニュース後半＠モンフリ",
+        "category": "周年CP",
+        "start_date": "2026-09-27",
+        "end_date": "2026-09-27",
+        "start_time": "19:30",
+        "end_time": "19:30",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/entertainment-news/20260917_1.html#2-7",
+        "confirmed_at": "",
+        "published": true
     }
 ]
