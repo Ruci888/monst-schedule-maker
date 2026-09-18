@@ -18170,5 +18170,23 @@
         "published": true,
         "created_at": "2026-09-18T21:05:01+00:00",
         "updated_at": "2026-09-18T21:05:01+00:00"
+    },
+    {
+        "quest_id": "quest_434289eb75a1a397",
+        "name": "八尺様",
+        "name_reading": "は",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "激究極",
+        "category": "イベント・期間限定",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-18T21:06:31+00:00",
+        "updated_at": "2026-09-18T21:06:31+00:00"
     }
 ]
