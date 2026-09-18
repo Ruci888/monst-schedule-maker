@@ -18152,5 +18152,23 @@
         "published": true,
         "created_at": "2026-09-18T21:04:09+00:00",
         "updated_at": "2026-09-18T21:04:09+00:00"
+    },
+    {
+        "quest_id": "quest_603f193fa8363264",
+        "name": "寺生まれのＴさん",
+        "name_reading": "て",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "星5制限",
+        "category": "イベント・期間限定",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-18T21:05:01+00:00",
+        "updated_at": "2026-09-18T21:05:01+00:00"
     }
 ]
