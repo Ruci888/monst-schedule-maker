@@ -673,5 +673,20 @@
         "source_url": "https://www.monster-strike.com/news/20260918_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "禁忌の獄",
+        "short_name": "禁忌の獄",
+        "category": "定期コンテンツ",
+        "start_date": "2026-09-21",
+        "end_date": "2026-10-08",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260918_3.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
