@@ -24,7 +24,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_41940ed6b2536583",
@@ -69,7 +69,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0317422bc8b6c3e4",
@@ -96,7 +96,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_fb1dab1c51c55c96",
@@ -123,7 +123,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_417aa3ad301944e6",
@@ -141,7 +141,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_a79fff2f25d5fa2d",
@@ -159,7 +159,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_ff5a5fc49c0f18b3",
@@ -177,7 +177,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2bdc031610c6da9b",
@@ -195,7 +195,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5b16666aece348c9",
@@ -230,7 +230,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d78361a90d101742",
@@ -257,7 +257,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d9495f133b1b62fd",
@@ -284,7 +284,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cff1ef80aa15205e",
@@ -319,7 +319,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2ebac46dd5a895c2",
@@ -337,7 +337,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2f1b11b9ac1dd484",
@@ -364,7 +364,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_77a98cb6245a8979",
@@ -596,7 +596,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6b66b89296b28011",
@@ -623,7 +623,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d4e590425ca9a775",
@@ -731,7 +731,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_3c4c612321188d25",
@@ -767,7 +767,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5c2fe2a5433fe561",
@@ -946,7 +946,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0355c5b43a3134a0",
@@ -973,7 +973,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_99cdbec032f78322",
@@ -1000,7 +1000,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:32:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_592cbf92c4a627e3",
@@ -1323,7 +1323,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T12:18:22+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_332777b6ae3d7dad",
@@ -1350,7 +1350,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T12:18:22+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9fa66c036602824e",
@@ -1377,7 +1377,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T13:50:36+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_7080132d2bb3f3c9",
@@ -1602,7 +1602,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T13:50:36+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_eaf77c340c67cf20",
@@ -1620,7 +1620,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-08-27T19:22:55+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b9e87d97ff9cbcec",
@@ -1647,7 +1647,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_93f9d90910374b32",
@@ -1717,7 +1717,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T22:50:37+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_607d8bc9683ef349",
@@ -1920,7 +1920,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_48d74178fca0a23c",
@@ -1938,7 +1938,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_3e3e75b6ad9ec540",
@@ -1956,7 +1956,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8a475499d3891145",
@@ -1974,7 +1974,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_dfa0406c57983b64",
@@ -2001,7 +2001,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8a34402a87e8aa23",
@@ -2019,7 +2019,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c8708c122fe5a669",
@@ -2037,7 +2037,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cd2a5223596c999b",
@@ -2055,7 +2055,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b3e5160c29a893e8",
@@ -2073,7 +2073,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_38bcff48b17e93f8",
@@ -2091,7 +2091,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_1170820515c62064",
@@ -2118,7 +2118,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:16:28+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9dabe636680dbe21",
@@ -2179,7 +2179,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cc8e21648b9c869a",
@@ -2206,7 +2206,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6b40ea8afe00b55a",
@@ -2257,7 +2257,7 @@
         ],
         "published": true,
         "created_at": "2026-09-01T23:52:01+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_edf1c693c37c0ace",
@@ -2311,7 +2311,7 @@
         ],
         "published": true,
         "created_at": "2026-09-02T02:51:25+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_dcbe2dfedd52e43b",
@@ -2329,7 +2329,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_50814356370c9e26",
@@ -2383,7 +2383,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_72e9479e35df9751",
@@ -2491,7 +2491,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e2deff5ea93852d3",
@@ -2509,7 +2509,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6f0bf16392ea34ea",
@@ -2653,7 +2653,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4732f7aa7a6c7ca2",
@@ -2671,7 +2671,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0836e97ed8690129",
@@ -2824,7 +2824,7 @@
         ],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5db0bd550d2a781c",
@@ -2851,7 +2851,7 @@
         ],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2243519f48f82819",
@@ -2878,7 +2878,7 @@
         ],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_72de05089a2dcc73",
@@ -2986,7 +2986,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4573233d82b4cf02",
@@ -3004,7 +3004,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d385b22970ba21c0",
@@ -3148,7 +3148,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_55654e56caba8b78",
@@ -3166,7 +3166,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f9ca72a58a1cc0de",
@@ -3247,7 +3247,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_eaf6ffb447454e0f",
@@ -3265,7 +3265,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_39a603d095789407",
@@ -3283,7 +3283,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0e76e300d6ae43bc",
@@ -3301,7 +3301,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f948636d5a0c2e80",
@@ -3319,7 +3319,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_105115d648d7a970",
@@ -3337,7 +3337,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8261a6d65de422cb",
@@ -3355,7 +3355,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_285403f0bd7dae10",
@@ -3373,7 +3373,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_32c29e49f0e0592f",
@@ -3391,7 +3391,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_35bebc09a33d6f60",
@@ -3409,7 +3409,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_37d7c119239d6516",
@@ -3427,7 +3427,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_a05505306c3c3436",
@@ -3445,7 +3445,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e31ea410bb01a4f9",
@@ -3463,7 +3463,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_efa15b61eebab5d7",
@@ -3481,7 +3481,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_404965fb1e32742d",
@@ -3499,7 +3499,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cadae868dcbae04a",
@@ -3517,7 +3517,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5bdbaa75d6a62b46",
@@ -3535,7 +3535,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c4658cd50aab3087",
@@ -3553,7 +3553,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_00b2ffcbe77de167",
@@ -3571,7 +3571,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_31feb68888675ca2",
@@ -3589,7 +3589,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d713dd345b44bf37",
@@ -3607,7 +3607,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_234512540f610db0",
@@ -3625,7 +3625,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5e25993c24200ff6",
@@ -3643,7 +3643,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0662926954b0e959",
@@ -3661,7 +3661,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_062fd53e85eab072",
@@ -3679,7 +3679,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e5879112318401db",
@@ -3697,7 +3697,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_43eae85cdc45957e",
@@ -3715,7 +3715,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f80148ce75642296",
@@ -3733,7 +3733,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5194e5d3b4ea16e1",
@@ -3751,7 +3751,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_43f5bb939d992ec4",
@@ -3769,7 +3769,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f1da54eb72a31bcc",
@@ -3787,7 +3787,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_adc99ae982f25219",
@@ -3805,7 +3805,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_ca6ce0656b6cd50d",
@@ -3823,7 +3823,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c4b64d2148aaca20",
@@ -3841,7 +3841,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cd7d12cf699f4a7c",
@@ -3859,7 +3859,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_376c0b0c1c377ebf",
@@ -3877,7 +3877,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_df1e1f84f9b63137",
@@ -3895,7 +3895,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_1b378cf7a9de0bfc",
@@ -3913,7 +3913,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b19961b5448fb88b",
@@ -3931,7 +3931,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_378fd2bde05ab1cd",
@@ -3949,7 +3949,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f8fdac6fda13aa45",
@@ -3967,7 +3967,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_eb57ff9a0e1e96e3",
@@ -3985,7 +3985,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f87501c4dce770bb",
@@ -4003,7 +4003,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c3c09b8b8286bb6b",
@@ -4021,7 +4021,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d401a98cc95f1467",
@@ -4039,7 +4039,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b6c1595f329e2aa0",
@@ -4057,7 +4057,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4907cc952324951d",
@@ -4075,7 +4075,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5d790c4e419589f9",
@@ -4093,7 +4093,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8ca1f2a6abb79f8d",
@@ -4111,7 +4111,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_94e7616714faac1c",
@@ -4129,7 +4129,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_29b412435ea96ed8",
@@ -4147,7 +4147,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e1339f8a5e89800c",
@@ -4165,7 +4165,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_03227d64da9a2a46",
@@ -4183,7 +4183,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_ad51c53856992c0e",
@@ -4201,7 +4201,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_fbc0fb0b471ba269",
@@ -4219,7 +4219,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_d13723de36e3c170",
@@ -4237,7 +4237,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_05d4ae9cabe64d1e",
@@ -4255,7 +4255,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_3ad33b41926e887a",
@@ -4273,7 +4273,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2fc765a9c766aa8f",
@@ -4291,7 +4291,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_769279ba432d776d",
@@ -4309,7 +4309,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9165339f9cbf5cac",
@@ -4327,7 +4327,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_685c9be3f7f5c202",
@@ -4345,7 +4345,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_af1e05217d2d7d47",
@@ -4363,7 +4363,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2ad2c5d0adf95036",
@@ -4381,7 +4381,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:00:02+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6a31db2b15b42a7f",
@@ -4399,7 +4399,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:05:34+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5f61f1c19c764891",
@@ -4417,7 +4417,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:05:34+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_adb4937d2d34809e",
@@ -4435,7 +4435,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:05:34+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_11c205890c51847d",
@@ -4453,7 +4453,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:10:07+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_23962f9ade62fe13",
@@ -4471,7 +4471,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:10:07+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e6357685b250894a",
@@ -4489,7 +4489,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:10:07+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_a6ad11ab7db89543",
@@ -4507,7 +4507,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:13:23+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_ecf7230f648bf7d9",
@@ -4525,7 +4525,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:13:23+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c7183a18054726ac",
@@ -4543,7 +4543,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:17:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9e766595b845cd38",
@@ -4561,7 +4561,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T16:17:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_fb21689db36142fe",
@@ -4579,7 +4579,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T01:05:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_fadf50cb1d0157a5",
@@ -4759,7 +4759,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T01:05:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_37dace112d9279da",
@@ -4795,7 +4795,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T01:05:43+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2ef3bbee37e56001",
@@ -5173,7 +5173,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T01:10:17+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_a493a28b6b9fec13",
@@ -5317,7 +5317,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9e160bf74f7fd9be",
@@ -5389,7 +5389,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2425ee88698f3536",
@@ -5479,7 +5479,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T02:16:11+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c886ba41589c4f86",
@@ -5695,7 +5695,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:16:34+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_1d60ca53f1e841e9",
@@ -6199,7 +6199,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6772b29c2654241d",
@@ -6397,7 +6397,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_710d90f6ed33a694",
@@ -6559,7 +6559,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_88687f7bd1f0cb76",
@@ -6595,7 +6595,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_dbb237f2affa3cd8",
@@ -6757,7 +6757,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:38:11+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_625e517ad29d0329",
@@ -6793,7 +6793,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_26c106e1cd87e73a",
@@ -6865,7 +6865,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_fddbe3d0aa1d3667",
@@ -6991,7 +6991,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_aae2418b6c91114e",
@@ -7387,7 +7387,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c3be80b242850c49",
@@ -7531,7 +7531,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b51d205362e9822e",
@@ -7855,7 +7855,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_1041e8ff7715fcd8",
@@ -7891,7 +7891,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_380a6bf7f14bff98",
@@ -7909,7 +7909,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2e3e01ccff569feb",
@@ -8125,7 +8125,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_950be8aa00f188bb",
@@ -8251,7 +8251,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_2b808ce817c3d00a",
@@ -8269,7 +8269,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e70d737c2f81f3d2",
@@ -8305,7 +8305,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c7c86b8ae9a2503f",
@@ -8431,7 +8431,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_9a7aecb0c119c45c",
@@ -8791,7 +8791,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b51843937e27ee48",
@@ -9295,7 +9295,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:36:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c9c614b5669da727",
@@ -9457,7 +9457,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:36:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_115028c8010ecf63",
@@ -9565,7 +9565,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:36:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_0293ecbd1016676f",
@@ -9907,7 +9907,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_47c2a816d2921be0",
@@ -9961,7 +9961,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b7359ad78c632a38",
@@ -10069,7 +10069,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_75878b73f0e4a398",
@@ -10393,7 +10393,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_52135f990e5f8ec7",
@@ -10447,7 +10447,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_30c4dbb6422b38f8",
@@ -10771,7 +10771,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_65e93a60a54dc9b3",
@@ -10861,7 +10861,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c9b8ae7bde82e7ac",
@@ -11023,7 +11023,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_656786df1c3eac29",
@@ -11149,7 +11149,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_670ee9f9d1dfcf9c",
@@ -11203,7 +11203,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_665c4f69276801b7",
@@ -11221,7 +11221,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f13ade8b5ac30976",
@@ -11239,7 +11239,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e302b63b4ad93b6f",
@@ -11275,7 +11275,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_038fbf1c31ede360",
@@ -12085,7 +12085,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:44:41+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e4e9d70a26113480",
@@ -12211,7 +12211,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:44:41+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_716bd07b4e6dac13",
@@ -12463,7 +12463,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:50:48+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b79fbd26392b4d96",
@@ -12499,7 +12499,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:50:48+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_1b27605874ff3329",
@@ -12589,7 +12589,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:57:30+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cc1751b04eb7f1bb",
@@ -12643,7 +12643,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:57:30+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_512caafb1c6cc5fd",
@@ -13075,7 +13075,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:03:50+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_22c584a5ca3c52bd",
@@ -13255,7 +13255,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:03:50+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_793285ee618fead8",
@@ -13363,7 +13363,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:03:50+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_20da9db69a1f45db",
@@ -13633,7 +13633,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:11:15+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_c5e1685f4648cbec",
@@ -13723,7 +13723,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:11:15+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4e7e61d4e6f1d80c",
@@ -13795,7 +13795,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:38:06+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_591c8c3f0ce395e2",
@@ -13813,7 +13813,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:39:03+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_38e39ecb29a8671c",
@@ -13831,7 +13831,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:39:48+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_14da1d9e58e6bbe8",
@@ -13849,7 +13849,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T22:52:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f12c3321be12fee8",
@@ -14101,7 +14101,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T22:52:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4c24cb2beaf18632",
@@ -14389,7 +14389,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T22:59:53+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_984bbb274f5d4019",
@@ -14461,7 +14461,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T22:59:53+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8a7bf7ab0f8cb831",
@@ -14605,7 +14605,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:07:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_513ddbd937d7915d",
@@ -14641,7 +14641,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:07:18+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_aab694e2837b086d",
@@ -14857,7 +14857,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:07:18+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6a102ff652e1d6cc",
@@ -15001,7 +15001,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:16:42+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_70b53985530f7f1e",
@@ -15073,7 +15073,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:16:42+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_b02a23b5290f255c",
@@ -15325,7 +15325,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:26:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5f1263c5e53896b5",
@@ -15343,7 +15343,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:26:33+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_5eac7c8cadfd1a88",
@@ -15937,7 +15937,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:04:09+00:00",
-        "updated_at": "2026-09-21T20:31:14+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_f5c10e1682dd9708",
@@ -16225,7 +16225,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:09:17+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_967f1d8b18a599c6",
@@ -16243,7 +16243,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:09:17+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8bb3f603fbbfd877",
@@ -16261,7 +16261,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:09:17+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_97da399fae86941a",
@@ -16585,7 +16585,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:14:08+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_6306cf90d5a82f3a",
@@ -16909,7 +16909,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:23:49+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_421d8baea684d506",
@@ -17197,7 +17197,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:23:49+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_cf537b2bc5c26da7",
@@ -17305,7 +17305,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:36:16+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_7b11f4e092146298",
@@ -17323,7 +17323,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-14T05:36:16+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4febe5cc13c26b7e",
@@ -18115,7 +18115,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-17T11:06:04+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_8c0bae304fe4b85d",
@@ -18133,7 +18133,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-17T11:06:04+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_e72bd1d1d2c6e2f9",
@@ -18151,7 +18151,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:04:09+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_603f193fa8363264",
@@ -18169,7 +18169,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:05:01+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_434289eb75a1a397",
@@ -18187,7 +18187,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:06:31+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_4897ee0db0c85c22",
@@ -18205,7 +18205,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:09:10+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     },
     {
         "quest_id": "quest_825726a0f656a793",
@@ -18223,6 +18223,6 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-21T20:21:44+00:00",
-        "updated_at": "2026-09-21T20:30:40+00:00"
+        "updated_at": "2026-09-21T20:35:07+00:00"
     }
 ]
