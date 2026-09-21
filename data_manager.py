@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # 公開メーカーが参照するGitHub上の共通JSON。
 # owner/repository は実際の公開リポジトリに合わせて設定してください。
-GITHUB_OWNER = "YOUR_GITHUB_OWNER"
+GITHUB_OWNER = "Ruci888"
 GITHUB_REPOSITORY = "monst-schedule-maker"
 GITHUB_BRANCH = "main"
 GITHUB_RAW_BASE = (
