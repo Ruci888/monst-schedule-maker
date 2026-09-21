@@ -449,23 +449,50 @@ def draw_week(draw, events, week_start, top, theme):
                     fill=color,
                 )
 
-        # 日付は上部軸とバー位置で示し、バー内には開始・終了時刻だけを表示する。
-        time_text = bar_time_text(event)
-        time_font = fit_font(
-            time_text,
-            maximum_size=17,
-            minimum_size=11,
-            maximum_width=max(20, bar_right - bar_left - 8),
-            draw=draw,
-        )
-        if bar_right - bar_left >= 52:
-            draw_emphasized_centered_text(
-                draw,
-                (bar_left + 3, bar_top, bar_right - 3, bar_bottom),
-                time_text,
-                time_font,
-                "#FFFFFF",
-                "#111827",
+        # 時刻は中央にまとめず、開始=バー左端 / 終了=バー右端に分離する。
+        # スマホ縮小時に数字が潰れないよう、縁取りは使わず白文字だけで描画する。
+        start_text = event.get("start_time", "") or "0:00"
+        end_text = event.get("end_time", "") or "23:59"
+        time_font = load_font(17)
+        start_box = draw.textbbox((0, 0), start_text, font=time_font)
+        end_box = draw.textbbox((0, 0), end_text, font=time_font)
+        start_width = start_box[2] - start_box[0]
+        end_width = end_box[2] - end_box[0]
+        bar_width = bar_right - bar_left
+        center_y = (bar_top + bar_bottom) / 2
+        padding = 6
+
+        if bar_width >= start_width + end_width + padding * 4:
+            # 十分な長さがあるバーでは、両時刻をバーの内側の左右端へ置く。
+            draw.text(
+                (bar_left + padding, center_y),
+                start_text,
+                font=time_font,
+                fill="#FFFFFF",
+                anchor="lm",
+            )
+            draw.text(
+                (bar_right - padding, center_y),
+                end_text,
+                font=time_font,
+                fill="#FFFFFF",
+                anchor="rm",
+            )
+        else:
+            # 短いバーは文字を潰さず、開始を左外側・終了を右外側へ逃がす。
+            draw.text(
+                (max(timeline_left + 2, bar_left - padding), center_y),
+                start_text,
+                font=time_font,
+                fill="#FFFFFF",
+                anchor="rm",
+            )
+            draw.text(
+                (min(right - 2, bar_right + padding), center_y),
+                end_text,
+                font=time_font,
+                fill="#FFFFFF",
+                anchor="lm",
             )
 
         row_top += row_height
