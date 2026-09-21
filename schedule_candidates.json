@@ -1,28 +1,6 @@
 [
     {
         "year": 2026,
-        "date": "9/18",
-        "start_time": "12:00",
-        "end_time": "11:59",
-        "name": "ララバイ",
-        "quest_name": "",
-        "attribute": "水",
-        "difficulty": "超究極",
-        "category": "高難易度・注目",
-        "group_name": "",
-        "availability_type": "時間指定",
-        "period_end_date": "",
-        "source_type": "official",
-        "source_url": "https://www.monster-strike.com/news/20260917_5.html",
-        "fetched_at": "2026-09-19T06:43:15+09:00",
-        "period_label": "ラベル未判定",
-        "review_status": "needs_review",
-        "review_reason": "公式記事の「ラベル未判定」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false,
-        "candidate_id": "ae8b59382b61f22b180d"
-    },
-    {
-        "year": 2026,
         "date": "9/26",
         "start_time": "17:00",
         "end_time": "11:59",
