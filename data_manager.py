@@ -1,4 +1,6 @@
 import json
+import shutil
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -6,8 +8,9 @@ import requests
 
 BASE_DIR = Path(__file__).resolve().parent
 
-# 公開メーカーが参照するGitHub上の共通JSON。
-# owner/repository は実際の公開リポジトリに合わせて設定してください。
+# IMPORTANT:
+# Set this to the SAME GitHub owner value that is currently working
+# in the public maker.
 GITHUB_OWNER = "Ruci888"
 GITHUB_REPOSITORY = "monst-schedule-maker"
 GITHUB_BRANCH = "main"
@@ -24,11 +27,11 @@ REMOTE_DATA_FILES = {
 
 
 class RemoteDataError(RuntimeError):
-    """公開データをGitHubから取得できない場合のエラー。"""
+    """Raised when public data cannot be loaded from GitHub."""
 
 
 def load_local_json(filename):
-    """開発・保守用のローカルJSON読込。公開データの正本には使用しない。"""
+    """Load a local JSON list. Used by admin/local-only files."""
     file_path = BASE_DIR / filename
     try:
         with file_path.open("r", encoding="utf-8") as file:
@@ -39,9 +42,11 @@ def load_local_json(filename):
 
 
 def load_remote_json(filename):
-    """GitHub Public Repository上のJSONを読み取る。Tokenは使用しない。"""
+    """Load public shared JSON from the GitHub repository without a token."""
     if filename not in REMOTE_DATA_FILES:
-        raise RemoteDataError(f"取得が許可されていないファイルです: {filename}")
+        raise RemoteDataError(
+            f"取得が許可されていないファイルです: {filename}"
+        )
 
     url = f"{GITHUB_RAW_BASE}/{filename}"
     try:
@@ -54,7 +59,7 @@ def load_remote_json(filename):
 
     try:
         data = response.json()
-    except (ValueError, json.JSONDecodeError) as error:
+    except ValueError as error:
         raise RemoteDataError(
             f"取得したJSONを読み込めませんでした: {filename}"
         ) from error
@@ -69,8 +74,11 @@ def load_remote_json(filename):
 
 def load_json(filename):
     """
-    公開データはGitHubを正本として取得する。
-    その他のローカル管理ファイルは従来どおりローカルから読む。
+    Keep the original admin-compatible API.
+
+    Shared public data uses GitHub as the source of truth.
+    Other admin files continue to use local JSON when this function
+    is used directly.
     """
     if filename in REMOTE_DATA_FILES:
         return load_remote_json(filename)
@@ -87,3 +95,39 @@ def load_events():
 
 def load_quest_master():
     return load_remote_json("quest_master.json")
+
+
+# ------------------------------------------------------------------
+# Backward-compatible local save functions required by admin_app.py.
+# When GitHub is configured, admin_app.py uses github_storage.py and
+# save_remote_json(). These functions remain as the existing fallback.
+# ------------------------------------------------------------------
+
+def save_json(filename, data):
+    """Save local JSON safely and back up the previous local file."""
+    file_path = BASE_DIR / filename
+    backup_dir = BASE_DIR / "backups"
+    backup_dir.mkdir(exist_ok=True)
+
+    if file_path.exists():
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_path = backup_dir / f"{file_path.stem}_{timestamp}.json"
+        shutil.copy2(file_path, backup_path)
+
+    temporary_path = file_path.with_suffix(".tmp")
+    with temporary_path.open("w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+    temporary_path.replace(file_path)
+
+
+def save_schedules(schedules):
+    save_json("schedules.json", schedules)
+
+
+def save_events(events):
+    save_json("events.json", events)
+
+
+def save_quest_master(records):
+    save_json("quest_master.json", records)
