@@ -18206,5 +18206,23 @@
         "published": true,
         "created_at": "2026-09-18T21:09:10+00:00",
         "updated_at": "2026-09-21T20:19:45+00:00"
+    },
+    {
+        "quest_id": "quest_825726a0f656a793",
+        "name": "ザ•ビューティフルベアーズ",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "水",
+        "difficulty": "究極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-09-21T20:21:44+00:00",
+        "updated_at": "2026-09-21T20:21:44+00:00"
     }
 ]
