@@ -18,7 +18,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.17"
+APP_VERSION = "v1.1.0-beta.9.18"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -276,10 +276,10 @@ st.caption(
     f"　｜　{APP_VERSION}"
 )
 
-schedule_tab, event_tab = st.tabs([
-    "降臨スケジュール",
+event_tab, schedule_tab = st.tabs([
     "イベントスケジュール",
-])
+    "降臨スケジュール",
+], default="イベントスケジュール")
 
 
 with schedule_tab:

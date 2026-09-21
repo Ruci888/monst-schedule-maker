@@ -52,7 +52,7 @@ def get_theme(design):
             "header": "#0755A5",
             "card": "#202938",
             "text": "#FFFFFF",
-            "sub_text": "#D7E8FF",
+            "sub_text": "#F2F7FF",
             "line": "#607089",
         },
         "ダーク": {
@@ -60,7 +60,7 @@ def get_theme(design):
             "header": "#030712",
             "card": "#1F2937",
             "text": "#F9FAFB",
-            "sub_text": "#D1D5DB",
+            "sub_text": "#F3F4F6",
             "line": "#607089",
         },
         "シンプル": {
@@ -131,9 +131,9 @@ def draw_centered_text(draw, area, text, font, fill):
 
 
 def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
-    information_font = load_font(20)
+    information_font = load_font(23)
     label_font = fit_font(
-        schedule["difficulty"], 17, 13, 92, draw
+        schedule["difficulty"], 19, 14, 102, draw
     )
 
     time_text = schedule_time_text_for_day(schedule, display_day)
@@ -147,8 +147,8 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     category_label = category_labels.get(category)
     if category_label:
         category_text, category_color = category_label
-        category_width = 82
-        category_height = 28
+        category_width = 88
+        category_height = 30
         category_x = column_right - category_width - 18
         draw.rounded_rectangle(
             (
@@ -169,22 +169,24 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
                 y + category_height,
             ),
             category_text,
-            load_font(14),
+            load_font(15),
             "#FFFFFF",
         )
 
-    label_width = 112
-    label_height = 42
+    label_width = 124
+    label_height = 46
     label_x = column_right - label_width - 12
     label_y = y + 32
     name_width = max(80, label_x - x - 12)
-    name_font = fit_font(schedule["name"], 28, 18, name_width, draw)
+    name_font = fit_font(schedule["name"], 31, 20, name_width, draw)
 
     draw.text(
         (x, y + 34),
         schedule["name"],
         font=name_font,
         fill=get_attribute_color(schedule["attribute"]),
+        stroke_width=1,
+        stroke_fill=get_attribute_color(schedule["attribute"]),
     )
     draw.rounded_rectangle(
         (label_x, label_y, label_x + label_width, label_y + label_height),
@@ -201,13 +203,13 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
 
 
 def draw_normal_schedule_item(draw, schedule, x, y, column_right, theme):
-    label_width = 94
-    label_height = 34
+    label_width = 104
+    label_height = 38
     label_x = column_right - label_width - 10
     name_width = max(70, label_x - x - 10)
-    name_font = fit_font(schedule["name"], 25, 16, name_width, draw)
+    name_font = fit_font(schedule["name"], 28, 18, name_width, draw)
     label_font = fit_font(
-        schedule["difficulty"], 15, 11, label_width - 10, draw
+        schedule["difficulty"], 17, 12, label_width - 10, draw
     )
     draw.text(
         (x, y + 3),

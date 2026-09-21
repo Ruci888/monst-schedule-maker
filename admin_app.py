@@ -1716,6 +1716,7 @@ def review_schedule_candidates():
         candidate_id = ensure_candidate_id(candidate, index)
         rows.append({
             "save": False,
+            "delete": False,
             "candidate_id": candidate_id,
             "date": candidate.get("date", ""),
             "name": candidate.get("name", ""),
@@ -1733,6 +1734,7 @@ def review_schedule_candidates():
         key="schedule_candidate_editor",
         column_config={
             "save": st.column_config.CheckboxColumn("保存対象"),
+            "delete": st.column_config.CheckboxColumn("削除対象"),
             "candidate_id": None,
             "date": st.column_config.TextColumn("日付"),
             "name": st.column_config.TextColumn("名前"),
@@ -1743,7 +1745,7 @@ def review_schedule_candidates():
             ),
         },
     )
-    selected = editor[editor["save"] == True]
+    selected = editor[editor["save"] == True].drop(columns=["delete"], errors="ignore")
     if st.button(
         "保存対象を承認・公開してマスターへ登録",
         type="primary",
@@ -1835,67 +1837,50 @@ def review_schedule_candidates():
             st.error(str(error))
 
     st.markdown("##### 承認待ち候補の削除")
-    candidate_ids = [
-        ensure_candidate_id(candidate, index)
-        for index, candidate in enumerate(candidates)
-    ]
-    delete_id = st.selectbox(
-        "削除する候補",
-        options=[""] + candidate_ids,
-        format_func=lambda value: "選択してください" if not value else next(
-            (
-                f"{candidate.get('date', '')}｜{candidate.get('name', '')}｜"
-                f"{candidate.get('difficulty', '')}"
-            )
-            for index, candidate in enumerate(candidates)
-            if ensure_candidate_id(candidate, index) == value
-        ),
-        key="schedule_candidate_delete_id",
-    )
+    delete_selected = editor[editor["delete"] == True]
+    delete_ids = set(delete_selected["candidate_id"].astype(str))
     if st.button(
-        "この候補の削除確認へ",
-        disabled=not delete_id,
-        key="prepare_schedule_candidate_delete",
+        f"選択した降臨候補を削除（{len(delete_ids)}件）",
+        disabled=not delete_ids,
+        key="prepare_schedule_candidate_bulk_delete",
     ):
-        st.session_state["schedule_candidate_delete_confirm_id"] = delete_id
+        st.session_state["schedule_candidate_delete_confirm_ids"] = list(delete_ids)
         st.rerun()
 
-    confirm_id = st.session_state.get("schedule_candidate_delete_confirm_id")
-    if confirm_id:
-        st.warning("選択した承認待ち候補を本当に削除しますか？")
+    confirm_ids = set(
+        st.session_state.get("schedule_candidate_delete_confirm_ids", [])
+    )
+    if confirm_ids:
+        st.warning(
+            f"選択した承認待ち候補{len(confirm_ids)}件を本当に削除しますか？"
+        )
         answer = st.radio(
             "削除確認",
             options=["いいえ", "はい"],
             horizontal=True,
-            key=f"confirm_schedule_candidate_delete_{confirm_id}",
+            key="confirm_schedule_candidate_bulk_delete",
         )
-        if st.button(
-            "回答を確定",
-            key=f"execute_schedule_candidate_delete_{confirm_id}",
-        ):
+        if st.button("回答を確定", key="execute_schedule_candidate_bulk_delete"):
             if answer == "はい":
                 remaining = [
                     candidate
                     for index, candidate in enumerate(candidates)
-                    if ensure_candidate_id(candidate, index) != confirm_id
+                    if ensure_candidate_id(candidate, index) not in confirm_ids
                 ]
                 try:
                     message = save_schedule_candidates(remaining)
-                    st.session_state.pop(
-                        "schedule_candidate_delete_confirm_id", None
-                    )
+                    st.session_state.pop("schedule_candidate_delete_confirm_ids", None)
                     st.session_state.pop("schedule_candidate_editor", None)
                     st.session_state["admin_flash_success"] = (
-                        f"{message} 承認待ち候補を1件削除しました。"
+                        f"{message} 承認待ち候補を{len(confirm_ids)}件削除しました。"
                     )
                     st.rerun()
                 except GitHubStorageError as error:
                     st.error(str(error))
             else:
-                st.session_state.pop(
-                    "schedule_candidate_delete_confirm_id", None
-                )
+                st.session_state.pop("schedule_candidate_delete_confirm_ids", None)
                 st.info("削除を取り消しました。")
+
 
 
 def review_event_candidates():
@@ -1975,6 +1960,46 @@ def review_event_candidates():
         st.session_state.pop("event_candidate_editor", None)
         st.session_state["admin_flash_success"] = message
         st.rerun()
+
+
+    st.markdown("##### イベント候補の一括削除")
+    if st.button(
+        f"イベント候補をすべて削除（{len(candidates)}件）",
+        key="prepare_event_candidate_delete_all",
+    ):
+        st.session_state["event_candidate_delete_all_confirm"] = True
+        st.rerun()
+
+    if st.session_state.get("event_candidate_delete_all_confirm"):
+        st.warning(
+            f"イベント候補{len(candidates)}件を本当にすべて削除しますか？"
+        )
+        answer = st.radio(
+            "イベント候補の削除確認",
+            options=["いいえ", "はい"],
+            horizontal=True,
+            key="confirm_event_candidate_delete_all",
+        )
+        if st.button("回答を確定", key="execute_event_candidate_delete_all"):
+            if answer == "はい":
+                try:
+                    message = save_admin_json(
+                        "event_candidates.json",
+                        [],
+                        lambda data: save_json("event_candidates.json", data),
+                        "Delete all event candidates from admin",
+                    )
+                    st.session_state.pop("event_candidate_delete_all_confirm", None)
+                    st.session_state.pop("event_candidate_editor", None)
+                    st.session_state["admin_flash_success"] = (
+                        f"{message} イベント候補を{len(candidates)}件削除しました。"
+                    )
+                    st.rerun()
+                except GitHubStorageError as error:
+                    st.error(str(error))
+            else:
+                st.session_state.pop("event_candidate_delete_all_confirm", None)
+                st.info("削除を取り消しました。")
 
 
 st.title("モンスト スケジュール管理")

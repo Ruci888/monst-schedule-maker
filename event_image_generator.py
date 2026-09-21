@@ -37,7 +37,7 @@ EVENT_THEMES = {
         "surface_alt": "#0E1D33",
         "week_header": "#162B49",
         "text": "#F3F7FC",
-        "sub_text": "#AFC0D6",
+        "sub_text": "#DDE8F5",
         "grid": "#314A6D",
         "accent": "#E3B95F",
         "shadow": "#030A14",
@@ -52,7 +52,7 @@ EVENT_THEMES = {
         "surface_alt": "#141A25",
         "week_header": "#222B3B",
         "text": "#F9FAFB",
-        "sub_text": "#B8C0CE",
+        "sub_text": "#E5E7EB",
         "grid": "#3C4659",
         "accent": "#C9A75B",
         "shadow": "#020307",
@@ -176,12 +176,33 @@ def event_daily_labels(event):
     }
 
 
+ATTRIBUTE_COLORS = {
+    "火": "#FF4B4B",
+    "水": "#48B8FF",
+    "木": "#4CD675",
+    "光": "#FFD84D",
+    "闇": "#D07CFF",
+}
+
+
+def is_library_campaign(event):
+    text = f"{event.get('name', '')} {event.get('short_name', '')}"
+    return "書庫" in text and ("2倍" in text or "消費0" in text or "消費０" in text)
+
+
+def bar_time_text(event):
+    start_text = event.get("start_time", "") or "0:00"
+    end_text = event.get("end_time", "") or "23:59"
+    return f"{start_text}～{end_text}"
+
+
 def category_sort_key(event):
     try:
         category_index = CATEGORY_ORDER.index(event.get("category", ""))
     except ValueError:
         category_index = len(CATEGORY_ORDER)
     return (
+        0 if is_library_campaign(event) else 1,
         category_index,
         event.get("start_date", ""),
         event.get("end_date", ""),
@@ -352,8 +373,8 @@ def draw_week(draw, events, week_start, top, theme):
         label = display_event_name(event)
         label_font = fit_font(
             label,
-            maximum_size=22,
-            minimum_size=14,
+            maximum_size=25,
+            minimum_size=16,
             maximum_width=timeline_left - (badge_left + badge_width) - 34,
             draw=draw,
         )
@@ -365,20 +386,6 @@ def draw_week(draw, events, week_start, top, theme):
             fill=theme["text"],
             stroke_width=1,
             stroke_fill=theme["text"],
-        )
-        time_text = event_time_text(event)
-        time_font = fit_font(
-            time_text,
-            maximum_size=14,
-            minimum_size=11,
-            maximum_width=timeline_left - label_x - 22,
-            draw=draw,
-        )
-        draw.text(
-            (label_x, row_top + 37),
-            time_text,
-            font=time_font,
-            fill=theme["sub_text"],
         )
 
         week_start_datetime = datetime.combine(week_start, time.min)
@@ -423,24 +430,42 @@ def draw_week(draw, events, week_start, top, theme):
             )
 
         daily_labels = event_daily_labels(event)
-        daily_label_font = load_font(15)
-        for offset in range(7):
-            day = week_start + timedelta(days=offset)
-            day_label = daily_labels.get(day)
-            if not day_label:
-                continue
-            day_left = timeline_left + offset * column_width
-            day_right = day_left + column_width
-            label_left = max(bar_left, day_left) + 2
-            label_right = min(bar_right, day_right) - 2
-            if label_right - label_left < 18:
-                continue
-            draw_centered_text(
+        if is_library_campaign(event) and daily_labels:
+            # 書庫CPは日ごとの対象属性を文字ではなく属性色だけで表す。
+            for offset in range(7):
+                day = week_start + timedelta(days=offset)
+                attribute = daily_labels.get(day)
+                color = ATTRIBUTE_COLORS.get(attribute)
+                if not color:
+                    continue
+                day_left = timeline_left + offset * column_width
+                day_right = day_left + column_width
+                segment_left = max(bar_left, day_left)
+                segment_right = min(bar_right, day_right)
+                if segment_right - segment_left < 2:
+                    continue
+                draw.rectangle(
+                    (segment_left, bar_top, segment_right, bar_bottom),
+                    fill=color,
+                )
+
+        # 日付は上部軸とバー位置で示し、バー内には開始・終了時刻だけを表示する。
+        time_text = bar_time_text(event)
+        time_font = fit_font(
+            time_text,
+            maximum_size=17,
+            minimum_size=11,
+            maximum_width=max(20, bar_right - bar_left - 8),
+            draw=draw,
+        )
+        if bar_right - bar_left >= 52:
+            draw_emphasized_centered_text(
                 draw,
-                (label_left, bar_top, label_right, bar_bottom),
-                day_label,
-                daily_label_font,
+                (bar_left + 3, bar_top, bar_right - 3, bar_bottom),
+                time_text,
+                time_font,
                 "#FFFFFF",
+                "#111827",
             )
 
         row_top += row_height
