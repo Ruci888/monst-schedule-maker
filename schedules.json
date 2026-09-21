@@ -2437,7 +2437,7 @@
         "source_type": "verified",
         "source_url": "",
         "confirmed_at": "2026-09-18T21:38:45+00:00",
-        "published": true
+        "published": false
     },
     {
         "quest_id": "quest_603f193fa8363264",
