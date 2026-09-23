@@ -168,6 +168,7 @@ EVENT_CATEGORY_LABELS = {
     "ガチャ": "ガチャ",
     "ゲーム内キャンペーン": "ゲーム内CP",
     "イベント": "イベント",
+    "ミッション": "ミッション",
     "その他": "その他",
 }
 
@@ -186,6 +187,8 @@ def public_event_group(category):
         return "ゲーム内CP"
     if category == "イベント":
         return "イベント"
+    if category == "ミッション":
+        return "ミッション"
     if category == "その他":
         return "その他"
     # Removed legacy categories are not exposed as public filter categories.
@@ -526,10 +529,10 @@ with event_tab:
     elif not available_events:
         st.info("選択した14日間に掲載できるイベントはありません。")
     else:
-        available_groups = [
-            group for group in PUBLIC_EVENT_GROUPS
-            if any(public_event_group(event.get("category", "")) == group for event in available_events)
-        ]
+        # Always show the full public category set.
+        # Filters must not disappear just because the selected 14-day window
+        # currently has no event in that category.
+        available_groups = PUBLIC_EVENT_GROUPS.copy()
         pills_key = f"event_groups_{start_date.isoformat()}"
         pills_options = ["すべて", *available_groups]
         if pills_key not in st.session_state:
