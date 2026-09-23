@@ -13,7 +13,6 @@ CATEGORY_STYLES = {
     "ガチャ": ("#FBBF24", "ガチャ"),
     "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
     "イベント": ("#F87171", "イベント"),
-    "ミッション": ("#F472B6", "ミッション"),
     "その他": ("#94A3B8", "その他"),
 }
 
@@ -35,8 +34,6 @@ def display_category(event):
         return "ゲーム内CP"
     if category == "イベント":
         return "イベント"
-    if category == "ミッション":
-        return "ミッション"
     return "その他"
 
 

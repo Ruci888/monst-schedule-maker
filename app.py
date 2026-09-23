@@ -168,7 +168,6 @@ EVENT_CATEGORY_LABELS = {
     "ガチャ": "ガチャ",
     "ゲーム内キャンペーン": "ゲーム内CP",
     "イベント": "イベント",
-    "ミッション": "ミッション",
     "その他": "その他",
 }
 
@@ -187,8 +186,6 @@ def public_event_group(category):
         return "ゲーム内CP"
     if category == "イベント":
         return "イベント"
-    if category == "ミッション":
-        return "ミッション"
     if category == "その他":
         return "その他"
     # Removed legacy categories are not exposed as public filter categories.
