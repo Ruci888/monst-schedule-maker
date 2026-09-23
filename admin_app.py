@@ -4,6 +4,10 @@ from datetime import date, datetime, time, timedelta
 
 import pandas as pd
 import streamlit as st
+from feedback_storage import (
+    feedback_csv, is_configured as feedback_is_configured,
+    list_feedback, update_feedback,
+)
 
 from auth_manager import require_admin_authentication
 from data_manager import (
@@ -2002,6 +2006,73 @@ def review_event_candidates():
                 st.info("削除を取り消しました。")
 
 
+
+
+FEEDBACK_CATEGORIES = ["未分類", "不具合", "改善要望", "情報修正", "感想", "その他"]
+
+def render_feedback_management():
+    st.subheader("利用者フィードバック")
+    if not feedback_is_configured():
+        st.warning("Firebaseが未設定のため、フィードバックを読み込めません。")
+        return
+    try:
+        rows = list_feedback()
+    except Exception as error:
+        st.error(f"フィードバックの読み込みに失敗しました: {error}")
+        return
+
+    if not rows:
+        st.info("フィードバックはまだありません。")
+        return
+
+    show_hidden = st.checkbox("非表示済みも表示", value=False, key="feedback_show_hidden")
+    order = st.radio(
+        "並び順", ["新しい順", "古い順"],
+        horizontal=True, key="feedback_order"
+    )
+    visible_rows = rows if show_hidden else [row for row in rows if not row["hidden"]]
+    visible_rows = sorted(
+        visible_rows, key=lambda row: row["created_at"],
+        reverse=(order == "新しい順")
+    )
+
+    for row in visible_rows:
+        state = "非表示" if row["hidden"] else "表示中"
+        with st.container(border=True):
+            st.caption(f'{row["created_at"]}　｜　{state}')
+            st.write(row["message"])
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                category = st.selectbox(
+                    "カテゴリ",
+                    FEEDBACK_CATEGORIES,
+                    index=(FEEDBACK_CATEGORIES.index(row["category"])
+                           if row["category"] in FEEDBACK_CATEGORIES else 0),
+                    key=f'feedback_category_{row["id"]}',
+                )
+                if category != row["category"]:
+                    update_feedback(row["id"], category=category)
+                    st.rerun()
+            with col2:
+                if row["hidden"]:
+                    if st.button("再表示", key=f'feedback_show_{row["id"]}',
+                                 use_container_width=True):
+                        update_feedback(row["id"], hidden=False)
+                        st.rerun()
+                else:
+                    if st.button("非表示", key=f'feedback_hide_{row["id"]}',
+                                 use_container_width=True):
+                        update_feedback(row["id"], hidden=True)
+                        st.rerun()
+
+    st.download_button(
+        "フィードバックをCSVで一括ダウンロード",
+        data=feedback_csv(rows),
+        file_name="monst_feedback.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
 st.title("モンスト スケジュール管理")
 flash_success = st.session_state.pop("admin_flash_success", None)
 if flash_success:
@@ -2027,8 +2098,9 @@ tab_labels = [
     "降臨日程",
     "イベント管理",
     "自動取得候補・失敗ログ",
+    "フィードバック",
 ]
-master_tab, schedule_tab, event_tab, candidate_tab = st.tabs(
+master_tab, schedule_tab, event_tab, candidate_tab, feedback_tab = st.tabs(
     tab_labels,
     default=(
         forced_admin_tab
@@ -2261,3 +2333,6 @@ with candidate_tab:
             st.dataframe(logs, use_container_width=True, hide_index=True)
         else:
             st.info("取得失敗ログはありません。")
+
+with feedback_tab:
+    render_feedback_management()

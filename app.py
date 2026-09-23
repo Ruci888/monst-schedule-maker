@@ -7,6 +7,7 @@ import streamlit.components.v1 as components
 from data_manager import load_events, load_schedules
 from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
+from feedback_storage import add_feedback, is_configured as feedback_is_configured
 from schedule_utils import (
     CATEGORY_COLLABORATION,
     CATEGORY_FEATURED,
@@ -18,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.18"
+APP_VERSION = "v1.1.0-beta.9.21"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -160,6 +161,53 @@ EVENT_CATEGORY_LABELS = {
 
 
 EVENT_CATEGORY_ORDER = list(EVENT_CATEGORY_LABELS)
+
+
+PUBLIC_EVENT_GROUPS = [
+    "育成", "ガチャ", "クエスト", "コラボ", "キャンペーン", "解禁", "その他"
+]
+
+def public_event_group(category):
+    if category == "育成キャンペーン":
+        return "育成"
+    if category == "ガチャ":
+        return "ガチャ"
+    if category == "定期コンテンツ":
+        return "クエスト"
+    if category in {"コラボ・期間限定", "コラボガチャ", "コラボミッション"}:
+        return "コラボ"
+    if category in {"ゲーム内キャンペーン", "マルチキャンペーン", "ミッション", "周年CP"}:
+        return "キャンペーン"
+    if category in {"獣神化情報", "期限"}:
+        return "解禁"
+    return "その他"
+
+def init_event_group_state(state_prefix, groups):
+    all_key = f"{state_prefix}_all"
+    if all_key not in st.session_state:
+        st.session_state[all_key] = True
+        for group in groups:
+            st.session_state[f"{state_prefix}_{group}"] = True
+
+def select_all_event_groups(state_prefix, groups):
+    if st.session_state.get(f"{state_prefix}_all"):
+        for group in groups:
+            st.session_state[f"{state_prefix}_{group}"] = True
+
+def toggle_event_group(state_prefix, groups, clicked_group):
+    all_key = f"{state_prefix}_all"
+    if st.session_state.get(all_key):
+        # First category operation from the all-selected state isolates that category.
+        for group in groups:
+            st.session_state[f"{state_prefix}_{group}"] = (group == clicked_group)
+        st.session_state[all_key] = False
+        return
+    selected = [
+        group for group in groups
+        if st.session_state.get(f"{state_prefix}_{group}", False)
+    ]
+    st.session_state[all_key] = len(selected) == len(groups)
+
 
 
 def event_category_sort_key(category):
@@ -425,13 +473,7 @@ with schedule_tab:
                 f"選択中：{len(selected_schedules)}件／"
                 f"この期間の掲載候補：{len(available_schedules)}件"
             )
-
-        schedule_design = st.radio(
-            "デザイン",
-            options=["ブルー", "ダーク", "シンプル"],
-            horizontal=True,
-            key="schedule_design",
-        )
+        schedule_design = "ブルー"
 
         if not selected_schedules:
             st.warning("予定を1つ以上選択してください。")
@@ -476,27 +518,40 @@ with event_tab:
     elif not available_events:
         st.info("選択した14日間に掲載できるイベントはありません。")
     else:
-        available_categories = sorted(
-            {event["category"] for event in available_events},
-            key=event_category_sort_key,
-        )
+        available_groups = [
+            group for group in PUBLIC_EVENT_GROUPS
+            if any(public_event_group(event["category"]) == group for event in available_events)
+        ]
+        state_prefix = f"event_groups_{start_date.isoformat()}"
+        init_event_group_state(state_prefix, available_groups)
 
-        selected_categories = st.pills(
-            "掲載カテゴリ",
-            options=available_categories,
-            default=available_categories,
-            selection_mode="multi",
-            format_func=lambda category: EVENT_CATEGORY_LABELS.get(
-                category,
-                category,
-            ),
-            key=f"event_categories_{start_date.isoformat()}",
-        )
+        st.markdown("**表示項目選択**")
+        cols = st.columns(4)
+        with cols[0]:
+            st.checkbox(
+                "すべて",
+                key=f"{state_prefix}_all",
+                on_change=select_all_event_groups,
+                args=(state_prefix, available_groups),
+            )
+        for index, group in enumerate(available_groups, start=1):
+            with cols[index % 4]:
+                st.checkbox(
+                    group,
+                    key=f"{state_prefix}_{group}",
+                    on_change=toggle_event_group,
+                    args=(state_prefix, available_groups, group),
+                )
+
+        selected_groups = {
+            group for group in available_groups
+            if st.session_state.get(f"{state_prefix}_{group}", False)
+        }
 
         category_events = [
             event
             for event in available_events
-            if event["category"] in (selected_categories or [])
+            if public_event_group(event["category"]) in selected_groups
         ]
         event_map = {event_key(event): event for event in category_events}
         valid_event_keys = set(event_map)
@@ -534,13 +589,7 @@ with event_tab:
             f"選択中：{len(selected_events)}件／"
             f"この期間の掲載候補：{len(available_events)}件"
         )
-
-        event_design = st.radio(
-            "デザイン",
-            options=["ブルー", "ダーク", "シンプル"],
-            horizontal=True,
-            key="event_design",
-        )
+        event_design = "ブルー"
 
         if not selected_events:
             st.warning("イベントを1つ以上選択してください。")
@@ -556,3 +605,60 @@ with event_tab:
                 "monst_event_schedule.png",
                 "生成したイベントスケジュール",
             )
+
+
+st.divider()
+st.caption(
+    "β版・非公式ファンツールです。公式運営とは関係ありません。"
+    "掲載内容は変更・誤りの可能性があるため、最終確認はゲーム内・公式情報をご確認ください。"
+)
+
+with st.expander("ご意見・ご要望を送る", expanded=False):
+    st.caption("個人情報は入力しないでください。")
+    feedback_message = st.text_area(
+        "ご意見・ご要望",
+        max_chars=1000,
+        placeholder="使いにくい点や改善してほしい点など",
+        key="public_feedback_message",
+    )
+
+    NG_WORDS = [
+        "死亡","骨折","重傷","殺害","傷害","暴力","被害者",
+        "ポルノ","アダルト","セックス","バイブレーター","マスターベーション",
+        "オナニー","スケベ","羞恥","セクロス","エッチ","sex","風俗","童貞",
+        "ペニス","巨乳","ロリ","触手","ノーブラ","手ブラ","ローアングル",
+        "禁断","tバック","グラビア","美尻","お尻","セクシー","無修正",
+        "大麻","麻薬","基地外","糞","死ね","殺す",
+    ]
+
+    def normalize_feedback_text(value):
+        import unicodedata
+        normalized = unicodedata.normalize("NFKC", value).casefold()
+        return "".join(ch for ch in normalized if not ch.isspace())
+
+    def contains_ng_word(value):
+        normalized = normalize_feedback_text(value)
+        return any(normalize_feedback_text(word) in normalized for word in NG_WORDS)
+
+    if st.button("送信する", key="send_public_feedback", use_container_width=True):
+        from time import time as unix_time
+        message = feedback_message.strip()
+        last_sent = st.session_state.get("feedback_last_sent_at", 0.0)
+        remaining = 60 - int(unix_time() - last_sent)
+
+        if not feedback_is_configured():
+            st.error("現在フィードバック機能を利用できません。")
+        elif len(message) < 5:
+            st.warning("5文字以上で入力してください。")
+        elif contains_ng_word(message):
+            st.warning("使用できない表現が含まれています。内容を修正してください。")
+        elif remaining > 0:
+            st.warning(f"連続送信を防ぐため、あと約{remaining}秒お待ちください。")
+        else:
+            try:
+                add_feedback(message)
+                st.session_state["feedback_last_sent_at"] = unix_time()
+                st.session_state["public_feedback_message"] = ""
+                st.success("ご意見・ご要望を送信しました。ありがとうございます。")
+            except Exception:
+                st.error("送信に失敗しました。時間をおいてもう一度お試しください。")

@@ -26,6 +26,37 @@ CATEGORY_STYLES = {
 CATEGORY_ORDER = list(CATEGORY_STYLES)
 
 
+DISPLAY_CATEGORY_STYLES = {
+    "育成": "#34D399",
+    "ガチャ": "#FBBF24",
+    "クエスト": "#3B82F6",
+    "コラボ": "#C084FC",
+    "キャンペーン": "#22D3EE",
+    "解禁": "#FDE68A",
+    "その他": "#93C5FD",
+}
+
+def display_category(event):
+    category = event.get("category", "")
+    if category == "育成キャンペーン":
+        return "育成"
+    if category == "ガチャ":
+        return "ガチャ"
+    if category == "定期コンテンツ":
+        return "クエスト"
+    if category in {"コラボ・期間限定", "コラボガチャ", "コラボミッション"}:
+        return "コラボ"
+    if category in {"ゲーム内キャンペーン", "マルチキャンペーン", "ミッション", "周年CP"}:
+        return "キャンペーン"
+    if category in {"獣神化情報", "期限"}:
+        return "解禁"
+    return "その他"
+
+def display_category_color(event):
+    return DISPLAY_CATEGORY_STYLES[display_category(event)]
+
+
+
 EVENT_THEMES = {
     "ブルー": {
         "background": "#07152B",
@@ -263,7 +294,7 @@ def draw_emphasized_centered_text(draw, area, text, font, fill, stroke_fill):
 def draw_week(draw, events, week_start, top, theme):
     left = 38
     right = 1042
-    timeline_left = 365
+    timeline_left = 405
     date_header_height = 58
     row_height = 64
     column_width = (right - timeline_left) / 7
@@ -278,10 +309,9 @@ def draw_week(draw, events, week_start, top, theme):
         radius=14,
         fill=theme["week_header"],
     )
-
     draw_centered_text(
         draw,
-        (left, top, timeline_left - 12, top + date_header_height),
+        (left + 24, top, timeline_left - 12, top + date_header_height),
         "イベント",
         load_font(20),
         theme["text"],
@@ -298,7 +328,6 @@ def draw_week(draw, events, week_start, top, theme):
             day_color = "#60A5FA"
         elif day.weekday() == 6:
             day_color = "#F87171"
-
         draw_centered_text(
             draw,
             (cell_left, top, cell_right, top + date_header_height),
@@ -307,100 +336,62 @@ def draw_week(draw, events, week_start, top, theme):
             day_color,
         )
         if offset:
-            draw.line(
-                (cell_left, top, cell_left, top + date_header_height),
-                fill=theme["grid"],
-                width=1,
-            )
+            draw.line((cell_left, top, cell_left, top + date_header_height),
+                      fill=theme["grid"], width=1)
 
-    draw.line(
-        (timeline_left - 12, top, timeline_left - 12, top + date_header_height),
-        fill=theme["grid"],
-        width=2,
-    )
+    draw.line((timeline_left - 12, top, timeline_left - 12, top + date_header_height),
+              fill=theme["grid"], width=2)
 
     row_top = top + date_header_height + 8
     if not week_events:
         draw_centered_text(
-            draw,
-            (left, row_top, right, row_top + row_height),
-            "掲載イベントなし",
-            load_font(20),
-            theme["sub_text"],
+            draw, (left, row_top, right, row_top + row_height),
+            "掲載イベントなし", load_font(20), theme["sub_text"]
         )
         return row_top + row_height
 
-    for row_index, event in enumerate(week_events):
+    for row_index, item in enumerate(week_events):
         row_bottom = row_top + row_height - 4
         row_fill = theme["surface"] if row_index % 2 == 0 else theme["surface_alt"]
+        draw.rounded_rectangle((left, row_top, right, row_bottom), radius=10, fill=row_fill)
+
+        category_color = display_category_color(item)
+
+        # Category is represented only by a slim vertical color bar.
+        color_bar_left = left + 9
+        color_bar_right = color_bar_left + 12
         draw.rounded_rectangle(
-            (left, row_top, right, row_bottom),
-            radius=10,
-            fill=row_fill,
+            (color_bar_left, row_top + 8, color_bar_right, row_bottom - 8),
+            radius=6, fill=category_color
         )
 
-        category_color, category_label = CATEGORY_STYLES.get(
-            event.get("category", ""),
-            ("#94A3B8", "その他"),
-        )
-        badge_left = left + 10
-        badge_top = row_top + 18
-        badge_width = 92
-        badge_bottom = badge_top + 28
-        badge_fill = mix_color(category_color, row_fill, 0.27)
-        draw.rounded_rectangle(
-            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
-            radius=8,
-            fill=badge_fill,
-            outline=mix_color(category_color, row_fill, 0.70),
-            width=1,
-        )
-        badge_font = fit_font(
-            category_label,
-            maximum_size=14,
-            minimum_size=11,
-            maximum_width=badge_width - 10,
-            draw=draw,
-        )
-        draw_centered_text(
-            draw,
-            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
-            category_label,
-            badge_font,
-            category_color,
-        )
-
-        label = display_event_name(event)
+        label = display_event_name(item)
+        label_x = color_bar_right + 12
         label_font = fit_font(
             label,
-            maximum_size=25,
-            minimum_size=16,
-            maximum_width=timeline_left - (badge_left + badge_width) - 34,
+            maximum_size=27,
+            minimum_size=15,
+            maximum_width=timeline_left - label_x - 24,
             draw=draw,
         )
-        label_x = badge_left + badge_width + 12
+        box = draw.textbbox((0, 0), label, font=label_font)
+        label_h = box[3] - box[1]
         draw.text(
-            (label_x, row_top + 7),
+            (label_x, row_top + (row_height - 4 - label_h) / 2 - box[1]),
             label,
             font=label_font,
             fill=theme["text"],
-            stroke_width=1,
-            stroke_fill=theme["text"],
         )
 
         week_start_datetime = datetime.combine(week_start, time.min)
         week_end_datetime = week_start_datetime + timedelta(days=7)
-        event_start, event_end = event_datetimes(event)
+        event_start, event_end = event_datetimes(item)
         visible_start = max(event_start, week_start_datetime)
         visible_end = min(event_end, week_end_datetime)
         timeline_width = right - timeline_left
         week_seconds = 7 * 24 * 60 * 60
-        start_ratio = (
-            visible_start - week_start_datetime
-        ).total_seconds() / week_seconds
-        end_ratio = (
-            visible_end - week_start_datetime
-        ).total_seconds() / week_seconds
+        start_ratio = (visible_start - week_start_datetime).total_seconds() / week_seconds
+        end_ratio = (visible_end - week_start_datetime).total_seconds() / week_seconds
         bar_left = timeline_left + start_ratio * timeline_width
         bar_right = timeline_left + end_ratio * timeline_width
         if bar_right - bar_left < 14:
@@ -408,149 +399,129 @@ def draw_week(draw, events, week_start, top, theme):
         bar_top = row_top + 18
         bar_bottom = row_top + 46
 
-        draw.rounded_rectangle(
-            (bar_left + 1, bar_top + 3, bar_right + 1, bar_bottom + 3),
-            radius=7,
-            fill=theme["shadow"],
-        )
-        draw.rounded_rectangle(
-            (bar_left, bar_top, bar_right, bar_bottom),
-            radius=7,
-            fill=mix_color(category_color, theme["background"], 0.72),
-            outline=mix_color(category_color, "#FFFFFF", 0.82),
-            width=1,
-        )
-
-        for offset in range(1, 7):
-            grid_x = timeline_left + offset * column_width
-            draw.line(
-                (grid_x, row_top + 7, grid_x, row_bottom - 7),
-                fill=theme["grid"],
+        # Draw daily attribute colors for 書庫卵2倍CP; otherwise use category color.
+        daily_labels = event_daily_labels(item)
+        if daily_labels and display_event_name(item).startswith("書庫卵2倍CP"):
+            attribute_colors = {
+                "火": "#EF4444", "水": "#38BDF8", "木": "#22C55E",
+                "光": "#FACC15", "闇": "#A855F7",
+            }
+            for offset in range(7):
+                day = week_start + timedelta(days=offset)
+                seg_left = max(bar_left, timeline_left + offset * column_width)
+                seg_right = min(bar_right, timeline_left + (offset + 1) * column_width)
+                if seg_right <= seg_left:
+                    continue
+                fill = attribute_colors.get(daily_labels.get(day, ""), category_color)
+                draw.rectangle((seg_left, bar_top, seg_right, bar_bottom), fill=fill)
+            draw.rounded_rectangle(
+                (bar_left, bar_top, bar_right, bar_bottom),
+                radius=7, outline=mix_color(category_color, "#FFFFFF", 0.82), width=1
+            )
+        else:
+            draw.rounded_rectangle(
+                (bar_left + 1, bar_top + 3, bar_right + 1, bar_bottom + 3),
+                radius=7, fill=theme["shadow"]
+            )
+            draw.rounded_rectangle(
+                (bar_left, bar_top, bar_right, bar_bottom),
+                radius=7,
+                fill=mix_color(category_color, theme["background"], 0.72),
+                outline=mix_color(category_color, "#FFFFFF", 0.82),
                 width=1,
             )
 
-        daily_labels = event_daily_labels(event)
-        if is_library_campaign(event) and daily_labels:
-            # 書庫CPは日ごとの対象属性を文字ではなく属性色だけで表す。
-            for offset in range(7):
-                day = week_start + timedelta(days=offset)
-                attribute = daily_labels.get(day)
-                color = ATTRIBUTE_COLORS.get(attribute)
-                if not color:
-                    continue
-                day_left = timeline_left + offset * column_width
-                day_right = day_left + column_width
-                segment_left = max(bar_left, day_left)
-                segment_right = min(bar_right, day_right)
-                if segment_right - segment_left < 2:
-                    continue
-                draw.rectangle(
-                    (segment_left, bar_top, segment_right, bar_bottom),
-                    fill=color,
-                )
+        for offset in range(1, 7):
+            grid_x = timeline_left + offset * column_width
+            draw.line((grid_x, row_top + 7, grid_x, row_bottom - 7),
+                      fill=theme["grid"], width=1)
 
-        # 時刻は中央にまとめず、開始=バー左端 / 終了=バー右端に分離する。
-        # スマホ縮小時に数字が潰れないよう、縁取りは使わず白文字だけで描画する。
-        start_text = event.get("start_time", "") or "0:00"
-        end_text = event.get("end_time", "") or "23:59"
+        # Time: start at left edge, end at right edge, white only, no outline.
+        start_text = item.get("start_time", "") or "0:00"
+        end_text = item.get("end_time", "") or "23:59"
         time_font = load_font(17)
-        start_box = draw.textbbox((0, 0), start_text, font=time_font)
-        end_box = draw.textbbox((0, 0), end_text, font=time_font)
-        start_width = start_box[2] - start_box[0]
-        end_width = end_box[2] - end_box[0]
-        bar_width = bar_right - bar_left
-        center_y = (bar_top + bar_bottom) / 2
-        padding = 6
+        sb = draw.textbbox((0, 0), start_text, font=time_font)
+        eb = draw.textbbox((0, 0), end_text, font=time_font)
+        sw, ew = sb[2] - sb[0], eb[2] - eb[0]
+        cy = (bar_top + bar_bottom) / 2
+        available = bar_right - bar_left
 
-        if bar_width >= start_width + end_width + padding * 4:
-            # 十分な長さがあるバーでは、両時刻をバーの内側の左右端へ置く。
-            draw.text(
-                (bar_left + padding, center_y),
-                start_text,
-                font=time_font,
-                fill="#FFFFFF",
-                anchor="lm",
-            )
-            draw.text(
-                (bar_right - padding, center_y),
-                end_text,
-                font=time_font,
-                fill="#FFFFFF",
-                anchor="rm",
-            )
+        if available >= sw + ew + 20:
+            draw.text((bar_left + 6, cy), start_text, font=time_font,
+                      fill="#FFFFFF", anchor="lm")
+            draw.text((bar_right - 6, cy), end_text, font=time_font,
+                      fill="#FFFFFF", anchor="rm")
         else:
-            # 短いバーは文字を潰さず、開始を左外側・終了を右外側へ逃がす。
-            draw.text(
-                (max(timeline_left + 2, bar_left - padding), center_y),
-                start_text,
-                font=time_font,
-                fill="#FFFFFF",
-                anchor="rm",
-            )
-            draw.text(
-                (min(right - 2, bar_right + padding), center_y),
-                end_text,
-                font=time_font,
-                fill="#FFFFFF",
-                anchor="lm",
-            )
+            # Short bar fallback: keep labels readable on the dark row background.
+            sx = max(timeline_left + 2, bar_left - 6)
+            ex = min(right - 2, bar_right + 6)
+            draw.text((sx, cy), start_text, font=time_font,
+                      fill="#FFFFFF", anchor="rm")
+            draw.text((ex, cy), end_text, font=time_font,
+                      fill="#FFFFFF", anchor="lm")
 
         row_top += row_height
 
     return row_top
 
+def generate_event_image(events, design="ブルー", start_date=None):
+    # Public beta uses one fixed high-contrast design.
+    theme = EVENT_THEMES["ブルー"]
+    if start_date is None:
+        raise ValueError("start_date is required")
 
-def generate_event_image(events, design, start_date):
-    theme = EVENT_THEMES.get(design, EVENT_THEMES["ブルー"])
     events = sorted(events, key=category_sort_key)
     second_week = start_date + timedelta(days=7)
-    first_count = max(
-        1,
-        sum(overlap(event, start_date, start_date + timedelta(days=6)) for event in events),
-    )
-    second_count = max(
-        1,
-        sum(overlap(event, second_week, second_week + timedelta(days=6)) for event in events),
-    )
+    first_count = max(1, sum(overlap(e, start_date, start_date + timedelta(days=6)) for e in events))
+    second_count = max(1, sum(overlap(e, second_week, second_week + timedelta(days=6)) for e in events))
 
     width = 1080
-    height = max(1350, 275 + (first_count + second_count) * 64 + 215)
+    header_height = 270
+    height = max(1420, header_height + 70 + (first_count + second_count) * 64 + 215)
     image = Image.new("RGB", (width, height), theme["background"])
     draw = ImageDraw.Draw(image)
 
-    draw_vertical_gradient(
-        draw,
-        (0, 0, width, 205),
-        theme["header_top"],
-        theme["header_bottom"],
-    )
+    draw_vertical_gradient(draw, (0, 0, width, header_height),
+                           theme["header_top"], theme["header_bottom"])
     draw.rectangle((0, 0, width, 4), fill=theme["accent"])
-    draw.rectangle((0, 201, width, 205), fill=theme["accent"])
+    draw.rectangle((0, header_height - 4, width, header_height), fill=theme["accent"])
+
     draw_emphasized_centered_text(
-        draw,
-        (0, 25, width, 125),
-        "イベントスケジュール",
-        load_font(50),
-        theme["header_text"],
-        theme["header_top"],
-    )
-    end_date = start_date + timedelta(days=13)
-    period = (
-        f"{start_date.year}/{start_date.month}/{start_date.day}～"
-        f"{end_date.month}/{end_date.day}"
-    )
-    draw_centered_text(
-        draw,
-        (0, 125, width, 190),
-        period,
-        load_font(25),
-        theme["header_sub_text"],
+        draw, (0, 18, width, 102), "イベントスケジュール",
+        load_font(48), theme["header_text"], theme["header_top"]
     )
 
-    first_bottom = draw_week(draw, events, start_date, 230, theme)
+    # Category legend directly below the title.
+    legend_items = list(DISPLAY_CATEGORY_STYLES.items())
+    legend_font = load_font(20)
+    rows = [legend_items[:4], legend_items[4:]]
+    y_positions = [112, 158]
+    for row_items, y in zip(rows, y_positions):
+        widths = []
+        for label, _ in row_items:
+            b = draw.textbbox((0, 0), label, font=legend_font)
+            widths.append(20 + 10 + (b[2] - b[0]) + 26)
+        total = sum(widths)
+        x = (width - total) / 2
+        for (label, color), item_w in zip(row_items, widths):
+            cy = y + 14
+            draw.ellipse((x, cy - 8, x + 16, cy + 8), fill=color)
+            draw.text((x + 26, cy), label, font=legend_font,
+                      fill=theme["header_text"], anchor="lm")
+            x += item_w
+
+    end_date = start_date + timedelta(days=13)
+    period = f"{start_date.year}/{start_date.month}/{start_date.day}～{end_date.month}/{end_date.day}"
+    draw_centered_text(
+        draw, (0, 205, width, 255), period,
+        load_font(24), theme["header_sub_text"]
+    )
+
+    first_bottom = draw_week(draw, events, start_date, header_height + 25, theme)
     draw_week(draw, events, second_week, first_bottom + 32, theme)
 
     image_buffer = BytesIO()
     image.save(image_buffer, format="PNG")
     image_buffer.seek(0)
     return image_buffer
+
