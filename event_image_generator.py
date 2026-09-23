@@ -9,52 +9,36 @@ from image_generator import draw_centered_text, fit_font, load_font
 
 CATEGORY_STYLES = {
     "定期コンテンツ": ("#60A5FA", "定期"),
-    "コラボ・期間限定": ("#F87171", "コラボ"),
-    "コラボガチャ": ("#C084FC", "コラボガチャ"),
-    "コラボミッション": ("#F472B6", "コラボミッション"),
+    "コラボ": ("#C084FC", "コラボ"),
     "ガチャ": ("#FBBF24", "ガチャ"),
-    "育成キャンペーン": ("#34D399", "育成"),
     "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
-    "マルチキャンペーン": ("#2DD4BF", "マルチCP"),
-    "ミッション": ("#F472B6", "ミッション"),
-    "周年CP": ("#F59E0B", "周年CP"),
-    "獣神化情報": ("#A78BFA", "獣神化"),
-    "期限": ("#FB7185", "期限"),
+    "イベント": ("#F87171", "イベント"),
+    "その他": ("#94A3B8", "その他"),
 }
-
 
 CATEGORY_ORDER = list(CATEGORY_STYLES)
-
-
 DISPLAY_CATEGORY_STYLES = {
-    "育成": "#34D399",
-    "ガチャ": "#FBBF24",
-    "クエスト": "#3B82F6",
-    "コラボ": "#C084FC",
-    "キャンペーン": "#22D3EE",
-    "解禁": "#FDE68A",
-    "その他": "#93C5FD",
+    label: color for color, label in CATEGORY_STYLES.values()
 }
+
 
 def display_category(event):
     category = event.get("category", "")
-    if category == "育成キャンペーン":
-        return "育成"
+    if category == "定期コンテンツ":
+        return "定期"
+    if category in {"コラボ", "コラボ・期間限定"}:
+        return "コラボ"
     if category == "ガチャ":
         return "ガチャ"
-    if category == "定期コンテンツ":
-        return "クエスト"
-    if category in {"コラボ・期間限定", "コラボガチャ", "コラボミッション"}:
-        return "コラボ"
-    if category in {"ゲーム内キャンペーン", "マルチキャンペーン", "ミッション", "周年CP"}:
-        return "キャンペーン"
-    if category in {"獣神化情報", "期限"}:
-        return "解禁"
+    if category == "ゲーム内キャンペーン":
+        return "ゲーム内CP"
+    if category == "イベント":
+        return "イベント"
     return "その他"
+
 
 def display_category_color(event):
     return DISPLAY_CATEGORY_STYLES[display_category(event)]
-
 
 
 EVENT_THEMES = {
@@ -360,9 +344,9 @@ def draw_week(draw, events, week_start, top, theme):
         # Category is represented only by a slim vertical color bar.
         color_bar_left = left + 9
         color_bar_right = color_bar_left + 12
-        draw.rounded_rectangle(
-            (color_bar_left, row_top + 8, color_bar_right, row_bottom - 8),
-            radius=6, fill=category_color
+        draw.rectangle(
+            (color_bar_left, row_top, color_bar_right, row_top + row_height),
+            fill=category_color,
         )
 
         label = display_event_name(item)
@@ -491,29 +475,26 @@ def generate_event_image(events, design="ブルー", start_date=None):
         load_font(48), theme["header_text"], theme["header_top"]
     )
 
-    # Category legend directly below the title.
+    # Six public categories in one horizontal legend row.
     legend_items = list(DISPLAY_CATEGORY_STYLES.items())
-    legend_font = load_font(20)
-    rows = [legend_items[:4], legend_items[4:]]
-    y_positions = [112, 158]
-    for row_items, y in zip(rows, y_positions):
-        widths = []
-        for label, _ in row_items:
-            b = draw.textbbox((0, 0), label, font=legend_font)
-            widths.append(20 + 10 + (b[2] - b[0]) + 26)
-        total = sum(widths)
-        x = (width - total) / 2
-        for (label, color), item_w in zip(row_items, widths):
-            cy = y + 14
-            draw.ellipse((x, cy - 8, x + 16, cy + 8), fill=color)
-            draw.text((x + 26, cy), label, font=legend_font,
-                      fill=theme["header_text"], anchor="lm")
-            x += item_w
+    legend_font = load_font(19)
+    widths = []
+    for label, _ in legend_items:
+        b = draw.textbbox((0, 0), label, font=legend_font)
+        widths.append(14 + 8 + (b[2] - b[0]) + 20)
+    total = sum(widths)
+    x = (width - total) / 2
+    cy = 136
+    for (label, color), item_w in zip(legend_items, widths):
+        draw.rounded_rectangle((x, cy - 10, x + 14, cy + 10), radius=3, fill=color)
+        draw.text((x + 22, cy), label, font=legend_font,
+                  fill=theme["header_text"], anchor="lm")
+        x += item_w
 
     end_date = start_date + timedelta(days=13)
     period = f"{start_date.year}/{start_date.month}/{start_date.day}～{end_date.month}/{end_date.day}"
     draw_centered_text(
-        draw, (0, 205, width, 255), period,
+        draw, (0, 178, width, 228), period,
         load_font(24), theme["header_sub_text"]
     )
 

@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.21"
+APP_VERSION = "v1.1.0-beta.9.22"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -46,6 +46,23 @@ st.set_page_config(
     page_title="モンスト スケジュールメーカー",
     page_icon="📅",
     layout="centered",
+)
+
+# Keep pill selectors on one horizontal line; narrow screens can scroll sideways.
+st.markdown(
+    """
+    <style>
+    [data-testid="stPills"] [role="listbox"] {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+    }
+    [data-testid="stPills"] [role="option"] {
+        flex: 0 0 auto !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -146,67 +163,58 @@ def event_label(event):
 
 
 EVENT_CATEGORY_LABELS = {
-    "定期コンテンツ": "定期コンテンツ",
-    "コラボ・期間限定": "コラボ・期間限定",
-    "コラボガチャ": "コラボガチャ",
-    "コラボミッション": "コラボミッション",
+    "定期コンテンツ": "定期",
+    "コラボ": "コラボ",
     "ガチャ": "ガチャ",
-    "育成キャンペーン": "育成キャンペーン",
     "ゲーム内キャンペーン": "ゲーム内CP",
-    "マルチキャンペーン": "マルチCP",
-    "ミッション": "ミッション",
-    "周年CP": "周年CP",
-    "獣神化情報": "獣神化情報",
+    "イベント": "イベント",
+    "その他": "その他",
 }
 
-
 EVENT_CATEGORY_ORDER = list(EVENT_CATEGORY_LABELS)
+PUBLIC_EVENT_GROUPS = list(EVENT_CATEGORY_LABELS.values())
 
-
-PUBLIC_EVENT_GROUPS = [
-    "育成", "ガチャ", "クエスト", "コラボ", "キャンペーン", "解禁", "その他"
-]
-
+# Legacy categories are only translated for public display so existing JSON keeps working.
 def public_event_group(category):
-    if category == "育成キャンペーン":
-        return "育成"
+    if category == "定期コンテンツ":
+        return "定期"
+    if category in {"コラボ", "コラボ・期間限定"}:
+        return "コラボ"
     if category == "ガチャ":
         return "ガチャ"
-    if category == "定期コンテンツ":
-        return "クエスト"
-    if category in {"コラボ・期間限定", "コラボガチャ", "コラボミッション"}:
-        return "コラボ"
-    if category in {"ゲーム内キャンペーン", "マルチキャンペーン", "ミッション", "周年CP"}:
-        return "キャンペーン"
-    if category in {"獣神化情報", "期限"}:
-        return "解禁"
-    return "その他"
+    if category == "ゲーム内キャンペーン":
+        return "ゲーム内CP"
+    if category == "イベント":
+        return "イベント"
+    if category == "その他":
+        return "その他"
+    # Removed legacy categories are not exposed as public filter categories.
+    return None
 
-def init_event_group_state(state_prefix, groups):
-    all_key = f"{state_prefix}_all"
-    if all_key not in st.session_state:
-        st.session_state[all_key] = True
-        for group in groups:
-            st.session_state[f"{state_prefix}_{group}"] = True
 
-def select_all_event_groups(state_prefix, groups):
-    if st.session_state.get(f"{state_prefix}_all"):
-        for group in groups:
-            st.session_state[f"{state_prefix}_{group}"] = True
+def _event_pills_changed(state_key, groups):
+    options = ["すべて", *groups]
+    current = list(st.session_state.get(state_key, []))
+    previous = list(st.session_state.get(f"{state_key}_previous", options))
 
-def toggle_event_group(state_prefix, groups, clicked_group):
-    all_key = f"{state_prefix}_all"
-    if st.session_state.get(all_key):
-        # First category operation from the all-selected state isolates that category.
-        for group in groups:
-            st.session_state[f"{state_prefix}_{group}"] = (group == clicked_group)
-        st.session_state[all_key] = False
-        return
-    selected = [
-        group for group in groups
-        if st.session_state.get(f"{state_prefix}_{group}", False)
-    ]
-    st.session_state[all_key] = len(selected) == len(groups)
+    # First individual operation from all-selected isolates the operated category.
+    if set(previous) == set(options) and set(current) != set(options):
+        removed = [item for item in options if item not in current]
+        if len(removed) == 1 and removed[0] != "すべて":
+            current = [removed[0]]
+        elif "すべて" not in current:
+            current = groups.copy()
+    elif "すべて" in current and "すべて" not in previous:
+        current = options.copy()
+    else:
+        selected = [item for item in current if item != "すべて"]
+        if len(selected) == len(groups):
+            current = options.copy()
+        else:
+            current = selected
+
+    st.session_state[state_key] = current
+    st.session_state[f"{state_key}_previous"] = current.copy()
 
 
 
@@ -520,38 +528,32 @@ with event_tab:
     else:
         available_groups = [
             group for group in PUBLIC_EVENT_GROUPS
-            if any(public_event_group(event["category"]) == group for event in available_events)
+            if any(public_event_group(event.get("category", "")) == group for event in available_events)
         ]
-        state_prefix = f"event_groups_{start_date.isoformat()}"
-        init_event_group_state(state_prefix, available_groups)
+        pills_key = f"event_groups_{start_date.isoformat()}"
+        pills_options = ["すべて", *available_groups]
+        if pills_key not in st.session_state:
+            st.session_state[pills_key] = pills_options.copy()
+            st.session_state[f"{pills_key}_previous"] = pills_options.copy()
 
-        st.markdown("**表示項目選択**")
-        cols = st.columns(4)
-        with cols[0]:
-            st.checkbox(
-                "すべて",
-                key=f"{state_prefix}_all",
-                on_change=select_all_event_groups,
-                args=(state_prefix, available_groups),
-            )
-        for index, group in enumerate(available_groups, start=1):
-            with cols[index % 4]:
-                st.checkbox(
-                    group,
-                    key=f"{state_prefix}_{group}",
-                    on_change=toggle_event_group,
-                    args=(state_prefix, available_groups, group),
-                )
-
+        selected_pills = st.pills(
+            "表示項目選択",
+            options=pills_options,
+            default=pills_options,
+            selection_mode="multi",
+            key=pills_key,
+            on_change=_event_pills_changed,
+            args=(pills_key, available_groups),
+        )
         selected_groups = {
-            group for group in available_groups
-            if st.session_state.get(f"{state_prefix}_{group}", False)
+            group for group in (selected_pills or [])
+            if group != "すべて"
         }
 
         category_events = [
             event
             for event in available_events
-            if public_event_group(event["category"]) in selected_groups
+            if public_event_group(event.get("category", "")) in selected_groups
         ]
         event_map = {event_key(event): event for event in category_events}
         valid_event_keys = set(event_map)
@@ -615,12 +617,6 @@ st.caption(
 
 with st.expander("ご意見・ご要望を送る", expanded=False):
     st.caption("個人情報は入力しないでください。")
-    feedback_message = st.text_area(
-        "ご意見・ご要望",
-        max_chars=1000,
-        placeholder="使いにくい点や改善してほしい点など",
-        key="public_feedback_message",
-    )
 
     NG_WORDS = [
         "死亡","骨折","重傷","殺害","傷害","暴力","被害者",
@@ -640,7 +636,15 @@ with st.expander("ご意見・ご要望を送る", expanded=False):
         normalized = normalize_feedback_text(value)
         return any(normalize_feedback_text(word) in normalized for word in NG_WORDS)
 
-    if st.button("送信する", key="send_public_feedback", use_container_width=True):
+    with st.form("public_feedback_form", clear_on_submit=True):
+        feedback_message = st.text_area(
+            "ご意見・ご要望",
+            max_chars=1000,
+            placeholder="使いにくい点や改善してほしい点など",
+        )
+        feedback_submitted = st.form_submit_button("送信する", use_container_width=True)
+
+    if feedback_submitted:
         from time import time as unix_time
         message = feedback_message.strip()
         last_sent = st.session_state.get("feedback_last_sent_at", 0.0)
@@ -658,7 +662,7 @@ with st.expander("ご意見・ご要望を送る", expanded=False):
             try:
                 add_feedback(message)
                 st.session_state["feedback_last_sent_at"] = unix_time()
-                st.session_state["public_feedback_message"] = ""
                 st.success("ご意見・ご要望を送信しました。ありがとうございます。")
             except Exception:
                 st.error("送信に失敗しました。時間をおいてもう一度お試しください。")
+

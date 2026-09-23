@@ -86,18 +86,17 @@ DIFFICULTIES = [
 ]
 EVENT_CATEGORIES = [
     "定期コンテンツ",
-    "コラボ・期間限定",
-    "コラボガチャ",
-    "コラボミッション",
+    "コラボ",
     "ガチャ",
-    "育成キャンペーン",
     "ゲーム内キャンペーン",
-    "マルチキャンペーン",
-    "ミッション",
-    "周年CP",
-    "獣神化情報",
-    "期限",
+    "イベント",
+    "その他",
 ]
+LEGACY_EVENT_CATEGORIES = {
+    "コラボ・期間限定", "コラボガチャ", "コラボミッション",
+    "育成キャンペーン", "マルチキャンペーン", "ミッション",
+    "周年CP", "獣神化情報", "期限",
+}
 
 
 require_admin_authentication()
@@ -257,7 +256,7 @@ def event_rows_from_editor(editor_data):
             errors.append(f"イベントデータ{row_number}行目：名称が空です。")
         if not short_name:
             errors.append(f"イベントデータ{row_number}行目：短縮表示名が空です。")
-        if category not in EVENT_CATEGORIES:
+        if category not in EVENT_CATEGORIES and category not in LEGACY_EVENT_CATEGORIES:
             errors.append(f"イベントデータ{row_number}行目：カテゴリが不正です。")
         if not validate_date(start_date) or not validate_date(end_date):
             errors.append(f"イベントデータ{row_number}行目：日付はYYYY-MM-DD形式で入力してください。")
