@@ -8,6 +8,11 @@ from data_manager import load_events, load_schedules
 from event_image_generator import generate_event_image
 from image_generator import generate_schedule_image
 from feedback_storage import add_feedback, is_configured as feedback_is_configured
+from analytics_storage import (
+    get_or_create_visitor_id,
+    is_configured as analytics_is_configured,
+    log_usage,
+)
 from schedule_utils import (
     CATEGORY_COLLABORATION,
     CATEGORY_FEATURED,
@@ -19,7 +24,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23d"
+APP_VERSION = "v1.1.0-beta.9.23e"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -393,6 +398,16 @@ event_tab, schedule_tab = st.tabs([
     "降臨スケジュール",
 ], default="イベントスケジュール")
 
+# Anonymous usage analytics. No IP address, name, or device fingerprint is stored.
+visitor_id, _visitor_is_new = get_or_create_visitor_id()
+if analytics_is_configured() and not st.session_state.get("_visit_logged"):
+    try:
+        log_usage("visit", visitor_id)
+        st.session_state["_visit_logged"] = True
+    except Exception:
+        # Analytics must never prevent the public maker from working.
+        pass
+
 
 with schedule_tab:
     schedules = [
@@ -592,6 +607,16 @@ with schedule_tab:
                 schedule_start_date,
                 schedule_mode,
             )
+            schedule_generation_key = (
+                f"{schedule_start_date.isoformat()}|{schedule_mode}|"
+                + "|".join(sorted(schedule_key(item) for item in selected_schedules))
+            )
+            if st.session_state.get("_last_schedule_generation") != schedule_generation_key:
+                try:
+                    log_usage("schedule_image_generated", visitor_id, detail=schedule_mode)
+                    st.session_state["_last_schedule_generation"] = schedule_generation_key
+                except Exception:
+                    pass
             render_image_save_actions(
                 schedule_image,
                 "monst_descent_schedule.png",
@@ -706,6 +731,16 @@ with event_tab:
                 event_design,
                 start_date,
             )
+            event_generation_key = (
+                f"{start_date.isoformat()}|"
+                + "|".join(sorted(event_key(item) for item in selected_events))
+            )
+            if st.session_state.get("_last_event_generation") != event_generation_key:
+                try:
+                    log_usage("event_image_generated", visitor_id)
+                    st.session_state["_last_event_generation"] = event_generation_key
+                except Exception:
+                    pass
             render_image_save_actions(
                 event_image,
                 "monst_event_schedule.png",

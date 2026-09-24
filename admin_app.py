@@ -8,6 +8,12 @@ from feedback_storage import (
     feedback_csv, is_configured as feedback_is_configured,
     list_feedback, update_feedback,
 )
+from analytics_storage import (
+    is_configured as analytics_is_configured,
+    list_usage,
+    usage_csv,
+    usage_summary,
+)
 
 from auth_manager import require_admin_authentication
 from data_manager import (
@@ -2078,6 +2084,44 @@ def render_feedback_management():
         use_container_width=True,
     )
 
+def render_usage_management():
+    st.subheader("利用状況")
+    st.caption(
+        "匿名IDを基準にした参考値です。同じ利用者でもブラウザやセッションが変わると"
+        "別の訪問者として数えられる場合があります。IPアドレス等は保存しません。"
+    )
+    if not analytics_is_configured():
+        st.warning("Firebaseが未設定のため、利用状況を読み込めません。")
+        return
+
+    if st.button("🔄 最新データに更新", key="usage_refresh"):
+        st.rerun()
+
+    try:
+        rows = list_usage()
+    except Exception as error:
+        st.error(f"利用状況を読み込めませんでした：{error}")
+        return
+
+    summary = usage_summary(rows)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("今日", summary["today"])
+    c2.metric("直近7日", summary["7days"])
+    c3.metric("直近30日", summary["30days"])
+    c4.metric("累計", summary["total"])
+
+    g1, g2 = st.columns(2)
+    g1.metric("イベント画像生成", summary["event_generations"])
+    g2.metric("降臨画像生成", summary["schedule_generations"])
+
+    st.download_button(
+        "利用ログをCSVで一括ダウンロード",
+        data=usage_csv(rows),
+        file_name="monst_usage.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
 st.title("モンスト スケジュール管理")
 flash_success = st.session_state.pop("admin_flash_success", None)
 if flash_success:
@@ -2104,8 +2148,9 @@ tab_labels = [
     "イベント管理",
     "自動取得候補・失敗ログ",
     "フィードバック",
+    "利用状況",
 ]
-master_tab, schedule_tab, event_tab, candidate_tab, feedback_tab = st.tabs(
+master_tab, schedule_tab, event_tab, candidate_tab, feedback_tab, usage_tab = st.tabs(
     tab_labels,
     default=(
         forced_admin_tab
@@ -2346,3 +2391,7 @@ with candidate_tab:
 
 with feedback_tab:
     render_feedback_management()
+
+
+with usage_tab:
+    render_usage_management()
