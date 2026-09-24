@@ -27,7 +27,7 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260826_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": false
+        "published": true
     },
     {
         "name": "英雄の神殿 わくわくの実2個",
@@ -57,7 +57,7 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260828_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": false
+        "published": true
     },
     {
         "name": "英雄の神殿 わくわくの実2個（第1期間）",
@@ -137,7 +137,7 @@
     {
         "name": "μ'sミッションでコラボキャラや衣装解放などを獲得！",
         "short_name": "ラブライブμ'sミッション",
-        "category": "コラボミッション",
+        "category": "ミッション",
         "start_date": "2026-09-01",
         "end_date": "2026-09-19",
         "start_time": "12:00",
@@ -147,12 +147,12 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": false
+        "published": true
     },
     {
         "name": "ラブライブ！シリーズコラボ",
         "short_name": "ラブライブ！シリーズコラボ",
-        "category": "コラボ・期間限定",
+        "category": "コラボ",
         "start_date": "2026-09-01",
         "end_date": "2026-09-18",
         "start_time": "12:00",
@@ -162,22 +162,7 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260827_1.html",
         "confirmed_at": "2026-08-31T10:36:01+00:00",
-        "published": false
-    },
-    {
-        "name": "破界に響く星歌",
-        "short_name": "破界に響く星歌",
-        "category": "ガチャ",
-        "start_date": "2026-09-02",
-        "end_date": "2026-09-04",
-        "start_time": "12:00",
-        "end_time": "11:59",
-        "daily_labels": "",
-        "description": "",
-        "source_type": "verified",
-        "source_url": "https://www.monster-strike.com/news/20260901_2.html",
-        "confirmed_at": "2026-09-01T22:33:59+00:00",
-        "published": false
+        "published": true
     },
     {
         "name": "激・獣神祭",
@@ -197,7 +182,7 @@
     {
         "name": "ジャスミン",
         "short_name": "ジャスミン、獣神化・改",
-        "category": "獣神化情報",
+        "category": "その他",
         "start_date": "2026-09-15",
         "end_date": "2026-09-15",
         "start_time": "12:00",
@@ -257,7 +242,7 @@
     {
         "name": "「ノーマルクエスト」をクリアした際に獲得できる経験値が「2倍」！",
         "short_name": "ノマクエ2倍",
-        "category": "育成キャンペーン",
+        "category": "ゲーム内キャンペーン",
         "start_date": "2026-09-13",
         "end_date": "2026-09-17",
         "start_time": "0:00",
@@ -287,7 +272,7 @@
     {
         "name": "メンテナンスの実施",
         "short_name": "メンテナンス",
-        "category": "期限",
+        "category": "その他",
         "start_date": "2026-09-17",
         "end_date": "2026-09-17",
         "start_time": "0:00",
@@ -302,7 +287,7 @@
     {
         "name": "ホップ！ステップ！限定！ガチャ",
         "short_name": "ホップ！ステップ！ガチャ",
-        "category": "周年CP",
+        "category": "ガチャ",
         "start_date": "2026-09-19",
         "end_date": "2026-09-25",
         "start_time": "12:00",
@@ -317,7 +302,7 @@
     {
         "name": "紫式部",
         "short_name": "紫式部、獣神化・改",
-        "category": "獣神化情報",
+        "category": "その他",
         "start_date": "2026-09-22",
         "end_date": "2026-09-22",
         "start_time": "12:00",
@@ -437,7 +422,7 @@
     {
         "name": "フォギルエ訓練所追加",
         "short_name": "訓練所にフォギルエ追加",
-        "category": "ゲーム内キャンペーン",
+        "category": "その他",
         "start_date": "2026-09-26",
         "end_date": "2026-09-26",
         "start_time": "04:00",
@@ -512,7 +497,7 @@
     {
         "name": "新イベント「コード・ビブリア４～開かれし伝承～」9/18より開催！",
         "short_name": "コード・ビブリア４",
-        "category": "ゲーム内キャンペーン",
+        "category": "イベント",
         "start_date": "2026-09-18",
         "end_date": "2026-10-02",
         "start_time": "12:00",
