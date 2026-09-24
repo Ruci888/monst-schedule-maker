@@ -234,7 +234,7 @@ def draw_normal_schedule_item(draw, schedule, x, y, column_right, theme):
     label_height = 38
     label_x = column_right - label_width - 10
     name_width = max(70, label_x - x - 10)
-    name_font = fit_font(schedule["name"], 28, 18, name_width, draw)
+    name_font = fit_featured_name_font(schedule["name"], 28, 18, name_width, draw)
     label_font = fit_font(
         schedule["difficulty"], 17, 12, label_width - 10, draw
     )
