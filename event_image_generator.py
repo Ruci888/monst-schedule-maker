@@ -423,11 +423,14 @@ def draw_week(draw, events, week_start, top, theme):
             draw.line((grid_x, row_top + 7, grid_x, row_bottom - 7),
                       fill=theme["grid"], width=1)
 
-        # Time: start at left edge, end at right edge, white only, no outline.
-        # If the event already started before this displayed week, its original
-        # start time is outside the visible range, so do not show that start time.
+        # Time labels are shown only in the week that contains the real
+        # start/end date.  A bar continuing into the next week must not look as
+        # though it ends at the current week's right edge.
         event_start_date = parse_date(item["start_date"])
-        show_start_time = event_start_date >= week_start
+        event_end_date = parse_date(item["end_date"])
+        show_start_time = week_start <= event_start_date <= week_end
+        show_end_time = week_start <= event_end_date <= week_end
+
         start_text = item.get("start_time", "") or "0:00"
         end_text = item.get("end_time", "") or "23:59"
         time_font = load_font(17)
@@ -437,23 +440,42 @@ def draw_week(draw, events, week_start, top, theme):
         cy = (bar_top + bar_bottom) / 2
         available = bar_right - bar_left
 
-        if show_start_time and available >= sw + ew + 20:
-            draw.text((bar_left + 6, cy), start_text, font=time_font,
-                      fill="#FFFFFF", anchor="lm")
-            draw.text((bar_right - 6, cy), end_text, font=time_font,
-                      fill="#FFFFFF", anchor="rm")
+        if show_start_time and show_end_time:
+            if available >= sw + ew + 20:
+                draw.text((bar_left + 6, cy), start_text, font=time_font,
+                          fill="#FFFFFF", anchor="lm")
+                draw.text((bar_right - 6, cy), end_text, font=time_font,
+                          fill="#FFFFFF", anchor="rm")
+            else:
+                # Short bar: move both labels outside so neither is buried
+                # on top of the bar.
+                sx = max(timeline_left + 2, bar_left - 6)
+                ex = bar_right + 6
+                draw.text((sx, cy), start_text, font=time_font,
+                          fill="#FFFFFF", anchor="rm")
+                draw.text((ex, cy), end_text, font=time_font,
+                          fill="#FFFFFF", anchor="lm")
+
         elif show_start_time:
-            # Short bar fallback: keep labels readable on the dark row background.
-            sx = max(timeline_left + 2, bar_left - 6)
-            ex = min(right - 2, bar_right + 6)
-            draw.text((sx, cy), start_text, font=time_font,
-                      fill="#FFFFFF", anchor="rm")
-            draw.text((ex, cy), end_text, font=time_font,
-                      fill="#FFFFFF", anchor="lm")
-        else:
-            # The start is before the displayed range; only the end time remains.
-            draw.text((bar_right - 6, cy), end_text, font=time_font,
-                      fill="#FFFFFF", anchor="rm")
+            # The event continues beyond this week, so there is no end-time
+            # label on this week's bar.
+            if available >= sw + 12:
+                draw.text((bar_left + 6, cy), start_text, font=time_font,
+                          fill="#FFFFFF", anchor="lm")
+            else:
+                sx = max(timeline_left + 2, bar_left - 6)
+                draw.text((sx, cy), start_text, font=time_font,
+                          fill="#FFFFFF", anchor="rm")
+
+        elif show_end_time:
+            # The event began before this week.  Show only its real end time.
+            # If the remaining bar is short, put the time just to its right.
+            if available >= ew + 12:
+                draw.text((bar_right - 6, cy), end_text, font=time_font,
+                          fill="#FFFFFF", anchor="rm")
+            else:
+                draw.text((bar_right + 6, cy), end_text, font=time_font,
+                          fill="#FFFFFF", anchor="lm")
 
         row_top += row_height
 
