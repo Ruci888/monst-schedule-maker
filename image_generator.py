@@ -172,7 +172,7 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
         CATEGORY_LIMITED_EVENT: ("期間限定", "#A16207"),
     }
     category_label = category_labels.get(category)
-    if category_label:
+    if category_label and schedule.get("show_category_badge", False):
         category_text, category_color = category_label
         category_width = 88
         category_height = 30
@@ -205,7 +205,7 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     label_x = column_right - label_width - 12
     label_y = y + 32
     name_width = max(80, label_x - x - 12)
-    name_font = fit_featured_name_font(schedule["name"], 31, 20, name_width, draw)
+    name_font = fit_featured_name_font(schedule["name"], 30, 18, name_width, draw)
 
     draw.text(
         (x, y + 34),

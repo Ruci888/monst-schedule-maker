@@ -176,6 +176,7 @@ def schedule_rows_from_editor(editor_data):
         source_url = normalize_text(row.get("source_url"))
         published = bool(row.get("published", True))
         show_time = bool(row.get("show_time", False))
+        show_category_badge = bool(row.get("show_category_badge", False))
         quest_id = normalize_text(row.get("quest_id"))
         end_next_day = bool(row.get("end_next_day", False))
 
@@ -237,6 +238,7 @@ def schedule_rows_from_editor(editor_data):
             "source_url": source_url,
             "confirmed_at": normalize_text(row.get("confirmed_at")),
             "show_time": show_time,
+            "show_category_badge": show_category_badge,
             "published": published,
         })
 
@@ -307,6 +309,7 @@ def ensure_schedule_columns(schedules):
         "source_url": "",
         "confirmed_at": "",
         "show_time": False,
+        "show_category_badge": False,
         "published": True,
     }
     results = []
@@ -2210,6 +2213,11 @@ with schedule_tab:
             "show_time": st.column_config.CheckboxColumn(
                 "時間表示",
                 help="注目画像で開始・終了時間を表示する場合だけONにします。初期値はOFFです。",
+                default=False,
+            ),
+            "show_category_badge": st.column_config.CheckboxColumn(
+                "カテゴリバッジ表示",
+                help="コラボ・期間限定の小バッジを画像に表示する場合だけONにします。初期値はOFFです。",
                 default=False,
             ),
             "published": st.column_config.CheckboxColumn("公開"),
