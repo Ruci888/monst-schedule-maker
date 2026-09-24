@@ -45,6 +45,22 @@ def load_font(size):
     return ImageFont.load_default()
 
 
+def load_featured_name_font(size):
+    """Use Noto Sans CJK for featured quest names when available."""
+    candidates = [
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+        Path("/usr/share/fonts/opentype/noto/NotoSansCJKjp-Regular.otf"),
+        Path("C:/Windows/Fonts/YuGothM.ttc"),
+        Path("C:/Windows/Fonts/meiryo.ttc"),
+    ]
+
+    for font_path in candidates:
+        if font_path.exists():
+            return ImageFont.truetype(str(font_path), size)
+
+    return load_font(size)
+
+
 def get_theme(design):
     themes = {
         "ブルー": {
@@ -114,6 +130,15 @@ def fit_font(text, maximum_size, minimum_size, maximum_width, draw):
     return load_font(minimum_size)
 
 
+def fit_featured_name_font(text, maximum_size, minimum_size, maximum_width, draw):
+    for size in range(maximum_size, minimum_size - 1, -1):
+        font = load_featured_name_font(size)
+        box = draw.textbbox((0, 0), text, font=font)
+        if box[2] - box[0] <= maximum_width:
+            return font
+    return load_featured_name_font(minimum_size)
+
+
 def draw_centered_text(draw, area, text, font, fill):
     left, top, right, bottom = area
     box = draw.textbbox((0, 0), text, font=font)
@@ -180,7 +205,7 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     label_x = column_right - label_width - 12
     label_y = y + 32
     name_width = max(80, label_x - x - 12)
-    name_font = fit_font(schedule["name"], 29, 20, name_width, draw)
+    name_font = fit_featured_name_font(schedule["name"], 29, 20, name_width, draw)
 
     draw.text(
         (x, y + 34),
