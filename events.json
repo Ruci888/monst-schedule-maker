@@ -673,5 +673,20 @@
         "source_url": "https://www.monster-strike.com/news/20260922_1.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "モンストニュースフラッシュ！",
+        "short_name": "モンストニュースフラッシュ！",
+        "category": "その他",
+        "start_date": "2026-09-24",
+        "end_date": "2026-09-24",
+        "start_time": "18:00",
+        "end_time": "20:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.youtube.com/watch?v=frKFScqZi7o",
+        "confirmed_at": "",
+        "published": true
     }
 ]
