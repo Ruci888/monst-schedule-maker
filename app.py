@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23a"
+APP_VERSION = "v1.1.0-beta.9.23b"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -62,13 +62,13 @@ st.markdown(
     }
     /* Reduce Streamlit's default top whitespace on mobile/desktop. */
     .block-container {
-        padding-top: 1.25rem !important;
+        padding-top: 2.25rem !important;
         overflow-x: hidden !important;
     }
     .maker-title-wrap {
         width: 100%;
         max-width: 100%;
-        margin: 0 0 0.45rem 0;
+        margin: 0 0 0.55rem 0;
         overflow: hidden;
     }
     .maker-title {
@@ -93,10 +93,11 @@ st.markdown(
         height: 0.32rem;
         border-radius: 999px;
         background: #ff4b4b;
-        margin-top: 0.7rem;
+        margin-top: 0.9rem;
     }
     @media (max-width: 430px) {
-        .block-container { padding-top: 0.75rem !important; }
+        /* Keep comfortable space below Streamlit's mobile toolbar. */
+        .block-container { padding-top: 3.0rem !important; }
         .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
         .maker-title-line-long { font-size: 0.72em; letter-spacing: -0.07em; }
     }
@@ -372,10 +373,10 @@ def render_image_save_actions(image_buffer, file_name, caption):
 st.markdown(
     """
     <div class="maker-title-wrap">
-      <h1 class="maker-title">
+      <div class="maker-title">
         <span class="maker-title-line">モンスト</span>
         <span class="maker-title-line maker-title-line-long">スケジュールメーカー</span>
-      </h1>
+      </div>
       <div class="maker-title-accent"></div>
     </div>
     """,
