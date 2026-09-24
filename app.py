@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.22"
+APP_VERSION = "v1.1.0-beta.9.23"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -59,6 +59,36 @@ st.markdown(
     }
     [data-testid="stPills"] [role="option"] {
         flex: 0 0 auto !important;
+    }
+    /* Reduce Streamlit's default top whitespace on mobile/desktop. */
+    .block-container {
+        padding-top: 2.2rem !important;
+    }
+    .maker-title-wrap {
+        margin: 0 0 0.45rem 0;
+    }
+    .maker-title-accent {
+        width: 3.4rem;
+        height: 0.32rem;
+        border-radius: 999px;
+        background: #ff4b4b;
+        margin-bottom: 0.65rem;
+    }
+    .maker-title {
+        margin: 0;
+        color: inherit;
+        font-size: clamp(2.35rem, 8.8vw, 3.15rem);
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+    }
+    .maker-title-line {
+        display: block;
+        white-space: nowrap;
+    }
+    @media (max-width: 430px) {
+        .block-container { padding-top: 1.55rem !important; }
+        .maker-title { font-size: clamp(2rem, 8.5vw, 2.55rem); }
     }
     </style>
     """,
@@ -329,7 +359,18 @@ def render_image_save_actions(image_buffer, file_name, caption):
     )
 
 
-st.title("モンスト スケジュールメーカー")
+st.markdown(
+    """
+    <div class="maker-title-wrap">
+      <div class="maker-title-accent"></div>
+      <h1 class="maker-title">
+        <span class="maker-title-line">モンスト</span>
+        <span class="maker-title-line">スケジュールメーカー</span>
+      </h1>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.caption(
     "予定を選ぶだけで、スマホ向けのスケジュール画像を生成できます。"
     f"　｜　{APP_VERSION}"
@@ -490,7 +531,6 @@ with schedule_tab:
             st.warning("予定を1つ以上選択してください。")
         else:
             selected_schedules.sort(key=parse_schedule_datetime)
-            st.subheader("生成結果")
             schedule_image = generate_schedule_image(
                 selected_schedules,
                 schedule_design,
@@ -529,11 +569,18 @@ with event_tab:
     elif not available_events:
         st.info("選択した14日間に掲載できるイベントはありません。")
     else:
-        # Always show the full public category set.
-        # Filters must not disappear just because the selected 14-day window
-        # currently has no event in that category.
-        available_groups = PUBLIC_EVENT_GROUPS.copy()
-        pills_key = f"event_groups_{start_date.isoformat()}"
+        # Only show categories that actually exist in the selected 14-day window.
+        # Initial state remains "all selected" for the categories that are available.
+        available_group_set = {
+            public_event_group(event.get("category", ""))
+            for event in available_events
+        }
+        available_groups = [
+            group for group in PUBLIC_EVENT_GROUPS
+            if group in available_group_set
+        ]
+        group_signature = "_".join(available_groups)
+        pills_key = f"event_groups_{start_date.isoformat()}_{group_signature}"
         pills_options = ["すべて", *available_groups]
         if pills_key not in st.session_state:
             st.session_state[pills_key] = pills_options.copy()
@@ -604,7 +651,6 @@ with event_tab:
                 event_design,
                 start_date,
             )
-            st.subheader("生成結果")
             render_image_save_actions(
                 event_image,
                 "monst_event_schedule.png",

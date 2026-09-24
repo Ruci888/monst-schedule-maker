@@ -169,6 +169,7 @@ def schedule_rows_from_editor(editor_data):
         source_type = normalize_text(row.get("source_type")) or "manual"
         source_url = normalize_text(row.get("source_url"))
         published = bool(row.get("published", True))
+        show_time = bool(row.get("show_time", False))
         quest_id = normalize_text(row.get("quest_id"))
         end_next_day = bool(row.get("end_next_day", False))
 
@@ -229,6 +230,7 @@ def schedule_rows_from_editor(editor_data):
             "source_type": source_type,
             "source_url": source_url,
             "confirmed_at": normalize_text(row.get("confirmed_at")),
+            "show_time": show_time,
             "published": published,
         })
 
@@ -298,6 +300,7 @@ def ensure_schedule_columns(schedules):
         "source_type": "manual",
         "source_url": "",
         "confirmed_at": "",
+        "show_time": False,
         "published": True,
     }
     results = []
@@ -2015,6 +2018,8 @@ def render_feedback_management():
     if not feedback_is_configured():
         st.warning("Firebaseが未設定のため、フィードバックを読み込めません。")
         return
+    if st.button("🔄 最新データに更新", key="feedback_refresh"):
+        st.rerun()
     try:
         rows = list_feedback()
     except Exception as error:
@@ -2156,6 +2161,11 @@ with schedule_tab:
             "source_type": st.column_config.SelectboxColumn(
                 "情報源種別",
                 options=["manual", "game", "official", "external", "verified"],
+            ),
+            "show_time": st.column_config.CheckboxColumn(
+                "時間表示",
+                help="注目画像で開始・終了時間を表示する場合だけONにします。初期値はOFFです。",
+                default=False,
             ),
             "published": st.column_config.CheckboxColumn("公開"),
         },

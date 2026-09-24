@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import csv
 from io import StringIO
 
@@ -13,6 +14,7 @@ except ImportError:
     firestore = None
 
 COLLECTION = "feedback"
+JST = ZoneInfo("Asia/Tokyo")
 
 def _firebase_config():
     try:
@@ -48,7 +50,7 @@ def list_feedback():
         data = doc.to_dict()
         created = data.get("created_at")
         if hasattr(created, "astimezone"):
-            created = created.astimezone().isoformat(timespec="seconds")
+            created = created.astimezone(JST).strftime("%Y/%m/%d %H:%M:%S")
         rows.append({
             "id": doc.id,
             "created_at": created or "",

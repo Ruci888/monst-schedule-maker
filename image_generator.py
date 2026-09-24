@@ -136,8 +136,10 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
         schedule["difficulty"], 19, 14, 102, draw
     )
 
-    time_text = schedule_time_text_for_day(schedule, display_day)
-    draw.text((x, y), time_text, font=information_font, fill=theme["sub_text"])
+    # Featured schedule times are hidden by default. Admin can enable them per item.
+    if schedule.get("show_time", False):
+        time_text = schedule_time_text_for_day(schedule, display_day)
+        draw.text((x, y), time_text, font=information_font, fill=theme["sub_text"])
 
     category = normalize_schedule_category(schedule.get("category"))
     category_labels = {

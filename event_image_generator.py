@@ -390,8 +390,8 @@ def draw_week(draw, events, week_start, top, theme):
         daily_labels = event_daily_labels(item)
         if daily_labels and display_event_name(item).startswith("書庫卵2倍CP"):
             attribute_colors = {
-                "火": "#EF4444", "水": "#38BDF8", "木": "#22C55E",
-                "光": "#FACC15", "闇": "#A855F7",
+                "火": "#E61919", "水": "#168FE3", "木": "#16A34A",
+                "光": "#E6D500", "闇": "#7119B8",
             }
             for offset in range(7):
                 day = week_start + timedelta(days=offset)
