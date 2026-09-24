@@ -24,7 +24,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23e"
+APP_VERSION = "v1.1.0-beta.9.23f"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -92,7 +92,7 @@ st.markdown(
     .maker-title-line-long {
         font-size: 0.87em;
         letter-spacing: -0.065em;
-        margin-top: 0.15em;
+        margin-top: 0.10em;
     }
     .maker-title-accent {
         width: 3.4rem;
@@ -105,7 +105,7 @@ st.markdown(
         /* Keep comfortable space below Streamlit's mobile toolbar. */
         .block-container { padding-top: 3.0rem !important; }
         .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
-        .maker-title-line-long { font-size: 0.85em; letter-spacing: -0.075em; margin-top: 0.15em; }
+        .maker-title-line-long { font-size: 0.85em; letter-spacing: -0.075em; margin-top: 0.10em; }
     }
     </style>
     """,
@@ -754,7 +754,7 @@ st.caption(
     "掲載内容は変更・誤りの可能性があるため、最終確認はゲーム内・公式情報をご確認ください。"
 )
 
-with st.expander("意見・要望を送る", expanded=False):
+with st.expander("ご意見・ご要望を送る", expanded=False):
     st.caption("個人情報は入力しないでください。")
 
     NG_WORDS = [
@@ -777,7 +777,7 @@ with st.expander("意見・要望を送る", expanded=False):
 
     with st.form("public_feedback_form", clear_on_submit=True):
         feedback_message = st.text_area(
-            "意見・要望",
+            "ご意見・ご要望",
             max_chars=1000,
             placeholder="使いにくい点や改善してほしい点など",
         )
@@ -801,7 +801,7 @@ with st.expander("意見・要望を送る", expanded=False):
             try:
                 add_feedback(message)
                 st.session_state["feedback_last_sent_at"] = unix_time()
-                st.success("あなたの意見・要望を送信しました。ありがとうございます。")
+                st.success("ご意見・ご要望を送信しました。ありがとうございます。")
             except Exception:
                 st.error("送信に失敗しました。時間をおいてもう一度お試しください。")
 

@@ -424,6 +424,10 @@ def draw_week(draw, events, week_start, top, theme):
                       fill=theme["grid"], width=1)
 
         # Time: start at left edge, end at right edge, white only, no outline.
+        # If the event already started before this displayed week, its original
+        # start time is outside the visible range, so do not show that start time.
+        event_start_date = parse_date(item["start_date"])
+        show_start_time = event_start_date >= week_start
         start_text = item.get("start_time", "") or "0:00"
         end_text = item.get("end_time", "") or "23:59"
         time_font = load_font(17)
@@ -433,12 +437,12 @@ def draw_week(draw, events, week_start, top, theme):
         cy = (bar_top + bar_bottom) / 2
         available = bar_right - bar_left
 
-        if available >= sw + ew + 20:
+        if show_start_time and available >= sw + ew + 20:
             draw.text((bar_left + 6, cy), start_text, font=time_font,
                       fill="#FFFFFF", anchor="lm")
             draw.text((bar_right - 6, cy), end_text, font=time_font,
                       fill="#FFFFFF", anchor="rm")
-        else:
+        elif show_start_time:
             # Short bar fallback: keep labels readable on the dark row background.
             sx = max(timeline_left + 2, bar_left - 6)
             ex = min(right - 2, bar_right + 6)
@@ -446,6 +450,10 @@ def draw_week(draw, events, week_start, top, theme):
                       fill="#FFFFFF", anchor="rm")
             draw.text((ex, cy), end_text, font=time_font,
                       fill="#FFFFFF", anchor="lm")
+        else:
+            # The start is before the displayed range; only the end time remains.
+            draw.text((bar_right - 6, cy), end_text, font=time_font,
+                      fill="#FFFFFF", anchor="rm")
 
         row_top += row_height
 
