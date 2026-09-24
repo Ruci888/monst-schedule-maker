@@ -212,8 +212,6 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
         schedule["name"],
         font=name_font,
         fill=get_attribute_color(schedule["attribute"]),
-        stroke_width=1,
-        stroke_fill=get_attribute_color(schedule["attribute"]),
     )
     draw.rounded_rectangle(
         (label_x, label_y, label_x + label_width, label_y + label_height),

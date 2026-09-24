@@ -24,7 +24,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23j"
+APP_VERSION = "v1.1.0-beta.9.23k"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
