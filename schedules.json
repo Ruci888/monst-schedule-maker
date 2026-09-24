@@ -500,7 +500,7 @@
         "source_type": "verified",
         "source_url": "",
         "confirmed_at": "2026-09-11T06:22:26+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
@@ -1718,7 +1718,7 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260813_4.html",
         "confirmed_at": "2026-09-11T15:53:32+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
@@ -2537,7 +2537,7 @@
         "source_type": "verified",
         "source_url": "",
         "confirmed_at": "2026-09-18T21:38:45+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
@@ -3923,7 +3923,7 @@
         "source_type": "master",
         "source_url": "",
         "confirmed_at": "2026-09-18T21:47:37+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
@@ -3944,7 +3944,7 @@
         "source_type": "master",
         "source_url": "",
         "confirmed_at": "2026-09-18T21:49:03+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
@@ -3965,7 +3965,7 @@
         "source_type": "master",
         "source_url": "",
         "confirmed_at": "2026-09-18T21:49:42+00:00",
-        "show_time": false,
+        "show_time": true,
         "published": true
     },
     {
