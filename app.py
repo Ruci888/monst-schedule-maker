@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23b"
+APP_VERSION = "v1.1.0-beta.9.23c"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -99,7 +99,7 @@ st.markdown(
         /* Keep comfortable space below Streamlit's mobile toolbar. */
         .block-container { padding-top: 3.0rem !important; }
         .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
-        .maker-title-line-long { font-size: 0.72em; letter-spacing: -0.07em; }
+        .maker-title-line-long { font-size: 0.80em; letter-spacing: -0.07em; }
     }
     </style>
     """,
@@ -436,34 +436,44 @@ with schedule_tab:
             selected_schedules = []
         else:
             if schedule_mode == SCHEDULE_MODE_FEATURED:
-                selected_categories = st.pills(
-                    "掲載カテゴリ",
-                    options=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
-                    default=[CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT],
-                    selection_mode="multi",
-                    key=(
-                        "schedule_main_categories_"
-                        f"{schedule_start_date.isoformat()}"
-                    ),
-                )
-                difficulty_options = FEATURED_DIFFICULTIES
+                filter_groups = [
+                    CATEGORY_COLLABORATION,
+                    CATEGORY_LIMITED_EVENT,
+                    *FEATURED_DIFFICULTIES,
+                ]
             else:
-                selected_categories = []
-                difficulty_options = NORMAL_DIFFICULTIES
+                filter_groups = NORMAL_DIFFICULTIES.copy()
 
-            selected_difficulties = st.pills(
-                "掲載する難易度",
-                options=difficulty_options,
-                default=difficulty_options,
+            filter_options = ["すべて", *filter_groups]
+            filter_key = (
+                f"schedule_filters_{schedule_mode}_"
+                f"{schedule_start_date.isoformat()}"
+            )
+            if filter_key not in st.session_state:
+                st.session_state[filter_key] = filter_options.copy()
+                st.session_state[f"{filter_key}_previous"] = filter_options.copy()
+
+            selected_filters = st.pills(
+                "掲載カテゴリ・難易度",
+                options=filter_options,
+                default=filter_options,
                 selection_mode="multi",
-                key=(
-                    f"schedule_difficulties_{schedule_mode}_"
-                    f"{schedule_start_date.isoformat()}"
-                ),
+                key=filter_key,
+                on_change=_event_pills_changed,
+                args=(filter_key, filter_groups),
             )
 
-            selected_category_set = set(selected_categories or [])
-            selected_difficulty_set = set(selected_difficulties or [])
+            selected_filter_set = {
+                item for item in (selected_filters or []) if item != "すべて"
+            }
+            selected_category_set = {
+                item for item in selected_filter_set
+                if item in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+            }
+            selected_difficulty_set = {
+                item for item in selected_filter_set
+                if item not in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+            }
             if schedule_mode == SCHEDULE_MODE_FEATURED:
                 category_schedules = [
                     schedule

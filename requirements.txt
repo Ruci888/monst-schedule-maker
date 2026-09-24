@@ -1,3 +1,4 @@
 firebase-admin
 pyotp
 argon2-cffi
+beautifulsoup4
