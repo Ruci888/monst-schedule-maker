@@ -688,5 +688,20 @@
         "source_url": "https://www.youtube.com/watch?v=frKFScqZi7o",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "Jumping Dark LIVE!!",
+        "short_name": "Jumping Dark LIVE!!",
+        "category": "ガチャ",
+        "start_date": "2026-09-26",
+        "end_date": "2026-10-04",
+        "start_time": "0:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260924_1.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
