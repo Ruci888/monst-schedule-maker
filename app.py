@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23"
+APP_VERSION = "v1.1.0-beta.9.23a"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -62,33 +62,43 @@ st.markdown(
     }
     /* Reduce Streamlit's default top whitespace on mobile/desktop. */
     .block-container {
-        padding-top: 2.2rem !important;
+        padding-top: 1.25rem !important;
+        overflow-x: hidden !important;
     }
     .maker-title-wrap {
+        width: 100%;
+        max-width: 100%;
         margin: 0 0 0.45rem 0;
+        overflow: hidden;
+    }
+    .maker-title {
+        margin: 0;
+        color: inherit;
+        font-size: clamp(2.1rem, 7.2vw, 2.85rem);
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -0.045em;
+    }
+    .maker-title-line {
+        display: block;
+        white-space: nowrap;
+        max-width: 100%;
+    }
+    .maker-title-line-long {
+        font-size: 0.82em;
+        letter-spacing: -0.06em;
     }
     .maker-title-accent {
         width: 3.4rem;
         height: 0.32rem;
         border-radius: 999px;
         background: #ff4b4b;
-        margin-bottom: 0.65rem;
-    }
-    .maker-title {
-        margin: 0;
-        color: inherit;
-        font-size: clamp(2.35rem, 8.8vw, 3.15rem);
-        font-weight: 700;
-        line-height: 1.08;
-        letter-spacing: -0.035em;
-    }
-    .maker-title-line {
-        display: block;
-        white-space: nowrap;
+        margin-top: 0.7rem;
     }
     @media (max-width: 430px) {
-        .block-container { padding-top: 1.55rem !important; }
-        .maker-title { font-size: clamp(2rem, 8.5vw, 2.55rem); }
+        .block-container { padding-top: 0.75rem !important; }
+        .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
+        .maker-title-line-long { font-size: 0.72em; letter-spacing: -0.07em; }
     }
     </style>
     """,
@@ -362,11 +372,11 @@ def render_image_save_actions(image_buffer, file_name, caption):
 st.markdown(
     """
     <div class="maker-title-wrap">
-      <div class="maker-title-accent"></div>
       <h1 class="maker-title">
         <span class="maker-title-line">モンスト</span>
-        <span class="maker-title-line">スケジュールメーカー</span>
+        <span class="maker-title-line maker-title-line-long">スケジュールメーカー</span>
       </h1>
+      <div class="maker-title-accent"></div>
     </div>
     """,
     unsafe_allow_html=True,
