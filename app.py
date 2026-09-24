@@ -92,7 +92,7 @@ st.markdown(
     .maker-title-line-long {
         font-size: 0.87em;
         letter-spacing: -0.065em;
-        margin-top: 0.10em;
+        margin-top: 0.15em;
     }
     .maker-title-accent {
         width: 3.4rem;
@@ -105,7 +105,7 @@ st.markdown(
         /* Keep comfortable space below Streamlit's mobile toolbar. */
         .block-container { padding-top: 3.0rem !important; }
         .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
-        .maker-title-line-long { font-size: 0.85em; letter-spacing: -0.075em; margin-top: 0.10em; }
+        .maker-title-line-long { font-size: 0.85em; letter-spacing: -0.075em; margin-top: 0.15em; }
     }
     </style>
     """,
