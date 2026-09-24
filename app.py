@@ -754,7 +754,7 @@ st.caption(
     "掲載内容は変更・誤りの可能性があるため、最終確認はゲーム内・公式情報をご確認ください。"
 )
 
-with st.expander("ご意見・ご要望を送る", expanded=False):
+with st.expander("意見・要望を送る", expanded=False):
     st.caption("個人情報は入力しないでください。")
 
     NG_WORDS = [
