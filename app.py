@@ -19,7 +19,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23c"
+APP_VERSION = "v1.1.0-beta.9.23d"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -85,8 +85,9 @@ st.markdown(
         max-width: 100%;
     }
     .maker-title-line-long {
-        font-size: 0.82em;
-        letter-spacing: -0.06em;
+        font-size: 0.87em;
+        letter-spacing: -0.065em;
+        margin-top: 0.10em;
     }
     .maker-title-accent {
         width: 3.4rem;
@@ -99,7 +100,7 @@ st.markdown(
         /* Keep comfortable space below Streamlit's mobile toolbar. */
         .block-container { padding-top: 3.0rem !important; }
         .maker-title { font-size: clamp(2rem, 9.2vw, 2.45rem); }
-        .maker-title-line-long { font-size: 0.80em; letter-spacing: -0.07em; }
+        .maker-title-line-long { font-size: 0.85em; letter-spacing: -0.075em; margin-top: 0.10em; }
     }
     </style>
     """,
@@ -436,13 +437,46 @@ with schedule_tab:
             selected_schedules = []
         else:
             if schedule_mode == SCHEDULE_MODE_FEATURED:
-                filter_groups = [
+                candidate_filter_groups = [
                     CATEGORY_COLLABORATION,
                     CATEGORY_LIMITED_EVENT,
                     *FEATURED_DIFFICULTIES,
                 ]
+                # Only show filters that actually exist in the selected 7-day window.
+                present_categories = {
+                    normalize_schedule_category(schedule.get("category"))
+                    for schedule in available_schedules
+                }
+                present_featured_difficulties = {
+                    schedule.get("difficulty")
+                    for schedule in available_schedules
+                    if normalize_schedule_category(schedule.get("category"))
+                    == CATEGORY_FEATURED
+                }
+                filter_groups = [
+                    group
+                    for group in candidate_filter_groups
+                    if (
+                        group in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+                        and group in present_categories
+                    )
+                    or (
+                        group in FEATURED_DIFFICULTIES
+                        and group in present_featured_difficulties
+                    )
+                ]
             else:
-                filter_groups = NORMAL_DIFFICULTIES.copy()
+                present_normal_difficulties = {
+                    schedule.get("difficulty")
+                    for schedule in available_schedules
+                    if normalize_schedule_category(schedule.get("category"))
+                    not in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+                }
+                filter_groups = [
+                    difficulty
+                    for difficulty in NORMAL_DIFFICULTIES
+                    if difficulty in present_normal_difficulties
+                ]
 
             filter_options = ["すべて", *filter_groups]
             filter_key = (
