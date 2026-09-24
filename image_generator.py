@@ -180,7 +180,7 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
     label_x = column_right - label_width - 12
     label_y = y + 32
     name_width = max(80, label_x - x - 12)
-    name_font = fit_font(schedule["name"], 31, 20, name_width, draw)
+    name_font = fit_font(schedule["name"], 29, 20, name_width, draw)
 
     draw.text(
         (x, y + 34),
