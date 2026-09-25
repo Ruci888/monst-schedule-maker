@@ -754,7 +754,7 @@ st.caption(
     "掲載内容は変更・誤りの可能性があるため、最終確認はゲーム内・公式情報をご確認ください。"
 )
 
-with st.expander("ご意見・ご要望を送る", expanded=False):
+with st.expander("意見・要望を送る", expanded=False):
     st.caption("個人情報は入力しないでください。")
 
     NG_WORDS = [
@@ -777,7 +777,7 @@ with st.expander("ご意見・ご要望を送る", expanded=False):
 
     with st.form("public_feedback_form", clear_on_submit=True):
         feedback_message = st.text_area(
-            "ご意見・ご要望",
+            "意見・要望",
             max_chars=1000,
             placeholder="使いにくい点や改善してほしい点など",
         )
@@ -801,7 +801,7 @@ with st.expander("ご意見・ご要望を送る", expanded=False):
             try:
                 add_feedback(message)
                 st.session_state["feedback_last_sent_at"] = unix_time()
-                st.success("ご意見・ご要望を送信しました。ありがとうございます。")
+                st.success("あなたの意見・要望を送信しました。ありがとうございます。")
             except Exception:
                 st.error("送信に失敗しました。時間をおいてもう一度お試しください。")
 
