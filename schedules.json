@@ -5366,5 +5366,27 @@
         "show_time": false,
         "show_category_badge": false,
         "published": true
+    },
+    {
+        "quest_id": "quest_545ce8f039b84542",
+        "year": 2026,
+        "date": "9/27",
+        "start_time": "0:00",
+        "end_time": "11:59",
+        "end_next_day": false,
+        "name": "ライ＆ロイ",
+        "quest_name": "",
+        "attribute": "木",
+        "difficulty": "究極",
+        "category": "コラボ",
+        "group_name": "",
+        "availability_type": "期間中常設",
+        "period_end_date": "2026-10-16",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260926_1.html",
+        "confirmed_at": "",
+        "show_time": false,
+        "show_category_badge": true,
+        "published": true
     }
 ]
