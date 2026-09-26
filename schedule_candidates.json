@@ -14,10 +14,31 @@
         "period_end_date": "",
         "source_type": "official",
         "source_url": "https://www.monster-strike.com/news/20260917_3.html",
-        "fetched_at": "2026-09-25T21:19:56+09:00",
+        "fetched_at": "2026-09-26T20:40:12+09:00",
         "period_label": "初出現日時",
         "review_status": "needs_review",
         "review_reason": "公式記事の「初出現日時」から降臨候補を抽出しました。",
+        "published": false
+    },
+    {
+        "year": 2026,
+        "date": "9/29",
+        "start_time": "19:00",
+        "end_time": "11:59",
+        "name": "レグルス",
+        "quest_name": "",
+        "attribute": "光",
+        "difficulty": "超究極",
+        "category": "コラボ",
+        "group_name": "リゼロコラボ",
+        "availability_type": "期間中常設",
+        "period_end_date": "2026-10-15",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20260926_1.html",
+        "fetched_at": "2026-09-26T20:40:12+09:00",
+        "period_label": "出現期間",
+        "review_status": "needs_review",
+        "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
         "published": false
     }
 ]
