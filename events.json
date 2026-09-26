@@ -761,7 +761,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260926_1.html",
-        "confirmed_at": "2026-09-26T11:43:35+00:00",
+        "confirmed_at": "2026-09-26T11:47:16+00:00",
         "published": true
     },
     {
@@ -776,7 +776,22 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20260926_1.html",
-        "confirmed_at": "2026-09-26T11:43:35+00:00",
+        "confirmed_at": "2026-09-26T11:47:16+00:00",
+        "published": true
+    },
+    {
+        "name": "モンストクリスマス × Re:ゼロから始める異世界生活コラボガチャ",
+        "short_name": "クリスマス × Re:ゼロガチャ",
+        "category": "ガチャ",
+        "start_date": "2026-09-27",
+        "end_date": "2026-10-16",
+        "start_time": "00:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20260926_1.html",
+        "confirmed_at": "2026-09-26T11:47:16+00:00",
         "published": true
     }
 ]
