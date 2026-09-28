@@ -1258,5 +1258,20 @@
         "source_url": "https://www.monster-strike.com/news/20260927_1.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "超・獣神祭",
+        "short_name": "超・獣神祭",
+        "category": "ガチャ",
+        "start_date": "2026-09-29",
+        "end_date": "2026-10-02",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260928_3.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
