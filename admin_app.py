@@ -10,9 +10,9 @@ from feedback_storage import (
 )
 from analytics_storage import (
     is_configured as analytics_is_configured,
+    get_usage_summary,
     list_usage,
     usage_csv,
-    usage_summary,
 )
 
 from auth_manager import require_admin_authentication
@@ -2101,12 +2101,12 @@ def render_usage_management():
         st.rerun()
 
     try:
-        rows = list_usage()
+        summary = get_usage_summary()
+        rows = list_usage(limit=200)
     except Exception as error:
         st.error(f"利用状況を読み込めませんでした：{error}")
         return
 
-    summary = usage_summary(rows)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("今日", summary["today"])
     c2.metric("直近7日", summary["7days"])
@@ -2116,9 +2116,10 @@ def render_usage_management():
     g1, g2 = st.columns(2)
     g1.metric("イベント画像生成", summary["event_generations"])
     g2.metric("降臨画像生成", summary["schedule_generations"])
+    st.caption("※ 軽量化後の集計値です。ユニーク訪問者・画像生成回数はこの更新後の記録から集計されます。")
 
     st.download_button(
-        "利用ログをCSVで一括ダウンロード",
+        "最新200件の利用ログをCSVでダウンロード",
         data=usage_csv(rows),
         file_name="monst_usage.csv",
         mime="text/csv",

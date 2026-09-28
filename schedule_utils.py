@@ -85,6 +85,16 @@ def game_day_bounds(day):
 
 def schedule_game_day(schedule):
     start = schedule_start_datetime(schedule)
+    availability_type = normalize_availability_type(
+        schedule.get("availability_type")
+    )
+
+    # 時間指定の降臨は、管理画面で入力した date をそのまま掲載日にする。
+    # 0:01～11:59 の降臨を前日の欄へ移動させない。
+    if availability_type == AVAILABILITY_SCHEDULED:
+        return start.date()
+
+    # 期間中常設は従来どおり、12:00～翌11:59 を1ゲーム日として扱う。
     if start.time() < time(12, 0):
         return start.date() - timedelta(days=1)
     return start.date()

@@ -15,6 +15,9 @@ except ImportError:
     firestore = None
 
 COLLECTION = "usage_events"
+VISITOR_COLLECTION = "usage_visitors"
+STATS_COLLECTION = "usage_stats"
+STATS_DOCUMENT = "totals"
 JST = ZoneInfo("Asia/Tokyo")
 
 
@@ -38,8 +41,6 @@ def get_db():
 
 
 def get_or_create_visitor_id():
-    # Streamlit exposes browser cookies read-only, so use an anonymous URL query
-    # parameter as the persistent browser-side identifier when possible.
     try:
         visitor_id = st.query_params.get("vid")
     except Exception:
@@ -66,18 +67,88 @@ def get_or_create_visitor_id():
 def log_usage(event_type, visitor_id, *, detail=""):
     if not is_configured() or not visitor_id:
         return
-    get_db().collection(COLLECTION).add({
+
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    batch = db.batch()
+
+    # 詳細ログは従来どおり残す。ただし管理画面では全件走査しない。
+    event_ref = db.collection(COLLECTION).document()
+    batch.set(event_ref, {
         "visitor_id": visitor_id,
         "event_type": event_type,
         "detail": detail,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": now,
     })
 
+    # visit 時だけ匿名訪問者の最終訪問日時を1ドキュメントに集約する。
+    # これにより期間別ユニーク数を全ログ読込なしで数えられる。
+    if event_type == "visit":
+        visitor_ref = db.collection(VISITOR_COLLECTION).document(visitor_id)
+        batch.set(visitor_ref, {
+            "visitor_id": visitor_id,
+            "last_seen": now,
+        }, merge=True)
 
-def list_usage():
+    # 画像生成回数はカウンタを加算し、管理画面では1ドキュメントだけ読む。
+    if event_type in ("event_image_generated", "schedule_image_generated"):
+        field = (
+            "event_generations"
+            if event_type == "event_image_generated"
+            else "schedule_generations"
+        )
+        stats_ref = db.collection(STATS_COLLECTION).document(STATS_DOCUMENT)
+        batch.set(stats_ref, {field: firestore.Increment(1)}, merge=True)
+
+    batch.commit()
+
+
+def _count_query(query):
+    """Firestoreの集約COUNTを使い、対象ドキュメント本体を読み込まない。"""
+    result = query.count().get()
+    if not result:
+        return 0
+    # firebase-admin のAggregationResultは value を持つ。
+    return int(result[0][0].value)
+
+
+def get_usage_summary():
     db = get_db()
+    now = datetime.now(JST)
+    starts = {
+        "today": datetime.combine(now.date(), datetime.min.time(), tzinfo=JST),
+        "7days": now - timedelta(days=7),
+        "30days": now - timedelta(days=30),
+    }
+
+    visitors = db.collection(VISITOR_COLLECTION)
+    summary = {
+        "today": _count_query(visitors.where("last_seen", ">=", starts["today"])),
+        "7days": _count_query(visitors.where("last_seen", ">=", starts["7days"])),
+        "30days": _count_query(visitors.where("last_seen", ">=", starts["30days"])),
+        "total": _count_query(visitors),
+        "event_generations": 0,
+        "schedule_generations": 0,
+    }
+
+    stats = db.collection(STATS_COLLECTION).document(STATS_DOCUMENT).get()
+    if stats.exists:
+        data = stats.to_dict() or {}
+        summary["event_generations"] = int(data.get("event_generations", 0) or 0)
+        summary["schedule_generations"] = int(data.get("schedule_generations", 0) or 0)
+    return summary
+
+
+def list_usage(limit=200):
+    """CSV/確認用。全件ではなく最新 limit 件だけ取得する。"""
+    db = get_db()
+    query = (
+        db.collection(COLLECTION)
+        .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .limit(limit)
+    )
     rows = []
-    for doc in db.collection(COLLECTION).stream():
+    for doc in query.stream():
         data = doc.to_dict()
         created = data.get("created_at")
         created_jst = created.astimezone(JST) if hasattr(created, "astimezone") else None
@@ -89,34 +160,7 @@ def list_usage():
             "event_type": data.get("event_type", ""),
             "detail": data.get("detail", ""),
         })
-    rows.sort(key=lambda x: x["created_at"], reverse=True)
     return rows
-
-
-def usage_summary(rows):
-    now = datetime.now(JST)
-    starts = {
-        "today": datetime.combine(now.date(), datetime.min.time(), tzinfo=JST),
-        "7days": now - timedelta(days=7),
-        "30days": now - timedelta(days=30),
-    }
-
-    def unique_since(start=None):
-        return len({
-            r["visitor_id"] for r in rows
-            if r.get("visitor_id")
-            and r.get("event_type") == "visit"
-            and (start is None or (r.get("_created_at") and r["_created_at"] >= start))
-        })
-
-    return {
-        "today": unique_since(starts["today"]),
-        "7days": unique_since(starts["7days"]),
-        "30days": unique_since(starts["30days"]),
-        "total": unique_since(),
-        "event_generations": sum(r.get("event_type") == "event_image_generated" for r in rows),
-        "schedule_generations": sum(r.get("event_type") == "schedule_image_generated" for r in rows),
-    }
 
 
 def usage_csv(rows):

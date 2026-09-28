@@ -81,13 +81,22 @@ class ScheduleUtilsTest(unittest.TestCase):
             datetime(2026, 8, 20, 11, 59),
         )
 
-    def test_before_noon_schedule_belongs_to_previous_game_day(self):
+    def test_before_noon_scheduled_quest_keeps_admin_date(self):
         schedule = make_schedule(
             date="8/19",
             start_time="10:00",
             end_time="11:59",
             availability_type=AVAILABILITY_SCHEDULED,
             period_end_date="",
+        )
+
+        self.assertEqual(schedule_game_day(schedule), date(2026, 8, 19))
+
+    def test_before_noon_period_still_belongs_to_previous_game_day(self):
+        schedule = make_schedule(
+            date="8/19",
+            start_time="10:00",
+            availability_type=AVAILABILITY_PERIOD,
         )
 
         self.assertEqual(schedule_game_day(schedule), date(2026, 8, 18))
