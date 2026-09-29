@@ -464,18 +464,27 @@ def divider_count(items, side, options):
 def draw_category_divider(draw, category, x, y, column_right, theme):
     label, color = CATEGORY_DIVIDER_STYLES[category]
     height = 30
-    # A slim full-width band: visible as a section break without overpowering quests.
-    draw.rounded_rectangle(
-        (x, y, column_right - 14, y + height),
-        radius=7,
-        fill=color,
-    )
-    draw_centered_text(
-        draw,
-        (x, y, column_right - 14, y + height),
+    right = column_right - 14
+    center_y = y + height / 2
+    # Separator style: thick category-color lines flank a normal-weight label.
+    # This avoids the crushed look caused by white text on a solid color band.
+    font = load_font(18)
+    box = draw.textbbox((0, 0), label, font=font)
+    text_width = box[2] - box[0]
+    text_height = box[3] - box[1]
+    gap = 10
+    text_left = x + (right - x - text_width) / 2
+    text_right = text_left + text_width
+    line_width = 5
+    if text_left - gap > x:
+        draw.line((x, center_y, text_left - gap, center_y), fill=color, width=line_width)
+    if text_right + gap < right:
+        draw.line((text_right + gap, center_y, right, center_y), fill=color, width=line_width)
+    draw.text(
+        (text_left, center_y - text_height / 2 - box[1]),
         label,
-        load_font(16),
-        "#FFFFFF",
+        font=font,
+        fill=color,
     )
     return height
 

@@ -351,20 +351,23 @@ def draw_week(draw, events, week_start, top, theme):
 
         label = display_event_name(event)
         label_x = stripe_right + 12
+        # Smartphone readability: keep event names large enough to read after
+        # Streamlit scales the 1080px image down on a phone.
         label_font = fit_font(
             label,
-            maximum_size=22,
-            minimum_size=14,
-            maximum_width=timeline_left - label_x - 22,
+            maximum_size=27,
+            minimum_size=17,
+            maximum_width=timeline_left - label_x - 18,
             draw=draw,
         )
+        label_box = draw.textbbox((0, 0), label, font=label_font)
+        label_height = label_box[3] - label_box[1]
+        label_y = row_top + (row_height - label_height) / 2 - label_box[1] - 2
         draw.text(
-            (label_x, row_top + 7),
+            (label_x, label_y),
             label,
             font=label_font,
             fill=theme["text"],
-            stroke_width=1,
-            stroke_fill=theme["text"],
         )
         week_start_datetime = datetime.combine(week_start, time.min)
         week_end_datetime = week_start_datetime + timedelta(days=7)
@@ -430,14 +433,18 @@ def draw_week(draw, events, week_start, top, theme):
 
         # Time labels belong to the bar edges. Dates are never printed here.
         start_text, end_text = event_boundary_times(event, week_start, week_end)
-        time_font = load_font(13)
-        pad = 7
-        gap = 5
+        # Keep boundary times legible on smartphones. No outline is used; the
+        # white text stays clean against the event bar.
+        time_font = load_font(18)
+        pad = 8
+        gap = 6
         start_w = draw.textbbox((0, 0), start_text, font=time_font)[2] if start_text else 0
         end_w = draw.textbbox((0, 0), end_text, font=time_font)[2] if end_text else 0
         needed = start_w + end_w + pad * 2 + (gap if start_text and end_text else 0)
         inside = (bar_right - bar_left) >= needed
-        text_y = bar_top + (bar_bottom - bar_top - 13) / 2 - 1
+        time_box = draw.textbbox((0, 0), "00:00", font=time_font)
+        time_height = time_box[3] - time_box[1]
+        text_y = bar_top + (bar_bottom - bar_top - time_height) / 2 - time_box[1]
         if start_text:
             x = bar_left + pad if inside else max(timeline_left, bar_left - start_w - 5)
             draw.text((x, text_y), start_text, font=time_font, fill="#FFFFFF")
