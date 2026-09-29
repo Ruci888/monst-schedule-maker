@@ -61,11 +61,8 @@ def schedule_end_datetime(schedule):
                 f"{period_end_date} {schedule['end_time']}",
                 "%Y-%m-%d %H:%M",
             )
-            # period_end_dateは実際のカレンダー終了日ではなく、
-            # 画像で最後に掲載したい「12:00開始の日付」を表す。
-            # 11:59など正午より前の終了時刻は翌日の時刻になる。
-            if end.time() < time(12, 0):
-                end += timedelta(days=1)
+            # period_end_date は管理画面で指定した「最後に掲載する日」。
+            # 終了時刻が正午より前でも翌日へずらさない。
             return end
 
     end = datetime.combine(
@@ -85,8 +82,16 @@ def game_day_bounds(day):
 
 def schedule_game_day(schedule):
     start = schedule_start_datetime(schedule)
-    if start.time() < time(12, 0):
-        return start.date() - timedelta(days=1)
+    availability_type = normalize_availability_type(
+        schedule.get("availability_type")
+    )
+
+    # 時間指定の降臨は、管理画面で入力した date をそのまま掲載日にする。
+    # 0:01～11:59 の降臨を前日の欄へ移動させない。
+    if availability_type == AVAILABILITY_SCHEDULED:
+        return start.date()
+
+    # 期間中常設も管理画面の date をそのまま掲載開始日にする。
     return start.date()
 
 
@@ -97,11 +102,9 @@ def schedule_active_on_game_day(schedule, day):
     if availability_type == AVAILABILITY_SCHEDULED:
         return schedule_game_day(schedule) == day
 
-    row_start, row_end = game_day_bounds(day)
-    return (
-        schedule_start_datetime(schedule) <= row_end
-        and schedule_end_datetime(schedule) >= row_start
-    )
+    start_day = schedule_start_datetime(schedule).date()
+    end_day = schedule_end_datetime(schedule).date()
+    return start_day <= day <= end_day
 
 
 def schedule_overlaps_game_days(schedule, first_day, last_day):
@@ -111,12 +114,9 @@ def schedule_overlaps_game_days(schedule, first_day, last_day):
     if availability_type == AVAILABILITY_SCHEDULED:
         return first_day <= schedule_game_day(schedule) <= last_day
 
-    window_start, _ = game_day_bounds(first_day)
-    _, window_end = game_day_bounds(last_day)
-    return (
-        schedule_start_datetime(schedule) <= window_end
-        and schedule_end_datetime(schedule) >= window_start
-    )
+    start_day = schedule_start_datetime(schedule).date()
+    end_day = schedule_end_datetime(schedule).date()
+    return start_day <= last_day and end_day >= first_day
 
 
 def schedule_period_text(schedule):
@@ -132,7 +132,7 @@ def schedule_period_text(schedule):
             return (
                 f"{start.month}/{start.day} {start.strftime('%H:%M')}～"
                 f"{last_day_value.month}/{last_day_value.day} "
-                f"（翌{end.strftime('%H:%M')}終了）"
+                f"{end.strftime('%H:%M')}終了"
             )
         return (
             f"{start.month}/{start.day} {start.strftime('%H:%M')}～"
