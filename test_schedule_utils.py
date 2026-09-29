@@ -73,12 +73,12 @@ class ScheduleUtilsTest(unittest.TestCase):
             "",
         )
 
-    def test_before_noon_period_end_is_on_next_calendar_day(self):
+    def test_before_noon_period_end_stays_on_admin_calendar_day(self):
         schedule = make_schedule(period_end_date="2026-08-19", end_time="11:59")
 
         self.assertEqual(
             schedule_end_datetime(schedule),
-            datetime(2026, 8, 20, 11, 59),
+            datetime(2026, 8, 19, 11, 59),
         )
 
     def test_before_noon_scheduled_quest_keeps_admin_date(self):
@@ -92,14 +92,24 @@ class ScheduleUtilsTest(unittest.TestCase):
 
         self.assertEqual(schedule_game_day(schedule), date(2026, 8, 19))
 
-    def test_before_noon_period_still_belongs_to_previous_game_day(self):
+    def test_before_noon_period_keeps_admin_date(self):
         schedule = make_schedule(
             date="8/19",
             start_time="10:00",
             availability_type=AVAILABILITY_PERIOD,
         )
 
-        self.assertEqual(schedule_game_day(schedule), date(2026, 8, 18))
+        self.assertEqual(schedule_game_day(schedule), date(2026, 8, 19))
+
+    def test_period_0001_does_not_appear_on_previous_day(self):
+        schedule = make_schedule(
+            year=2026, date="9/27", start_time="00:01", end_time="11:59",
+            availability_type=AVAILABILITY_PERIOD, period_end_date="2026-10-16",
+        )
+        self.assertFalse(schedule_active_on_game_day(schedule, date(2026, 9, 26)))
+        self.assertTrue(schedule_active_on_game_day(schedule, date(2026, 9, 27)))
+        self.assertTrue(schedule_active_on_game_day(schedule, date(2026, 10, 16)))
+        self.assertFalse(schedule_active_on_game_day(schedule, date(2026, 10, 17)))
 
     def test_overnight_scheduled_end_moves_to_next_calendar_day(self):
         schedule = make_schedule(

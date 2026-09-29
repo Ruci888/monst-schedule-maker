@@ -2090,21 +2090,28 @@ def render_feedback_management():
 def render_usage_management():
     st.subheader("利用状況")
     st.caption(
-        "匿名IDを基準にした参考値です。同じ利用者でもブラウザやセッションが変わると"
-        "別の訪問者として数えられる場合があります。IPアドレス等は保存しません。"
+        "Firestoreの読み取り節約のため、この画面は自動取得しません。"
+        "必要なときだけ下のボタンで集計を読み込みます。"
     )
     if not analytics_is_configured():
         st.warning("Firebaseが未設定のため、利用状況を読み込めません。")
         return
 
-    if st.button("🔄 最新データに更新", key="usage_refresh"):
-        st.rerun()
+    if st.button("利用状況を読み込む", key="usage_load"):
+        try:
+            st.session_state["_usage_summary_cache"] = get_usage_summary()
+            st.session_state["_usage_load_error"] = ""
+        except Exception as error:
+            st.session_state["_usage_load_error"] = str(error)
 
-    try:
-        summary = get_usage_summary()
-        rows = list_usage(limit=200)
-    except Exception as error:
+    error = st.session_state.get("_usage_load_error", "")
+    if error:
         st.error(f"利用状況を読み込めませんでした：{error}")
+        return
+
+    summary = st.session_state.get("_usage_summary_cache")
+    if summary is None:
+        st.info("まだFirestoreから利用状況を読み込んでいません。")
         return
 
     c1, c2, c3, c4 = st.columns(4)
@@ -2116,15 +2123,27 @@ def render_usage_management():
     g1, g2 = st.columns(2)
     g1.metric("イベント画像生成", summary["event_generations"])
     g2.metric("降臨画像生成", summary["schedule_generations"])
-    st.caption("※ 軽量化後の集計値です。ユニーク訪問者・画像生成回数はこの更新後の記録から集計されます。")
+    st.caption("※ 軽量化後の集計値です。")
 
-    st.download_button(
-        "最新200件の利用ログをCSVでダウンロード",
-        data=usage_csv(rows),
-        file_name="monst_usage.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
+    if st.button("CSV用に最新200件のログを読み込む", key="usage_logs_load"):
+        try:
+            st.session_state["_usage_rows_cache"] = list_usage(limit=200)
+            st.session_state["_usage_rows_error"] = ""
+        except Exception as error:
+            st.session_state["_usage_rows_error"] = str(error)
+
+    rows_error = st.session_state.get("_usage_rows_error", "")
+    if rows_error:
+        st.error(f"利用ログを読み込めませんでした：{rows_error}")
+    rows = st.session_state.get("_usage_rows_cache")
+    if rows is not None:
+        st.download_button(
+            "最新200件の利用ログをCSVでダウンロード",
+            data=usage_csv(rows),
+            file_name="monst_usage.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
 
 st.title("モンスト スケジュール管理")
 flash_success = st.session_state.pop("admin_flash_success", None)
