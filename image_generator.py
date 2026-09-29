@@ -417,11 +417,89 @@ def generate_normal_schedule_image(schedules, design, start_date=None):
     return image_buffer
 
 
+CATEGORY_DIVIDER_STYLES = {
+    CATEGORY_COLLABORATION: ("コラボ", "#B91C1C"),
+    CATEGORY_LIMITED_EVENT: ("期間限定", "#A16207"),
+}
+
+
+def featured_column(schedule):
+    """Place collaboration/limited super-ultimate quests in the right column."""
+    category = normalize_schedule_category(schedule.get("category"))
+    if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
+        if schedule.get("difficulty") in {"超究極", "超究極・兵"}:
+            return "high_difficulty"
+        return "event"
+    return "high_difficulty"
+
+
+def featured_sort_key(schedule):
+    category = normalize_schedule_category(schedule.get("category"))
+    category_order = {
+        CATEGORY_FEATURED: 0,
+        CATEGORY_COLLABORATION: 1,
+        CATEGORY_LIMITED_EVENT: 2,
+    }
+    return (
+        category_order.get(category, 0),
+        parse_schedule_datetime(schedule),
+        schedule.get("name", ""),
+    )
+
+
+def divider_enabled(options, side, category):
+    key = (side, category)
+    return options.get(key, True)
+
+
+def divider_count(items, side, options):
+    categories = {normalize_schedule_category(item.get("category")) for item in items}
+    return sum(
+        category in categories and divider_enabled(options, side, category)
+        for category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
+    )
+
+
+def draw_category_divider(draw, category, x, y, column_right, theme):
+    label, color = CATEGORY_DIVIDER_STYLES[category]
+    height = 30
+    # A slim full-width band: visible as a section break without overpowering quests.
+    draw.rounded_rectangle(
+        (x, y, column_right - 14, y + height),
+        radius=7,
+        fill=color,
+    )
+    draw_centered_text(
+        draw,
+        (x, y, column_right - 14, y + height),
+        label,
+        load_font(16),
+        "#FFFFFF",
+    )
+    return height
+
+
+def draw_featured_column(draw, items, display_day, x, y, column_right, theme, side, options):
+    previous_category = None
+    for schedule in items:
+        category = normalize_schedule_category(schedule.get("category"))
+        if (
+            category in CATEGORY_DIVIDER_STYLES
+            and category != previous_category
+            and divider_enabled(options, side, category)
+        ):
+            y += draw_category_divider(draw, category, x, y, column_right, theme) + 7
+        draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme)
+        y += 92
+        previous_category = category
+
+
 def generate_schedule_image(
     schedules,
     design,
     start_date=None,
     schedule_mode="注目",
+    category_dividers=None,
 ):
     if schedule_mode == "通常降臨・爆絶以下":
         return generate_normal_schedule_image(
@@ -431,6 +509,7 @@ def generate_schedule_image(
         )
 
     theme = get_theme(design)
+    category_dividers = category_dividers or {}
     schedules = sorted(schedules, key=parse_schedule_datetime)
     first_day = start_date or schedule_game_day(schedules[0])
     days = [first_day + timedelta(days=offset) for offset in range(7)]
@@ -442,23 +521,26 @@ def generate_schedule_image(
 
     for schedule in schedules:
         category = normalize_schedule_category(schedule.get("category"))
-        column_name = (
-            "event"
-            if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT)
-            else "high_difficulty"
-        )
+        column_name = featured_column(schedule)
         for day in days:
             if schedule_active_on_game_day(schedule, day):
                 schedule_by_date[day][column_name].append(schedule)
 
+    for date_data in schedule_by_date.values():
+        date_data["event"].sort(key=featured_sort_key)
+        date_data["high_difficulty"].sort(key=featured_sort_key)
+
     row_heights = []
     for date_data in schedule_by_date.values():
-        largest_count = max(
-            len(date_data["event"]),
-            len(date_data["high_difficulty"]),
-            1,
+        left_height = (
+            len(date_data["event"]) * 92
+            + divider_count(date_data["event"], "left", category_dividers) * 37
         )
-        row_heights.append(max(130, 24 + largest_count * 92))
+        right_height = (
+            len(date_data["high_difficulty"]) * 92
+            + divider_count(date_data["high_difficulty"], "right", category_dividers) * 37
+        )
+        row_heights.append(max(130, 24 + max(left_height, right_height, 92)))
 
     width = 1080
     header_height = 250
@@ -523,15 +605,14 @@ def generate_schedule_image(
             spacing=7,
         )
 
-        item_y = y + 15
-        for schedule in date_data["event"]:
-            draw_schedule_item(draw, schedule, day, date_right + 18, item_y, event_right, theme)
-            item_y += 92
-
-        item_y = y + 15
-        for schedule in date_data["high_difficulty"]:
-            draw_schedule_item(draw, schedule, day, event_right + 18, item_y, right_edge, theme)
-            item_y += 92
+        draw_featured_column(
+            draw, date_data["event"], day, date_right + 18, y + 15,
+            event_right, theme, "left", category_dividers,
+        )
+        draw_featured_column(
+            draw, date_data["high_difficulty"], day, event_right + 18, y + 15,
+            right_edge, theme, "right", category_dividers,
+        )
 
         y += row_height + 10
 

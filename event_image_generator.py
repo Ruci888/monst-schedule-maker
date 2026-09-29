@@ -189,7 +189,12 @@ def category_sort_key(event):
         category_index = CATEGORY_ORDER.index(event.get("category", ""))
     except ValueError:
         category_index = len(CATEGORY_ORDER)
+    # Events with per-day labels (e.g. archive campaigns) are always grouped
+    # directly below the date header. Normal events keep the existing
+    # category/start/end/name order beneath them.
+    daily_priority = 0 if event_daily_labels(event) else 1
     return (
+        daily_priority,
         category_index,
         event.get("start_date", ""),
         event.get("end_date", ""),
