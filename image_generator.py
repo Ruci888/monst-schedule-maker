@@ -427,7 +427,8 @@ def featured_column(schedule):
     """Place collaboration/limited super-ultimate quests in the right column."""
     category = normalize_schedule_category(schedule.get("category"))
     if category in (CATEGORY_COLLABORATION, CATEGORY_LIMITED_EVENT):
-        if schedule.get("difficulty") in {"超究極", "超究極・兵"}:
+        difficulty = str(schedule.get("difficulty", "")).strip()
+        if difficulty in {"超究極", "超究極・兵", "超究極兵"}:
             return "high_difficulty"
         return "event"
     return "high_difficulty"

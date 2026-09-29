@@ -224,22 +224,22 @@ PUBLIC_EVENT_GROUPS = list(EVENT_CATEGORY_LABELS.values())
 
 # Legacy categories are only translated for public display so existing JSON keeps working.
 def public_event_group(category):
-    if category == "定期コンテンツ":
-        return "定期"
-    if category in {"コラボ", "コラボ・期間限定"}:
-        return "コラボ"
-    if category == "ガチャ":
-        return "ガチャ"
-    if category == "ゲーム内キャンペーン":
-        return "ゲーム内CP"
-    if category == "イベント":
-        return "イベント"
-    if category == "ミッション":
-        return "ミッション"
-    if category == "その他":
-        return "その他"
-    # Removed legacy categories are not exposed as public filter categories.
-    return None
+    # Admin/JSON category is authoritative. Normalize harmless whitespace only;
+    # never demote a known category to "その他".
+    category = str(category or "").strip()
+    aliases = {
+        "定期コンテンツ": "定期",
+        "定期": "定期",
+        "コラボ": "コラボ",
+        "コラボ・期間限定": "コラボ",  # legacy JSON compatibility
+        "ガチャ": "ガチャ",
+        "ゲーム内キャンペーン": "ゲーム内CP",
+        "ゲーム内CP": "ゲーム内CP",
+        "イベント": "イベント",
+        "ミッション": "ミッション",
+        "その他": "その他",
+    }
+    return aliases.get(category)
 
 
 def _event_pills_changed(state_key, groups):

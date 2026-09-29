@@ -2,6 +2,7 @@ import hashlib
 import json
 from datetime import date, datetime, time, timedelta
 
+import unicodedata
 import pandas as pd
 import streamlit as st
 from feedback_storage import (
@@ -145,6 +146,67 @@ def validate_date(value):
         return True
     except ValueError:
         return False
+
+
+def japanese_sort_text(value):
+    """Return a normalized key that sorts hiragana/katakana together by reading order."""
+    text = unicodedata.normalize("NFKC", normalize_text(value)).casefold()
+    return "".join(
+        chr(ord(char) - 0x60) if "ァ" <= char <= "ヶ" else char
+        for char in text
+    )
+
+
+def prepare_admin_editor_dataframe(rows, sort_column, ascending, date_columns=()):
+    """Sort only the admin display while retaining each row's original storage order."""
+    frame = pd.DataFrame(rows).copy()
+    frame["_admin_original_order"] = range(len(frame))
+    if frame.empty or not sort_column or sort_column not in frame.columns:
+        return frame
+
+    if sort_column in date_columns:
+        if sort_column == "date" and "year" in frame.columns:
+            values = (
+                frame["year"].astype(str).str.strip()
+                + "/"
+                + frame["date"].astype(str).str.strip()
+            )
+            frame["_admin_sort_key"] = pd.to_datetime(
+                values, format="%Y/%m/%d", errors="coerce"
+            )
+        else:
+            frame["_admin_sort_key"] = pd.to_datetime(
+                frame[sort_column], errors="coerce"
+            )
+    else:
+        frame["_admin_sort_key"] = frame[sort_column].map(japanese_sort_text)
+
+    frame = frame.sort_values(
+        "_admin_sort_key",
+        ascending=ascending,
+        na_position="last",
+        kind="stable",
+    ).drop(columns=["_admin_sort_key"])
+    return frame.reset_index(drop=True)
+
+
+def restore_admin_storage_order(editor_data):
+    """Undo display-only sorting before validation/save; newly added rows stay at the end."""
+    frame = editor_data.copy()
+    if "_admin_original_order" not in frame.columns:
+        return frame
+
+    original = pd.to_numeric(frame["_admin_original_order"], errors="coerce")
+    new_row_start = len(frame) + 1
+    frame["_admin_restore_order"] = original.where(
+        original.notna(),
+        new_row_start + pd.Series(range(len(frame)), index=frame.index),
+    )
+    return (
+        frame.sort_values("_admin_restore_order", kind="stable")
+        .drop(columns=["_admin_original_order", "_admin_restore_order"])
+        .reset_index(drop=True)
+    )
 
 
 def schedule_rows_from_editor(editor_data):
@@ -2198,8 +2260,47 @@ with schedule_tab:
     except GitHubStorageError as error:
         st.error(str(error))
         st.stop()
+    schedule_sort_labels = {
+        "登録順": None,
+        "名前": "name",
+        "クエスト名": "quest_name",
+        "日付": "date",
+        "開始時刻": "start_time",
+        "終了時刻": "end_time",
+        "属性": "attribute",
+        "難易度": "difficulty",
+        "カテゴリ": "category",
+        "掲載グループ": "group_name",
+        "開催方式": "availability_type",
+        "最終掲載日": "period_end_date",
+        "情報源種別": "source_type",
+        "情報源URL": "source_url",
+        "確認日時": "confirmed_at",
+        "時間表示": "show_time",
+        "カテゴリバッジ表示": "show_category_badge",
+        "公開": "published",
+    }
+    sort_left, sort_right = st.columns([2, 1])
+    with sort_left:
+        schedule_sort_label = st.selectbox(
+            "並び替え",
+            options=list(schedule_sort_labels),
+            key="schedule_sort_column",
+        )
+    with sort_right:
+        schedule_sort_order = st.selectbox(
+            "順序",
+            options=["昇順", "降順"],
+            key="schedule_sort_order",
+        )
+    schedule_frame = prepare_admin_editor_dataframe(
+        schedule_data,
+        schedule_sort_labels[schedule_sort_label],
+        schedule_sort_order == "昇順",
+        date_columns=("date", "period_end_date"),
+    )
     schedule_editor = st.data_editor(
-        pd.DataFrame(schedule_data),
+        schedule_frame,
         num_rows="dynamic",
         use_container_width=True,
         hide_index=True,
@@ -2207,6 +2308,7 @@ with schedule_tab:
         column_config={
             "quest_id": None,
             "end_next_day": None,
+            "_admin_original_order": None,
             "attribute": st.column_config.SelectboxColumn("属性", options=ATTRIBUTES),
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
@@ -2244,7 +2346,8 @@ with schedule_tab:
         },
     )
 
-    schedule_rows, schedule_errors = schedule_rows_from_editor(schedule_editor)
+    schedule_editor_for_save = restore_admin_storage_order(schedule_editor)
+    schedule_rows, schedule_errors = schedule_rows_from_editor(schedule_editor_for_save)
     if schedule_errors:
         for error in schedule_errors:
             st.error(error)
@@ -2306,13 +2409,49 @@ with event_tab:
     except GitHubStorageError as error:
         st.error(str(error))
         st.stop()
+    event_sort_labels = {
+        "登録順": None,
+        "名称": "name",
+        "短縮表示名": "short_name",
+        "カテゴリ": "category",
+        "開始日": "start_date",
+        "終了日": "end_date",
+        "開始時刻": "start_time",
+        "終了時刻": "end_time",
+        "日別表示": "daily_labels",
+        "説明": "description",
+        "情報源種別": "source_type",
+        "情報源URL": "source_url",
+        "確認日時": "confirmed_at",
+        "公開": "published",
+    }
+    sort_left, sort_right = st.columns([2, 1])
+    with sort_left:
+        event_sort_label = st.selectbox(
+            "並び替え",
+            options=list(event_sort_labels),
+            key="event_sort_column",
+        )
+    with sort_right:
+        event_sort_order = st.selectbox(
+            "順序",
+            options=["昇順", "降順"],
+            key="event_sort_order",
+        )
+    event_frame = prepare_admin_editor_dataframe(
+        event_data,
+        event_sort_labels[event_sort_label],
+        event_sort_order == "昇順",
+        date_columns=("start_date", "end_date"),
+    )
     event_editor = st.data_editor(
-        pd.DataFrame(event_data),
+        event_frame,
         num_rows="dynamic",
         use_container_width=True,
         hide_index=True,
         key="event_editor",
         column_config={
+            "_admin_original_order": None,
             "category": st.column_config.SelectboxColumn(
                 "カテゴリ", options=EVENT_CATEGORIES
             ),
@@ -2330,7 +2469,8 @@ with event_tab:
         },
     )
 
-    event_rows, event_errors = event_rows_from_editor(event_editor)
+    event_editor_for_save = restore_admin_storage_order(event_editor)
+    event_rows, event_errors = event_rows_from_editor(event_editor_for_save)
     if event_errors:
         for error in event_errors:
             st.error(error)

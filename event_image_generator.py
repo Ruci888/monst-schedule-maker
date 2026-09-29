@@ -9,14 +9,20 @@ from image_generator import draw_centered_text, fit_font, load_font
 
 CATEGORY_STYLES = {
     "定期コンテンツ": ("#60A5FA", "定期"),
+    "定期": ("#60A5FA", "定期"),
+    "コラボ": ("#F87171", "コラボ"),
     "コラボ・期間限定": ("#F87171", "コラボ"),
+    "ガチャ": ("#FBBF24", "ガチャ"),
+    "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
+    "ゲーム内CP": ("#2DD4BF", "ゲーム内CP"),
+    "イベント": ("#A78BFA", "イベント"),
+    "ミッション": ("#F472B6", "ミッション"),
+    "その他": ("#94A3B8", "その他"),
+    # Legacy categories kept only so old JSON does not lose its color.
     "コラボガチャ": ("#C084FC", "コラボガチャ"),
     "コラボミッション": ("#F472B6", "コラボミッション"),
-    "ガチャ": ("#FBBF24", "ガチャ"),
     "育成キャンペーン": ("#34D399", "育成"),
-    "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
     "マルチキャンペーン": ("#2DD4BF", "マルチCP"),
-    "ミッション": ("#F472B6", "ミッション"),
     "周年CP": ("#F59E0B", "周年CP"),
     "獣神化情報": ("#A78BFA", "獣神化"),
     "期限": ("#FB7185", "期限"),
@@ -335,42 +341,25 @@ def draw_week(draw, events, week_start, top, theme):
             event.get("category", ""),
             ("#94A3B8", "その他"),
         )
-        badge_left = left + 10
-        badge_top = row_top + 18
-        badge_width = 92
-        badge_bottom = badge_top + 28
-        badge_fill = mix_color(category_color, row_fill, 0.27)
+        # Confirmed event layout: category is shown only as a slim color stripe.
+        # Do not draw category text/badges in the left column.
+        stripe_left = left + 10
+        stripe_right = stripe_left + 8
         draw.rounded_rectangle(
-            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
-            radius=8,
-            fill=badge_fill,
-            outline=mix_color(category_color, row_fill, 0.70),
-            width=1,
-        )
-        badge_font = fit_font(
-            category_label,
-            maximum_size=14,
-            minimum_size=11,
-            maximum_width=badge_width - 10,
-            draw=draw,
-        )
-        draw_centered_text(
-            draw,
-            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
-            category_label,
-            badge_font,
-            category_color,
+            (stripe_left, row_top + 8, stripe_right, row_bottom - 8),
+            radius=4,
+            fill=category_color,
         )
 
         label = display_event_name(event)
+        label_x = stripe_right + 12
         label_font = fit_font(
             label,
             maximum_size=22,
             minimum_size=14,
-            maximum_width=timeline_left - (badge_left + badge_width) - 34,
+            maximum_width=timeline_left - label_x - 22,
             draw=draw,
         )
-        label_x = badge_left + badge_width + 12
         draw.text(
             (label_x, row_top + 7),
             label,
