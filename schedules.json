@@ -5386,7 +5386,7 @@
         "source_url": "https://www.monster-strike.com/news/20260926_1.html",
         "confirmed_at": "",
         "show_time": false,
-        "show_category_badge": true,
+        "show_category_badge": false,
         "published": true
     },
     {
