@@ -372,6 +372,10 @@ def ensure_schedule_columns(schedules):
         "confirmed_at": "",
         "show_time": False,
         "show_category_badge": False,
+        "divider_left_collab": True,
+        "divider_left_limited": True,
+        "divider_right_collab": True,
+        "divider_right_limited": True,
         "published": True,
     }
     results = []
@@ -2260,6 +2264,31 @@ with schedule_tab:
     except GitHubStorageError as error:
         st.error(str(error))
         st.stop()
+    st.markdown("#### 注目画像のカテゴリ区切り")
+    st.caption("一般ユーザーには表示されない管理者用設定です。")
+    divider_source = schedule_data[0] if schedule_data else {}
+    divider_left_col, divider_right_col = st.columns(2)
+    with divider_left_col:
+        st.markdown("**左：コラボ・期間限定**")
+        admin_divider_left_collab = st.checkbox(
+            "コラボ区切り", value=bool(divider_source.get("divider_left_collab", True)),
+            key="admin_divider_left_collab",
+        )
+        admin_divider_left_limited = st.checkbox(
+            "期間限定区切り", value=bool(divider_source.get("divider_left_limited", True)),
+            key="admin_divider_left_limited",
+        )
+    with divider_right_col:
+        st.markdown("**右：高難易度・注目**")
+        admin_divider_right_collab = st.checkbox(
+            "コラボ区切り", value=bool(divider_source.get("divider_right_collab", True)),
+            key="admin_divider_right_collab",
+        )
+        admin_divider_right_limited = st.checkbox(
+            "期間限定区切り", value=bool(divider_source.get("divider_right_limited", True)),
+            key="admin_divider_right_limited",
+        )
+
     schedule_sort_labels = {
         "登録順": None,
         "名前": "name",
@@ -2309,6 +2338,10 @@ with schedule_tab:
             "quest_id": None,
             "end_next_day": None,
             "_admin_original_order": None,
+            "divider_left_collab": None,
+            "divider_left_limited": None,
+            "divider_right_collab": None,
+            "divider_right_limited": None,
             "attribute": st.column_config.SelectboxColumn("属性", options=ATTRIBUTES),
             "difficulty": st.column_config.SelectboxColumn("難易度", options=DIFFICULTIES),
             "category": st.column_config.SelectboxColumn(
@@ -2348,6 +2381,11 @@ with schedule_tab:
 
     schedule_editor_for_save = restore_admin_storage_order(schedule_editor)
     schedule_rows, schedule_errors = schedule_rows_from_editor(schedule_editor_for_save)
+    for schedule in schedule_rows:
+        schedule["divider_left_collab"] = admin_divider_left_collab
+        schedule["divider_left_limited"] = admin_divider_left_limited
+        schedule["divider_right_collab"] = admin_divider_right_collab
+        schedule["divider_right_limited"] = admin_divider_right_limited
     if schedule_errors:
         for error in schedule_errors:
             st.error(error)

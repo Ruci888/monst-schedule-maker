@@ -24,7 +24,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23p"
+APP_VERSION = "v1.1.0-beta.9.23s"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -437,25 +437,16 @@ with schedule_tab:
             key="schedule_mode",
         )
 
-        category_dividers = {}
-        if schedule_mode == SCHEDULE_MODE_FEATURED:
-            with st.expander("区切り表示", expanded=False):
-                st.caption("コラボ・期間限定の区切り帯を左右それぞれ設定できます。")
-                left_col, right_col = st.columns(2)
-                with left_col:
-                    st.markdown("**左：コラボ・期間限定**")
-                    left_collab = st.checkbox("コラボ", value=True, key="divider_left_collab")
-                    left_limited = st.checkbox("期間限定", value=True, key="divider_left_limited")
-                with right_col:
-                    st.markdown("**右：高難易度・注目**")
-                    right_collab = st.checkbox("コラボ", value=True, key="divider_right_collab")
-                    right_limited = st.checkbox("期間限定", value=True, key="divider_right_limited")
-            category_dividers = {
-                ("left", CATEGORY_COLLABORATION): left_collab,
-                ("left", CATEGORY_LIMITED_EVENT): left_limited,
-                ("right", CATEGORY_COLLABORATION): right_collab,
-                ("right", CATEGORY_LIMITED_EVENT): right_limited,
-            }
+        # Divider visibility is administrator-controlled. Public users do not
+        # need extra controls for image-layout details. Settings are stored with
+        # schedule records for backward-compatible public read access.
+        settings_source = schedules[0] if schedules else {}
+        category_dividers = {
+            ("left", CATEGORY_COLLABORATION): bool(settings_source.get("divider_left_collab", True)),
+            ("left", CATEGORY_LIMITED_EVENT): bool(settings_source.get("divider_left_limited", True)),
+            ("right", CATEGORY_COLLABORATION): bool(settings_source.get("divider_right_collab", True)),
+            ("right", CATEGORY_LIMITED_EVENT): bool(settings_source.get("divider_right_limited", True)),
+        } if schedule_mode == SCHEDULE_MODE_FEATURED else {}
 
         available_schedules = [
             schedule

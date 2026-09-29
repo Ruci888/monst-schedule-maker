@@ -140,22 +140,13 @@ def display_event_name(event):
     return label
 
 
-def event_time_text(event):
-    start_time = event.get("start_time", "")
-    end_time = event.get("end_time", "")
-    if not start_time and not end_time:
-        return "終日"
-
-    start_date = parse_date(event["start_date"])
-    end_date = parse_date(event["end_date"])
-    start_text = start_time or "0:00"
-    end_text = end_time or "23:59"
-    if start_date == end_date:
-        return f"{start_text}～{end_text}"
-    return (
-        f"{start_date.month}/{start_date.day} {start_text}～"
-        f"{end_date.month}/{end_date.day} {end_text}"
-    )
+def event_boundary_times(event, week_start, week_end):
+    """Return start/end clock labels only when the true boundary is in this 7-day block."""
+    event_start_date = parse_date(event["start_date"])
+    event_end_date = parse_date(event["end_date"])
+    start_text = event.get("start_time", "") if week_start <= event_start_date <= week_end else ""
+    end_text = event.get("end_time", "") if week_start <= event_end_date <= week_end else ""
+    return start_text, end_text
 
 
 def event_daily_labels(event):
@@ -199,8 +190,15 @@ def category_sort_key(event):
     # directly below the date header. Normal events keep the existing
     # category/start/end/name order beneath them.
     daily_priority = 0 if event_daily_labels(event) else 1
+    if daily_priority == 0:
+        return (
+            0,
+            event.get("start_date", ""),
+            event.get("end_date", ""),
+            event.get("name", ""),
+        )
     return (
-        daily_priority,
+        1,
         category_index,
         event.get("start_date", ""),
         event.get("end_date", ""),
@@ -343,11 +341,11 @@ def draw_week(draw, events, week_start, top, theme):
         )
         # Confirmed event layout: category is shown only as a slim color stripe.
         # Do not draw category text/badges in the left column.
-        stripe_left = left + 10
+        stripe_left = left + 8
         stripe_right = stripe_left + 8
-        draw.rounded_rectangle(
-            (stripe_left, row_top + 8, stripe_right, row_bottom - 8),
-            radius=4,
+        # Category stripe is continuous vertically; no per-row gaps.
+        draw.rectangle(
+            (stripe_left, row_top, stripe_right, row_top + row_height),
             fill=category_color,
         )
 
@@ -368,21 +366,6 @@ def draw_week(draw, events, week_start, top, theme):
             stroke_width=1,
             stroke_fill=theme["text"],
         )
-        time_text = event_time_text(event)
-        time_font = fit_font(
-            time_text,
-            maximum_size=14,
-            minimum_size=11,
-            maximum_width=timeline_left - label_x - 22,
-            draw=draw,
-        )
-        draw.text(
-            (label_x, row_top + 37),
-            time_text,
-            font=time_font,
-            fill=theme["sub_text"],
-        )
-
         week_start_datetime = datetime.combine(week_start, time.min)
         week_end_datetime = week_start_datetime + timedelta(days=7)
         event_start, event_end = event_datetimes(event)
@@ -445,9 +428,54 @@ def draw_week(draw, events, week_start, top, theme):
                 fill=attribute_color,
             )
 
+        # Time labels belong to the bar edges. Dates are never printed here.
+        start_text, end_text = event_boundary_times(event, week_start, week_end)
+        time_font = load_font(13)
+        pad = 7
+        gap = 5
+        start_w = draw.textbbox((0, 0), start_text, font=time_font)[2] if start_text else 0
+        end_w = draw.textbbox((0, 0), end_text, font=time_font)[2] if end_text else 0
+        needed = start_w + end_w + pad * 2 + (gap if start_text and end_text else 0)
+        inside = (bar_right - bar_left) >= needed
+        text_y = bar_top + (bar_bottom - bar_top - 13) / 2 - 1
+        if start_text:
+            x = bar_left + pad if inside else max(timeline_left, bar_left - start_w - 5)
+            draw.text((x, text_y), start_text, font=time_font, fill="#FFFFFF")
+        if end_text:
+            x = bar_right - end_w - pad if inside else min(right - end_w, bar_right + 5)
+            draw.text((x, text_y), end_text, font=time_font, fill="#FFFFFF")
+
         row_top += row_height
 
     return row_top
+
+
+def draw_category_legend(draw, theme, top):
+    # Public legend mirrors the left category stripe colors.
+    entries = [
+        ("定期コンテンツ", "定期"),
+        ("コラボ", "コラボ"),
+        ("ガチャ", "ガチャ"),
+        ("ゲーム内キャンペーン", "ゲーム内CP"),
+        ("イベント", "イベント"),
+        ("ミッション", "ミッション"),
+        ("その他", "その他"),
+    ]
+    font = load_font(16)
+    gap = 14
+    bar_w = 9
+    widths = []
+    for key, label in entries:
+        box = draw.textbbox((0, 0), label, font=font)
+        widths.append(bar_w + 5 + (box[2] - box[0]))
+    total = sum(widths) + gap * (len(entries) - 1)
+    x = max(28, (1080 - total) / 2)
+    for (key, label), width in zip(entries, widths):
+        color = CATEGORY_STYLES[key][0]
+        draw.rectangle((x, top + 4, x + bar_w, top + 24), fill=color)
+        draw.text((x + bar_w + 5, top), label, font=font, fill=theme["header_text"])
+        x += width + gap
+    return top + 30
 
 
 def generate_event_image(events, design, start_date):
@@ -470,12 +498,12 @@ def generate_event_image(events, design, start_date):
 
     draw_vertical_gradient(
         draw,
-        (0, 0, width, 205),
+        (0, 0, width, 235),
         theme["header_top"],
         theme["header_bottom"],
     )
     draw.rectangle((0, 0, width, 4), fill=theme["accent"])
-    draw.rectangle((0, 201, width, 205), fill=theme["accent"])
+    draw.rectangle((0, 231, width, 235), fill=theme["accent"])
     draw_emphasized_centered_text(
         draw,
         (0, 25, width, 125),
@@ -489,15 +517,16 @@ def generate_event_image(events, design, start_date):
         f"{start_date.year}/{start_date.month}/{start_date.day}～"
         f"{end_date.month}/{end_date.day}"
     )
+    draw_category_legend(draw, theme, 118)
     draw_centered_text(
         draw,
-        (0, 125, width, 190),
+        (0, 157, width, 222),
         period,
         load_font(25),
         theme["header_sub_text"],
     )
 
-    first_bottom = draw_week(draw, events, start_date, 230, theme)
+    first_bottom = draw_week(draw, events, start_date, 260, theme)
     draw_week(draw, events, second_week, first_bottom + 32, theme)
 
     image_buffer = BytesIO()
