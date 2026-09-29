@@ -1273,5 +1273,35 @@
         "source_url": "https://www.monster-strike.com/news/20260928_3.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "ストレコ2026後期",
+        "short_name": "ストレコ2026後期開始(～2027.4/1)",
+        "category": "その他",
+        "start_date": "2026-10-02",
+        "end_date": "2026-10-02",
+        "start_time": "4:00",
+        "end_time": "4:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260928_1.html",
+        "confirmed_at": "",
+        "published": true
+    },
+    {
+        "name": "シールオブジェネシス 第3弾",
+        "short_name": "シール第3弾開始(～2027.4/11)",
+        "category": "その他",
+        "start_date": "2026-10-02",
+        "end_date": "2026-10-02",
+        "start_time": "12:00",
+        "end_time": "12:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20260928_2.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
