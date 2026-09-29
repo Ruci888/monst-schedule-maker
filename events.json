@@ -1303,5 +1303,20 @@
         "source_url": "https://www.monster-strike.com/news/20260928_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "モンフリグッジョブ",
+        "short_name": "モンフリ限定グッジョブ",
+        "category": "その他",
+        "start_date": "2026-09-26",
+        "end_date": "2026-10-27",
+        "start_time": "4:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     }
 ]
