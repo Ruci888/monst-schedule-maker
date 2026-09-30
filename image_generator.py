@@ -484,7 +484,7 @@ def draw_category_divider(draw, category, x, y, column_right, theme):
         (text_left, center_y - text_height / 2 - box[1]),
         label,
         font=font,
-        fill=color,
+        fill="#FFFFFF",
     )
     return height
 
