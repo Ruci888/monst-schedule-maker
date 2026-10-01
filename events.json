@@ -1331,7 +1331,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261001_6.html",
-        "confirmed_at": "2026-10-01T10:35:04+00:00",
+        "confirmed_at": "2026-10-01T10:36:18+00:00",
         "published": true
     },
     {
@@ -1346,7 +1346,22 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261001_5.html",
-        "confirmed_at": "2026-10-01T10:35:04+00:00",
+        "confirmed_at": "2026-10-01T10:36:18+00:00",
+        "published": true
+    },
+    {
+        "name": "CM視聴ミッションでレアアイテム確率UP！",
+        "short_name": "CM視聴レアアイテム確率UP",
+        "category": "ミッション",
+        "start_date": "2026-10-04",
+        "end_date": "2026-10-09",
+        "start_time": "04:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20261001_2.html",
+        "confirmed_at": "2026-10-01T10:36:18+00:00",
         "published": true
     }
 ]
