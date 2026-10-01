@@ -1438,5 +1438,20 @@
         "source_url": "https://www.monster-strike.com/news/20261001_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "【13周年感謝キャンペーン】モンパスお試しキャンペーンが10/3より開催！",
+        "short_name": "モンパスお試しキャンペーン",
+        "category": "ゲーム内キャンペーン",
+        "start_date": "2026-10-03",
+        "end_date": "2026-10-11",
+        "start_time": "04:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261001_3.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
