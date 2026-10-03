@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "quest_id": "quest_b3e5160c29a893e8",
+    "year": 2026,
+    "date": "10/8",
+    "name": "フォギルエ",
+    "name_reading": "",
+    "quest_name": "",
+    "attribute": "闇",
+    "difficulty": "黎絶",
+    "category": "高難易度・注目",
+    "group_name": "",
+    "start_time": "12:00",
+    "end_time": "11:59",
+    "end_next_day": true,
+    "availability_type": "時間指定",
+    "period_end_date": "",
+    "source_type": "master",
+    "source_url": "",
+    "published": false,
+    "confirmed_at": "",
+    "review_reason": "iPhoneで画像を参照して手動選択",
+    "source_capture_type": "manual_reference",
+    "fetched_at": "2026-10-03T16:33:45.797Z",
+    "candidate_id": "iphone_8ab196f1b75793cf72fd25c6"
+  }
+]
