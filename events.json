@@ -1466,7 +1466,22 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261002_1.html",
-        "confirmed_at": "2026-10-03T04:38:57+00:00",
+        "confirmed_at": "2026-10-03T04:40:37+00:00",
+        "published": true
+    },
+    {
+        "name": "追憶の書庫キャンペーン",
+        "short_name": "アイテム使い放題@書庫",
+        "category": "育成キャンペーン",
+        "start_date": "2026-10-05",
+        "end_date": "2026-10-08",
+        "start_time": "00:00",
+        "end_time": "23:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20261002_1.html",
+        "confirmed_at": "2026-10-03T04:40:37+00:00",
         "published": true
     }
 ]
