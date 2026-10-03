@@ -10001,7 +10001,7 @@
     },
     {
         "quest_id": "quest_4aeaf745ea75265c",
-        "name": "ヴラド",
+        "name": "ヴラド・ツェペシュ",
         "name_reading": "",
         "quest_name": "",
         "attribute": "木",
@@ -10015,7 +10015,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-10-03T23:06:12+00:00"
+        "updated_at": "2026-10-03T23:07:03+00:00"
     },
     {
         "quest_id": "quest_214b416bc18bbaa3",
