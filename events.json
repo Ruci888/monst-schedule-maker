@@ -1588,5 +1588,20 @@
         "source_url": "https://www.monster-strike.com/news/20261008_10.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "期間限定ミッション登場",
+        "short_name": "大黒天クリアミッション",
+        "category": "ミッション",
+        "start_date": "2026-10-09",
+        "end_date": "2026-11-12",
+        "start_time": "19:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261008_6.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
