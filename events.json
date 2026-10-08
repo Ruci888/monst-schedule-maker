@@ -1573,5 +1573,20 @@
         "source_url": "https://www.monster-strike.com/news/20261008_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "守護獣「叫喚」が10/14より初登場！",
+        "short_name": "守護獣「叫喚」登場！",
+        "category": "イベント",
+        "start_date": "2026-10-14",
+        "end_date": "2026-10-14",
+        "start_time": "12:00",
+        "end_time": "12:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261008_10.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
