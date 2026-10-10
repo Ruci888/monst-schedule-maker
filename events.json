@@ -1648,5 +1648,20 @@
         "source_url": "https://www.monster-strike.com/news/20261009_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "≪モンスポット≫ラッキーバルーンで「オラゴン」の出現確率がアップ！",
+        "short_name": "モンスポ・オラゴン出現UP",
+        "category": "ゲーム内キャンペーン",
+        "start_date": "2026-10-10",
+        "end_date": "2026-10-12",
+        "start_time": "00:00",
+        "end_time": "23:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261009_2.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
