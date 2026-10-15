@@ -1691,7 +1691,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1706,7 +1706,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1721,7 +1721,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1736,7 +1736,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1751,7 +1751,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1766,7 +1766,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1781,7 +1781,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1796,7 +1796,7 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_2.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     },
     {
@@ -1811,7 +1811,22 @@
         "description": "",
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261015_2.html",
-        "confirmed_at": "2026-10-15T10:03:55+00:00",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
+        "published": true
+    },
+    {
+        "name": "ルイス・フロイス",
+        "short_name": "ルイス・フロイス、獣神化・改",
+        "category": "その他",
+        "start_date": "2026-10-20",
+        "end_date": "2026-10-20",
+        "start_time": "12:00",
+        "end_time": "12:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20261015_5.html",
+        "confirmed_at": "2026-10-15T10:06:21+00:00",
         "published": true
     }
 ]
