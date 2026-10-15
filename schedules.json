@@ -11857,8 +11857,34 @@
     },
     {
         "quest_id": "quest_3ad3f049efcd7846",
+        "end_next_day": true,
+        "quest_name": "破壊と創造をもたらす双聖",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "master",
+        "source_url": "https://www.monster-strike.com/news/20261008_6.html",
+        "confirmed_at": "2026-10-15T10:32:12+00:00",
+        "show_time": false,
+        "show_category_badge": false,
+        "divider_left_collab": true,
+        "divider_left_limited": true,
+        "divider_right_collab": true,
+        "divider_right_limited": true,
+        "published": true,
         "year": 2026,
         "date": "11/6",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "name": "大黒天",
+        "attribute": "光",
+        "difficulty": "超究極",
+        "category": "イベント・期間限定"
+    },
+    {
+        "quest_id": "quest_3ad3f049efcd7846",
+        "year": 2026,
+        "date": "11/8",
         "start_time": "12:00",
         "end_time": "11:59",
         "end_next_day": true,
@@ -11872,7 +11898,7 @@
         "period_end_date": "",
         "source_type": "master",
         "source_url": "https://www.monster-strike.com/news/20261008_6.html",
-        "confirmed_at": "2026-10-15T10:32:12+00:00",
+        "confirmed_at": "2026-10-15T10:32:25+00:00",
         "published": true
     }
 ]
