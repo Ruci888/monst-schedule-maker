@@ -1873,5 +1873,20 @@
         "source_url": "https://www.monster-strike.com/news/20261015_3.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "「夜と昼を別つ双子ミッション」開催！",
+        "short_name": "コラボ・双子ミッション",
+        "category": "ミッション",
+        "start_date": "2026-10-16",
+        "end_date": "2026-11-05",
+        "start_time": "12:00",
+        "end_time": "3:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261015_2.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
