@@ -1888,5 +1888,20 @@
         "source_url": "https://www.monster-strike.com/news/20261015_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "「13周年スクラッチくじ」開催！",
+        "short_name": "13周年スクラッチくじ",
+        "category": "ゲーム内キャンペーン",
+        "start_date": "2026-10-17",
+        "end_date": "2026-10-21",
+        "start_time": "4:00",
+        "end_time": "3:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261015_4.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
