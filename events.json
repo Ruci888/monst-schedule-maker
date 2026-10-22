@@ -2023,5 +2023,20 @@
         "source_url": "https://www.monster-strike.com/news/20261022_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "破界の星墓 みんなで突破チャレンジ",
+        "short_name": "星墓・みんなで突破チャレ",
+        "category": "イベント",
+        "start_date": "2026-10-27",
+        "end_date": "2026-11-23",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261022_3.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
