@@ -2038,5 +2038,20 @@
         "source_url": "https://www.monster-strike.com/news/20261022_3.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "「日替わり誠くんガチャ」開催！",
+        "short_name": "誠くんガチャ",
+        "category": "コラボ",
+        "start_date": "2026-10-23",
+        "end_date": "2026-11-02",
+        "start_time": "04:00",
+        "end_time": "03:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261015_2.html#11",
+        "confirmed_at": "",
+        "published": true
     }
 ]
