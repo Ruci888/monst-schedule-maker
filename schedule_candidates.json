@@ -18,7 +18,8 @@
         "period_label": "クエスト出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「クエスト出現期間」から降臨候補を抽出しました。",
-        "published": false
+        "published": false,
+        "candidate_id": "fe32d72541b07a707f65"
     },
     {
         "year": 2026,
@@ -39,27 +40,7 @@
         "period_label": "出現期間",
         "review_status": "needs_review",
         "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
-        "published": false
-    },
-    {
-        "year": 2026,
-        "date": "10/23",
-        "start_time": "19:00",
-        "end_time": "11:59",
-        "name": "イワン",
-        "quest_name": "大凶と小凶",
-        "attribute": "",
-        "difficulty": "超究極",
-        "category": "コラボ",
-        "group_name": "モンスト×黄泉のツガイコラボ",
-        "availability_type": "期間中常設",
-        "period_end_date": "2026-11-01",
-        "source_type": "official",
-        "source_url": "https://www.monster-strike.com/news/20261015_2.html",
-        "fetched_at": "2026-10-23T07:38:34+09:00",
-        "period_label": "出現期間",
-        "review_status": "needs_review",
-        "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 属性を確認してください。",
-        "published": false
+        "published": false,
+        "candidate_id": "d7991f232b800e0ffeec"
     }
 ]
