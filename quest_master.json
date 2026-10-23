@@ -18602,5 +18602,23 @@
         "published": true,
         "created_at": "2026-10-15T10:18:44+00:00",
         "updated_at": "2026-10-16T01:04:16+00:00"
+    },
+    {
+        "quest_id": "quest_3cb5bf172ad73d5d",
+        "name": "イワン",
+        "name_reading": "",
+        "quest_name": "大凶と小凶",
+        "attribute": "闇",
+        "difficulty": "超究極",
+        "category": "コラボ",
+        "group_name": "モンスト×黄泉のツガイコラボ",
+        "availability_type": "期間中常設",
+        "period_end_date": "2026-11-01",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20261015_2.html",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-10-23T10:02:24+00:00",
+        "updated_at": "2026-10-23T10:02:24+00:00"
     }
 ]
