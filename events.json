@@ -2338,5 +2338,20 @@
         "source_url": "https://www.monster-strike.com/news/20261029_2.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "コラボ追加ミッション",
+        "short_name": "イワン•その他ミッション",
+        "category": "コラボ",
+        "start_date": "2026-10-30",
+        "end_date": "2026-11-05",
+        "start_time": "00:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "",
+        "confirmed_at": "",
+        "published": true
     }
 ]
