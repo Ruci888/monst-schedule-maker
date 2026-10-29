@@ -2145,11 +2145,6 @@
         "end_date": "2026-10-27"
     },
     {
-        "name": "破界に響く星歌",
-        "short_name": "破界に響く星歌",
-        "category": "ガチャ",
-        "start_date": "2026-10-27",
-        "end_date": "2026-10-29",
         "start_time": "12:00",
         "end_time": "11:59",
         "daily_labels": "",
@@ -2157,6 +2152,26 @@
         "source_type": "verified",
         "source_url": "https://www.monster-strike.com/news/20261026_1.html",
         "confirmed_at": "2026-10-26T14:34:32+00:00",
+        "published": true,
+        "name": "破界に響く星歌",
+        "short_name": "破界に響く星歌",
+        "category": "ガチャ",
+        "start_date": "2026-10-27",
+        "end_date": "2026-10-29"
+    },
+    {
+        "name": "レグルス",
+        "short_name": "レグルス、獣神化・改",
+        "category": "その他",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-03",
+        "start_time": "12:00",
+        "end_time": "12:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "verified",
+        "source_url": "https://www.monster-strike.com/news/20261029_4.html",
+        "confirmed_at": "2026-10-29T09:33:12+00:00",
         "published": true
     }
 ]
