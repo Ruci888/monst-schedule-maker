@@ -79,6 +79,7 @@ st.set_page_config(
 
 ATTRIBUTES = ["火", "水", "木", "光", "闇"]
 DIFFICULTIES = [
+    "滅絶",
     "黎絶",
     "轟絶",
     "超究極",

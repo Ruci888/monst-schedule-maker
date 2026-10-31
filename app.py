@@ -30,6 +30,7 @@ SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
 
 FEATURED_DIFFICULTIES = [
+    "滅絶",
     "黎絶",
     "轟絶",
     "超究極",
@@ -130,6 +131,7 @@ def schedule_label(schedule):
 
 
 SCHEDULE_DIFFICULTY_ORDER = [
+    "滅絶",
     "黎絶",
     "轟絶",
     "超究極",

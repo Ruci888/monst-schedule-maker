@@ -3,7 +3,7 @@ from datetime import date
 
 from PIL import Image
 
-from image_generator import generate_schedule_image, get_difficulty_color
+from image_generator import generate_schedule_image, get_difficulty_color, get_difficulty_text_color
 
 
 def make_schedule(day, name, difficulty, attribute="火"):
@@ -22,6 +22,13 @@ def make_schedule(day, name, difficulty, attribute="火"):
 
 
 class ScheduleImageGeneratorTest(unittest.TestCase):
+    def test_metsuzetsu_label_and_image(self):
+        self.assertEqual(get_difficulty_color("滅絶"), "#252025")
+        self.assertEqual(get_difficulty_text_color("滅絶"), "#FF5555")
+        self.assertEqual(get_difficulty_text_color("黎絶"), "#FFFFFF")
+        buf = generate_schedule_image([make_schedule("11/3", "テスト滅絶", "滅絶")], "ダーク", date(2026, 11, 3), "注目")
+        self.assertEqual(Image.open(buf).format, "PNG")
+
     def test_normal_mode_keeps_seven_days_and_generates_png(self):
         schedules = [
             make_schedule("8/18", "テスト爆絶", "爆絶"),

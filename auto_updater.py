@@ -70,6 +70,7 @@ EXCLUDED_SECTION_WORDS = (
 )
 
 SCHEDULE_DIFFICULTIES = (
+    "滅絶",
     "超究極・兵",
     "超究極",
     "星5制限",
@@ -709,7 +710,7 @@ def extract_schedule_candidate_from_block(
 
     category = article_schedule_category(article_title)
     if difficulty == "超究極・兵" or re.search(
-        r"新(?:黎絶|轟絶|爆絶|超絶)クエスト", block_title
+        r"新(?:滅絶|黎絶|轟絶|爆絶|超絶)クエスト", block_title
     ):
         category = CATEGORY_FEATURED
 

@@ -103,6 +103,7 @@ def get_attribute_color(attribute):
 
 def get_difficulty_color(difficulty):
     return {
+        "滅絶": "#252025",
         "黎絶": "#9B1C1C",
         "轟絶": "#163E87",
         "超究極": "#8A3FFC",
@@ -115,6 +116,10 @@ def get_difficulty_color(difficulty):
         "星5制限": "#BE123C",
         "極": "#64748B",
     }.get(difficulty, "#4B5563")
+
+
+def get_difficulty_text_color(difficulty):
+    return "#FF5555" if difficulty == "滅絶" else "#FFFFFF"
 
 
 def parse_schedule_datetime(schedule):
@@ -223,7 +228,7 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
         (label_x, label_y, label_x + label_width, label_y + label_height),
         schedule["difficulty"],
         label_font,
-        "#FFFFFF",
+        get_difficulty_text_color(schedule["difficulty"]),
     )
 
 
@@ -252,7 +257,7 @@ def draw_normal_schedule_item(draw, schedule, x, y, column_right, theme):
         (label_x, y, label_x + label_width, y + label_height),
         schedule["difficulty"],
         label_font,
-        "#FFFFFF",
+        get_difficulty_text_color(schedule["difficulty"]),
     )
 
 
