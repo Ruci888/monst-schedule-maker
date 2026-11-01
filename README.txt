@@ -1,20 +1,26 @@
-モンストスケジュールメーカー data_manager 互換性修正版
+モンストスケジュールメーカー イベント名リンク統合パッチ
+提案バージョン: v1.1.0-beta.9.24b
 
-目的
-- 公開メーカー: GitHub上の schedules.json / events.json / quest_master.json を読み込む
-- 管理画面: admin_app.py が従来 import している save_json / save_schedules /
-  save_events / save_quest_master を復元し、ImportErrorを解消する
-- UI・画像生成処理には変更を加えない
+変更ファイル（2つのみ）:
+- app.py
+- event_image_generator.py
 
-重要
-1. data_manager.py を置き換える前に、現在正常表示できている data_manager.py の
-   GITHUB_OWNER の値を確認してください。
-2. この修正版の
-       GITHUB_OWNER = "YOUR_GITHUB_OWNER"
-   を、その現在動作している値に変更してください。
-3. GitHubへ commit してください。
-4. 公開メーカーと管理画面の両方が起動することを確認してください。
-5. 管理画面でテスト更新し、公開メーカーへ反映されることを確認してください。
+機能:
+- イベントカレンダーのイベント名にリンクのタップ領域を重ねる
+- イベント名変更、表示位置、2週間表示に追従
+- source_urlがあるイベントだけリンクを表示
+- イベント画像PNGそのものは変更しない
+- Web画面に「イベント名をタップすると、公式ニュースの該当箇所を確認できます。」と表示
+- リンク先はイベントに登録されたsource_urlをそのまま使用する
 
-想定コミットメッセージ:
-Fix data manager compatibility for admin app
+重要:
+- source_urlが記事トップのURLだけなら、記事トップへ移動します。
+  見出しへ移動するには、イベントのsource_urlに正しい #:~:text=... を含めてください。
+- Chrome/iPhoneでの実機動作はテストアプリでは確認済みですが、本番環境は未検証です。
+- このパッチは先に適用した滅絶対応パッチをベースにしています。
+  GitHub mainの最新コードが別途変更されている場合、上書き前に差分確認が必要です。
+- data_manager.py、JSON、管理画面、降臨画像生成、既存の保存機能は変更しません。
+- 念のため、GitHub mainのバックアップブランチを作成してから適用してください。
+
+コミット例:
+v1.1.0-beta.9.24b Add tappable event news links
