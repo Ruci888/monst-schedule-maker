@@ -119,7 +119,29 @@ def get_difficulty_color(difficulty):
 
 
 def get_difficulty_text_color(difficulty):
-    return "#FF5555" if difficulty == "滅絶" else "#FFFFFF"
+    return "#FFFFFF"
+
+
+
+def draw_difficulty_badge(draw, bounds, difficulty, radius):
+    """Draw the special Metsuzetsu badge; keep all other badges unchanged."""
+    if difficulty != "滅絶":
+        draw.rounded_rectangle(
+            bounds, radius=radius, fill=get_difficulty_color(difficulty)
+        )
+        return
+
+    # Dark crimson base, with a bright crimson edge and a restrained highlight.
+    draw.rounded_rectangle(
+        bounds, radius=radius, fill="#19090D", outline="#B52B3D", width=3
+    )
+    left, top, right, bottom = bounds
+    draw.rounded_rectangle(
+        (left + 5, top + 5, right - 5, bottom - 5),
+        radius=max(2, radius - 5),
+        outline="#68202C",
+        width=1,
+    )
 
 
 def parse_schedule_datetime(schedule):
@@ -218,10 +240,11 @@ def draw_schedule_item(draw, schedule, display_day, x, y, column_right, theme):
         font=name_font,
         fill=get_attribute_color(schedule["attribute"]),
     )
-    draw.rounded_rectangle(
+    draw_difficulty_badge(
+        draw,
         (label_x, label_y, label_x + label_width, label_y + label_height),
+        schedule["difficulty"],
         radius=12,
-        fill=get_difficulty_color(schedule["difficulty"]),
     )
     draw_centered_text(
         draw,
@@ -247,10 +270,11 @@ def draw_normal_schedule_item(draw, schedule, x, y, column_right, theme):
         font=name_font,
         fill=get_attribute_color(schedule["attribute"]),
     )
-    draw.rounded_rectangle(
+    draw_difficulty_badge(
+        draw,
         (label_x, y, label_x + label_width, y + label_height),
+        schedule["difficulty"],
         radius=10,
-        fill=get_difficulty_color(schedule["difficulty"]),
     )
     draw_centered_text(
         draw,
