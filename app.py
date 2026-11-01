@@ -1,6 +1,4 @@
 import base64
-import html
-from urllib.parse import urlparse
 from datetime import date, datetime, timedelta
 
 import streamlit as st
@@ -26,7 +24,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.24b"
+APP_VERSION = "v1.1.0-beta.9.23s"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -312,61 +310,10 @@ def latest_confirmation(items):
         return None
 
 
-def render_event_image_with_links(image_bytes, link_regions):
-    """Render the unchanged PNG with responsive links over the text positions."""
-    from PIL import Image
-    from io import BytesIO
-
-    with Image.open(BytesIO(image_bytes)) as image:
-        width, height = image.size
-    encoded = base64.b64encode(image_bytes).decode("ascii")
-    links = []
-    for region in link_regions:
-        url = region.get("url", "")
-        parsed = urlparse(url)
-        if parsed.scheme not in ("https", "http") or not parsed.netloc:
-            continue
-        x0, y0, x1, y1 = region["bounds"]
-        style = (
-            f"left:{100*x0/width:.6f}%;top:{100*y0/height:.6f}%;"
-            f"width:{100*(x1-x0)/width:.6f}%;"
-            f"height:{100*(y1-y0)/height:.6f}%;"
-        )
-        label = html.escape(region.get("label", "イベント"), quote=True)
-        safe_url = html.escape(url, quote=True)
-        links.append(
-            f'<a class="hotspot" href="{safe_url}" target="_blank" '
-            f'rel="noopener noreferrer" aria-label="{label} の公式ニュース" '
-            f'title="{label} の公式ニュース" style="{style}"></a>'
-        )
-    markup = (
-        '<!doctype html><html><head>'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<style>html,body{margin:0;padding:0;background:transparent;}'
-        '.frame{position:relative;width:100%;line-height:0;}'
-        '.frame img{display:block;width:100%;height:auto;}'
-        '.hotspot{position:absolute;display:block;cursor:pointer;line-height:normal;}'
-        '.hotspot:focus-visible{outline:3px solid #ffd54a;}</style>'
-        '</head><body><div class="frame">'
-        f'<img src="data:image/png;base64,{encoded}" alt="イベントスケジュール">'
-        + "".join(links) + '</div>'
-        '<script>function resize(){const h=document.querySelector(".frame").getBoundingClientRect().height;'
-        'window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:Math.ceil(h)+4},"*");}'
-        'new ResizeObserver(resize).observe(document.querySelector(".frame"));'
-        'window.addEventListener("load",resize);resize();</script></body></html>'
-    )
-    # Preserve the whole image in the component, even on narrow screens.
-    components.html(markup, height=height + 8, scrolling=False)
-
-
-def render_image_save_actions(image_buffer, file_name, caption, link_regions=None):
+def render_image_save_actions(image_buffer, file_name, caption):
     """画像を表示し、スマホ向け保存と通常ダウンロードを用意する。"""
     image_bytes = image_buffer.getvalue()
-    if link_regions:
-        render_event_image_with_links(image_bytes, link_regions)
-        st.caption(caption)
-    else:
-        st.image(image_bytes, caption=caption)
+    st.image(image_bytes, caption=caption)
 
     encoded_image = base64.b64encode(image_bytes).decode("ascii")
     components.html(
@@ -794,12 +741,10 @@ with event_tab:
         if not selected_events:
             st.warning("イベントを1つ以上選択してください。")
         else:
-            event_link_regions = []
             event_image = generate_event_image(
                 selected_events,
                 event_design,
                 start_date,
-                link_regions=event_link_regions,
             )
             event_generation_key = (
                 f"{start_date.isoformat()}|"
@@ -811,13 +756,10 @@ with event_tab:
                     st.session_state["_last_event_generation"] = event_generation_key
                 except Exception:
                     pass
-            if event_link_regions:
-                st.caption("イベント名をタップすると、公式ニュースの該当箇所を確認できます。")
             render_image_save_actions(
                 event_image,
                 "monst_event_schedule.png",
                 "生成したイベントスケジュール",
-                link_regions=event_link_regions,
             )
 
 
