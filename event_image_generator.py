@@ -256,7 +256,7 @@ def draw_emphasized_centered_text(draw, area, text, font, fill, stroke_fill):
     )
 
 
-def draw_week(draw, events, week_start, top, theme):
+def draw_week(draw, events, week_start, top, theme, link_regions=None):
     left = 38
     right = 1042
     timeline_left = 365
@@ -369,6 +369,20 @@ def draw_week(draw, events, week_start, top, theme):
             font=label_font,
             fill=theme["text"],
         )
+        if link_regions is not None and event.get("source_url"):
+            # Use the exact rendered text box so renamed labels follow automatically.
+            text_box = draw.textbbox((label_x, label_y), label, font=label_font)
+            link_regions.append({
+                "bounds": (
+                    max(label_x - 4, text_box[0] - 4),
+                    row_top + 2,
+                    min(timeline_left - 12, text_box[2] + 6),
+                    row_bottom - 2,
+                ),
+                "url": event["source_url"],
+                "event_name": event.get("name", ""),
+                "label": label,
+            })
         week_start_datetime = datetime.combine(week_start, time.min)
         week_end_datetime = week_start_datetime + timedelta(days=7)
         event_start, event_end = event_datetimes(event)
@@ -485,7 +499,7 @@ def draw_category_legend(draw, theme, top):
     return top + 30
 
 
-def generate_event_image(events, design, start_date):
+def generate_event_image(events, design, start_date, link_regions=None):
     theme = EVENT_THEMES.get(design, EVENT_THEMES["ブルー"])
     events = sorted(events, key=category_sort_key)
     second_week = start_date + timedelta(days=7)
@@ -533,8 +547,8 @@ def generate_event_image(events, design, start_date):
         theme["header_sub_text"],
     )
 
-    first_bottom = draw_week(draw, events, start_date, 260, theme)
-    draw_week(draw, events, second_week, first_bottom + 32, theme)
+    first_bottom = draw_week(draw, events, start_date, 260, theme, link_regions)
+    draw_week(draw, events, second_week, first_bottom + 32, theme, link_regions)
 
     image_buffer = BytesIO()
     image.save(image_buffer, format="PNG")
