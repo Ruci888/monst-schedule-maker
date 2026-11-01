@@ -1,6 +1,6 @@
 import base64
 import html
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse, urlunparse, quote
 from datetime import date, datetime, timedelta
 
 import streamlit as st
@@ -26,7 +26,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.24d"
+APP_VERSION = "v1.1.0-beta.9.24e"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -319,10 +319,12 @@ def build_event_news_url(source_url, event_name):
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         return url
-    # Preserve all existing fragments, including manually tuned text fragments.
-    if parsed.fragment or not name:
+    # Preserve explicitly configured text fragments. Replace legacy anchors
+    # (e.g. #5, #10) with a name-based text fragment when a name is available.
+    if ':~:text=' in parsed.fragment or not name:
         return url
-    return f"{url}#:~:text={quote(name, safe='')}"
+    base_url = urlunparse(parsed._replace(fragment=''))
+    return f"{base_url}#:~:text={quote(name, safe='')}"
 
 
 def render_event_image_with_links(image_bytes, link_regions):

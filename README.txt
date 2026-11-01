@@ -1,15 +1,13 @@
-モンストスケジュールメーカー v1.1.0-beta.9.24d
-イベント公式ニュースの見出し自動ジャンプ改善パッチ
+v1.1.0-beta.9.24e — Anchor-to-text-fragment fix
 
-変更ファイル：app.py、event_image_generator.py
+Based on v1.1.0-beta.9.24d.
 
-・イベントの source_url が通常の記事URLで、name がある場合、name をURLエンコードして #:~:text= を自動追加します。
-・既に # 以降のフラグメントがあるURLは変更しません（手動設定を優先）。
-・カレンダー表示は従来どおり short_name を優先します。
-・PNG生成処理、画像レイアウト、リンク領域、画像保存機能は変更しません。
-・見出しが記事内に存在しない、重複している、ブラウザが非対応の場合は目的位置に移動しない可能性があります。
+Changes:
+- app.py: Existing legacy URL anchors (#5, #10, etc.) are replaced with
+  name-based #:~:text= fragments.
+- Existing explicit #:~:text= fragments remain unchanged.
+- Plain URLs continue to generate fragments from event name.
+- event_image_generator.py is included unchanged from 9.24d for consistency.
 
-重要：2026-11-01にユーザーから提供された main(2).zip を基準にしたリンク実装済みパッチから作成。
-GitHub main がそれ以降更新されている場合は直接上書きせず差分を確認してください。
-反映前にバックアップを取り、両Pythonファイルをセットで更新してください。
-Streamlit Cloud / iPhone の本番動作は未検証です。
+Upload both app.py and event_image_generator.py to repository root.
+Commit: v1.1.0-beta.9.24e Fix anchor-based event news links
