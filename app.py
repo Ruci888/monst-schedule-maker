@@ -1,6 +1,4 @@
 import base64
-import html
-from urllib.parse import urlparse
 from datetime import date, datetime, timedelta
 
 import streamlit as st
@@ -312,60 +310,10 @@ def latest_confirmation(items):
         return None
 
 
-def render_event_image_with_links(image_bytes, link_regions):
-    """Show the unchanged PNG with links positioned by its drawing coordinates."""
-    from io import BytesIO
-    from PIL import Image
-
-    with Image.open(BytesIO(image_bytes)) as image:
-        image_width, image_height = image.size
-    encoded = base64.b64encode(image_bytes).decode("ascii")
-    links = []
-    for region in link_regions:
-        url = region.get("url", "")
-        parsed = urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            continue
-        left, top, right, bottom = region["bounds"]
-        if right <= left or bottom <= top:
-            continue
-        style = (
-            f"left:{left / image_width * 100:.6f}%;"
-            f"top:{top / image_height * 100:.6f}%;"
-            f"width:{(right - left) / image_width * 100:.6f}%;"
-            f"height:{(bottom - top) / image_height * 100:.6f}%;"
-        )
-        safe_url = html.escape(url, quote=True)
-        safe_label = html.escape(region.get("label", "イベント"), quote=True)
-        links.append(
-            f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="{safe_label} の公式ニュース" title="{safe_label} の公式ニュース" '
-            f'style="{style}"></a>'
-        )
-    markup = (
-        '<!doctype html><html><head><meta name="viewport" '
-        'content="width=device-width,initial-scale=1">'
-        '<style>html,body{margin:0;padding:0;overflow:hidden}'
-        '.image-wrap{position:relative;width:100%;line-height:0}'
-        '.image-wrap img{width:100%;height:auto;display:block}'
-        '.image-wrap a{position:absolute;display:block;cursor:pointer}'
-        '.image-wrap a:focus-visible{outline:3px solid #FFD54A}'
-        '</style></head><body><div class="image-wrap">'
-        f'<img src="data:image/png;base64,{encoded}" alt="イベントスケジュール">'
-        + "".join(links) + '</div></body></html>'
-    )
-    # Full native height avoids clipping even on a wide desktop display.
-    components.html(markup, height=image_height + 4, scrolling=False)
-
-
-def render_image_save_actions(image_buffer, file_name, caption, link_regions=None):
+def render_image_save_actions(image_buffer, file_name, caption):
     """画像を表示し、スマホ向け保存と通常ダウンロードを用意する。"""
     image_bytes = image_buffer.getvalue()
-    if link_regions:
-        render_event_image_with_links(image_bytes, link_regions)
-        st.caption(caption)
-    else:
-        st.image(image_bytes, caption=caption)
+    st.image(image_bytes, caption=caption)
 
     encoded_image = base64.b64encode(image_bytes).decode("ascii")
     components.html(
@@ -793,12 +741,10 @@ with event_tab:
         if not selected_events:
             st.warning("イベントを1つ以上選択してください。")
         else:
-            event_link_regions = []
             event_image = generate_event_image(
                 selected_events,
                 event_design,
                 start_date,
-                link_regions=event_link_regions,
             )
             event_generation_key = (
                 f"{start_date.isoformat()}|"
@@ -810,13 +756,10 @@ with event_tab:
                     st.session_state["_last_event_generation"] = event_generation_key
                 except Exception:
                     pass
-            if event_link_regions:
-                st.caption("イベント名をタップすると、公式ニュースの該当箇所を確認できます。")
             render_image_save_actions(
                 event_image,
                 "monst_event_schedule.png",
                 "生成したイベントスケジュール",
-                link_regions=event_link_regions,
             )
 
 
