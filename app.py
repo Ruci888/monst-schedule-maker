@@ -1,6 +1,6 @@
 import base64
 import html
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from datetime import date, datetime, timedelta
 
 import streamlit as st
@@ -26,7 +26,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.24d"
+APP_VERSION = "v1.1.0-beta.9.23s"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -312,19 +312,6 @@ def latest_confirmation(items):
         return None
 
 
-def build_event_news_url(source_url, event_name):
-    """Append a text fragment based on full event name, preserving manual fragments."""
-    url = (source_url or "").strip()
-    name = (event_name or "").strip()
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        return url
-    # Preserve all existing fragments, including manually tuned text fragments.
-    if parsed.fragment or not name:
-        return url
-    return f"{url}#:~:text={quote(name, safe='')}"
-
-
 def render_event_image_with_links(image_bytes, link_regions):
     """Show the unchanged PNG with links positioned by its drawing coordinates."""
     from io import BytesIO
@@ -335,7 +322,7 @@ def render_event_image_with_links(image_bytes, link_regions):
     encoded = base64.b64encode(image_bytes).decode("ascii")
     links = []
     for region in link_regions:
-        url = build_event_news_url(region.get("url", ""), region.get("event_name", ""))
+        url = region.get("url", "")
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             continue

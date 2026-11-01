@@ -380,7 +380,6 @@ def draw_week(draw, events, week_start, top, theme, link_regions=None):
                     row_bottom - 2,
                 ),
                 "url": event["source_url"],
-                "event_name": event.get("name", ""),
                 "label": label,
             })
         week_start_datetime = datetime.combine(week_start, time.min)
