@@ -319,7 +319,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T03:05:51+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_2ebac46dd5a895c2",
@@ -1377,7 +1377,7 @@
         ],
         "published": true,
         "created_at": "2026-08-27T13:50:36+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_7080132d2bb3f3c9",
@@ -1920,7 +1920,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_48d74178fca0a23c",
@@ -1938,7 +1938,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_3e3e75b6ad9ec540",
@@ -1956,7 +1956,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-01T23:13:57+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_8a475499d3891145",
@@ -2383,7 +2383,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_72e9479e35df9751",
@@ -2491,7 +2491,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-02T03:04:33+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_e2deff5ea93852d3",
@@ -3373,7 +3373,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_32c29e49f0e0592f",
@@ -3391,7 +3391,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_35bebc09a33d6f60",
@@ -3589,7 +3589,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_d713dd345b44bf37",
@@ -3607,7 +3607,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_234512540f610db0",
@@ -3913,7 +3913,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_b19961b5448fb88b",
@@ -3931,7 +3931,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-11T06:22:26+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_378fd2bde05ab1cd",
@@ -4970,12 +4970,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T01:05:43+00:00",
-        "updated_at": "2026-09-12T01:05:43+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_07fc7cbbb962fff1",
@@ -5708,12 +5708,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:16:34+00:00",
-        "updated_at": "2026-09-12T22:16:34+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_f25212e58f1aa62d",
@@ -6086,12 +6086,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T22:32:32+00:00",
-        "updated_at": "2026-09-12T22:32:32+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_aae683ab8f3cf721",
@@ -7058,12 +7058,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-12T23:06:08+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_0dcd3ebdd039f37c",
@@ -7202,12 +7202,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-12T23:06:08+00:00",
-        "updated_at": "2026-09-12T23:06:08+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_6192f37f9094d77e",
@@ -7472,12 +7472,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T06:43:06+00:00",
-        "updated_at": "2026-09-13T06:43:06+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_6c3811a0918a0879",
@@ -8336,12 +8336,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:21:28+00:00",
-        "updated_at": "2026-09-13T07:21:28+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_e9f320731ded2aca",
@@ -9632,12 +9632,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:36:08+00:00",
-        "updated_at": "2026-09-13T07:36:08+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_99ad2e8049e30aa9",
@@ -10406,12 +10406,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T07:52:18+00:00",
-        "updated_at": "2026-09-13T07:52:18+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_dd67f2a443e2fa54",
@@ -10514,12 +10514,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:06:13+00:00",
-        "updated_at": "2026-09-13T08:06:13+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_1c05169dd5e9bd5e",
@@ -11414,12 +11414,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-13T08:23:51+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_e211cb00c5e74acd",
@@ -11684,12 +11684,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T08:23:51+00:00",
-        "updated_at": "2026-09-13T08:23:51+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_472c54ed1002c7ea",
@@ -12998,12 +12998,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:57:30+00:00",
-        "updated_at": "2026-09-13T09:57:30+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_cb5221dc72e0d9ae",
@@ -13052,12 +13052,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:03:50+00:00",
-        "updated_at": "2026-09-13T10:03:50+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_60976badcbcecc8c",
@@ -13682,12 +13682,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T10:11:15+00:00",
-        "updated_at": "2026-09-13T10:11:15+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_d73fd9f9aa737ebb",
@@ -14204,12 +14204,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T22:59:53+00:00",
-        "updated_at": "2026-09-13T22:59:53+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_c9752af7405b4a13",
@@ -14798,12 +14798,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:07:18+00:00",
-        "updated_at": "2026-09-13T23:07:18+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_3a9a6ac4e22c5216",
@@ -14924,12 +14924,12 @@
         "group_name": "",
         "availability_type": "時間指定",
         "period_end_date": "",
-        "source_type": "manual",
+        "source_type": "verified",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T23:16:42+00:00",
-        "updated_at": "2026-09-13T23:16:42+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_f9c7ee578d452843",
@@ -18133,7 +18133,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-17T11:06:04+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_e72bd1d1d2c6e2f9",
@@ -18151,7 +18151,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:04:09+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_603f193fa8363264",
@@ -18169,7 +18169,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:05:01+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_434289eb75a1a397",
@@ -18187,7 +18187,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-18T21:06:31+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_4897ee0db0c85c22",
@@ -18673,7 +18673,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-10-31T10:47:31+00:00",
-        "updated_at": "2026-11-01T01:12:25+00:00"
+        "updated_at": "2026-11-01T23:51:21+00:00"
     },
     {
         "quest_id": "quest_b0fbf6792581e874",
