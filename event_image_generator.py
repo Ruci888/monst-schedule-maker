@@ -9,20 +9,14 @@ from image_generator import draw_centered_text, fit_font, load_font
 
 CATEGORY_STYLES = {
     "定期コンテンツ": ("#60A5FA", "定期"),
-    "定期": ("#60A5FA", "定期"),
-    "コラボ": ("#F87171", "コラボ"),
     "コラボ・期間限定": ("#F87171", "コラボ"),
-    "ガチャ": ("#FBBF24", "ガチャ"),
-    "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
-    "ゲーム内CP": ("#2DD4BF", "ゲーム内CP"),
-    "イベント": ("#A78BFA", "イベント"),
-    "ミッション": ("#F472B6", "ミッション"),
-    "その他": ("#94A3B8", "その他"),
-    # Legacy categories kept only so old JSON does not lose its color.
     "コラボガチャ": ("#C084FC", "コラボガチャ"),
     "コラボミッション": ("#F472B6", "コラボミッション"),
+    "ガチャ": ("#FBBF24", "ガチャ"),
     "育成キャンペーン": ("#34D399", "育成"),
+    "ゲーム内キャンペーン": ("#2DD4BF", "ゲーム内CP"),
     "マルチキャンペーン": ("#2DD4BF", "マルチCP"),
+    "ミッション": ("#F472B6", "ミッション"),
     "周年CP": ("#F59E0B", "周年CP"),
     "獣神化情報": ("#A78BFA", "獣神化"),
     "期限": ("#FB7185", "期限"),
@@ -30,14 +24,6 @@ CATEGORY_STYLES = {
 
 
 CATEGORY_ORDER = list(CATEGORY_STYLES)
-
-ARCHIVE_CP_ATTRIBUTE_COLORS = {
-    "火": "#E61919",
-    "水": "#168FE3",
-    "木": "#16A34A",
-    "光": "#E6D500",
-    "闇": "#7119B8",
-}
 
 
 EVENT_THEMES = {
@@ -140,13 +126,22 @@ def display_event_name(event):
     return label
 
 
-def event_boundary_times(event, week_start, week_end):
-    """Return start/end clock labels only when the true boundary is in this 7-day block."""
-    event_start_date = parse_date(event["start_date"])
-    event_end_date = parse_date(event["end_date"])
-    start_text = event.get("start_time", "") if week_start <= event_start_date <= week_end else ""
-    end_text = event.get("end_time", "") if week_start <= event_end_date <= week_end else ""
-    return start_text, end_text
+def event_time_text(event):
+    start_time = event.get("start_time", "")
+    end_time = event.get("end_time", "")
+    if not start_time and not end_time:
+        return "終日"
+
+    start_date = parse_date(event["start_date"])
+    end_date = parse_date(event["end_date"])
+    start_text = start_time or "0:00"
+    end_text = end_time or "23:59"
+    if start_date == end_date:
+        return f"{start_text}～{end_text}"
+    return (
+        f"{start_date.month}/{start_date.day} {start_text}～"
+        f"{end_date.month}/{end_date.day} {end_text}"
+    )
 
 
 def event_daily_labels(event):
@@ -186,19 +181,7 @@ def category_sort_key(event):
         category_index = CATEGORY_ORDER.index(event.get("category", ""))
     except ValueError:
         category_index = len(CATEGORY_ORDER)
-    # Events with per-day labels (e.g. archive campaigns) are always grouped
-    # directly below the date header. Normal events keep the existing
-    # category/start/end/name order beneath them.
-    daily_priority = 0 if event_daily_labels(event) else 1
-    if daily_priority == 0:
-        return (
-            0,
-            event.get("start_date", ""),
-            event.get("end_date", ""),
-            event.get("name", ""),
-        )
     return (
-        1,
         category_index,
         event.get("start_date", ""),
         event.get("end_date", ""),
@@ -256,7 +239,7 @@ def draw_emphasized_centered_text(draw, area, text, font, fill, stroke_fill):
     )
 
 
-def draw_week(draw, events, week_start, top, theme):
+def draw_week(draw, events, week_start, top, theme, link_regions=None):
     left = 38
     right = 1042
     timeline_left = 365
@@ -339,36 +322,78 @@ def draw_week(draw, events, week_start, top, theme):
             event.get("category", ""),
             ("#94A3B8", "その他"),
         )
-        # Confirmed event layout: category is shown only as a slim color stripe.
-        # Do not draw category text/badges in the left column.
-        stripe_left = left + 8
-        stripe_right = stripe_left + 8
-        # Category stripe is continuous vertically; no per-row gaps.
-        draw.rectangle(
-            (stripe_left, row_top, stripe_right, row_top + row_height),
-            fill=category_color,
+        badge_left = left + 10
+        badge_top = row_top + 18
+        badge_width = 92
+        badge_bottom = badge_top + 28
+        badge_fill = mix_color(category_color, row_fill, 0.27)
+        draw.rounded_rectangle(
+            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
+            radius=8,
+            fill=badge_fill,
+            outline=mix_color(category_color, row_fill, 0.70),
+            width=1,
+        )
+        badge_font = fit_font(
+            category_label,
+            maximum_size=14,
+            minimum_size=11,
+            maximum_width=badge_width - 10,
+            draw=draw,
+        )
+        draw_centered_text(
+            draw,
+            (badge_left, badge_top, badge_left + badge_width, badge_bottom),
+            category_label,
+            badge_font,
+            category_color,
         )
 
         label = display_event_name(event)
-        label_x = stripe_right + 12
-        # Smartphone readability: keep event names large enough to read after
-        # Streamlit scales the 1080px image down on a phone.
         label_font = fit_font(
             label,
-            maximum_size=27,
-            minimum_size=17,
-            maximum_width=timeline_left - label_x - 18,
+            maximum_size=22,
+            minimum_size=14,
+            maximum_width=timeline_left - (badge_left + badge_width) - 34,
             draw=draw,
         )
-        label_box = draw.textbbox((0, 0), label, font=label_font)
-        label_height = label_box[3] - label_box[1]
-        label_y = row_top + (row_height - label_height) / 2 - label_box[1] - 2
+        label_x = badge_left + badge_width + 12
         draw.text(
-            (label_x, label_y),
+            (label_x, row_top + 7),
             label,
             font=label_font,
             fill=theme["text"],
+            stroke_width=1,
+            stroke_fill=theme["text"],
         )
+        if link_regions is not None and event.get("source_url"):
+            # Coordinates are measured from the text actually drawn, not the data name.
+            bounds = draw.textbbox((label_x, row_top + 7), label, font=label_font, stroke_width=1)
+            x0 = max(label_x - 4, bounds[0] - 4)
+            y0 = max(row_top + 2, bounds[1] - 7)
+            x1 = min(timeline_left - 16, bounds[2] + 6)
+            y1 = min(row_bottom - 2, bounds[3] + 8)
+            if x1 > x0 and y1 > y0:
+                link_regions.append({
+                    "label": label,
+                    "url": event["source_url"],
+                    "bounds": (x0, y0, x1, y1),
+                })
+        time_text = event_time_text(event)
+        time_font = fit_font(
+            time_text,
+            maximum_size=14,
+            minimum_size=11,
+            maximum_width=timeline_left - label_x - 22,
+            draw=draw,
+        )
+        draw.text(
+            (label_x, row_top + 37),
+            time_text,
+            font=time_font,
+            fill=theme["sub_text"],
+        )
+
         week_start_datetime = datetime.combine(week_start, time.min)
         week_end_datetime = week_start_datetime + timedelta(days=7)
         event_start, event_end = event_datetimes(event)
@@ -411,81 +436,32 @@ def draw_week(draw, events, week_start, top, theme):
             )
 
         daily_labels = event_daily_labels(event)
+        daily_label_font = load_font(15)
         for offset in range(7):
             day = week_start + timedelta(days=offset)
             day_label = daily_labels.get(day)
-            attribute_color = ARCHIVE_CP_ATTRIBUTE_COLORS.get(day_label)
-            if not attribute_color:
+            if not day_label:
                 continue
-
             day_left = timeline_left + offset * column_width
             day_right = day_left + column_width
-            segment_left = max(bar_left, day_left)
-            segment_right = min(bar_right, day_right)
-            if segment_right - segment_left < 2:
+            label_left = max(bar_left, day_left) + 2
+            label_right = min(bar_right, day_right) - 2
+            if label_right - label_left < 18:
                 continue
-
-            # 書庫CPの日別表示は属性文字ではなく、属性色だけで表現する。
-            draw.rectangle(
-                (segment_left, bar_top, segment_right, bar_bottom),
-                fill=attribute_color,
+            draw_centered_text(
+                draw,
+                (label_left, bar_top, label_right, bar_bottom),
+                day_label,
+                daily_label_font,
+                "#FFFFFF",
             )
-
-        # Time labels belong to the bar edges. Dates are never printed here.
-        start_text, end_text = event_boundary_times(event, week_start, week_end)
-        # Keep boundary times legible on smartphones. No outline is used; the
-        # white text stays clean against the event bar.
-        time_font = load_font(18)
-        pad = 8
-        gap = 6
-        start_w = draw.textbbox((0, 0), start_text, font=time_font)[2] if start_text else 0
-        end_w = draw.textbbox((0, 0), end_text, font=time_font)[2] if end_text else 0
-        needed = start_w + end_w + pad * 2 + (gap if start_text and end_text else 0)
-        inside = (bar_right - bar_left) >= needed
-        time_box = draw.textbbox((0, 0), "00:00", font=time_font)
-        time_height = time_box[3] - time_box[1]
-        text_y = bar_top + (bar_bottom - bar_top - time_height) / 2 - time_box[1]
-        if start_text:
-            x = bar_left + pad if inside else max(timeline_left, bar_left - start_w - 5)
-            draw.text((x, text_y), start_text, font=time_font, fill="#FFFFFF")
-        if end_text:
-            x = bar_right - end_w - pad if inside else min(right - end_w, bar_right + 5)
-            draw.text((x, text_y), end_text, font=time_font, fill="#FFFFFF")
 
         row_top += row_height
 
     return row_top
 
 
-def draw_category_legend(draw, theme, top):
-    # Public legend mirrors the left category stripe colors.
-    entries = [
-        ("定期コンテンツ", "定期"),
-        ("コラボ", "コラボ"),
-        ("ガチャ", "ガチャ"),
-        ("ゲーム内キャンペーン", "ゲーム内CP"),
-        ("イベント", "イベント"),
-        ("ミッション", "ミッション"),
-        ("その他", "その他"),
-    ]
-    font = load_font(16)
-    gap = 14
-    bar_w = 9
-    widths = []
-    for key, label in entries:
-        box = draw.textbbox((0, 0), label, font=font)
-        widths.append(bar_w + 5 + (box[2] - box[0]))
-    total = sum(widths) + gap * (len(entries) - 1)
-    x = max(28, (1080 - total) / 2)
-    for (key, label), width in zip(entries, widths):
-        color = CATEGORY_STYLES[key][0]
-        draw.rectangle((x, top + 4, x + bar_w, top + 24), fill=color)
-        draw.text((x + bar_w + 5, top), label, font=font, fill=theme["header_text"])
-        x += width + gap
-    return top + 30
-
-
-def generate_event_image(events, design, start_date):
+def generate_event_image(events, design, start_date, link_regions=None):
     theme = EVENT_THEMES.get(design, EVENT_THEMES["ブルー"])
     events = sorted(events, key=category_sort_key)
     second_week = start_date + timedelta(days=7)
@@ -505,12 +481,12 @@ def generate_event_image(events, design, start_date):
 
     draw_vertical_gradient(
         draw,
-        (0, 0, width, 235),
+        (0, 0, width, 205),
         theme["header_top"],
         theme["header_bottom"],
     )
     draw.rectangle((0, 0, width, 4), fill=theme["accent"])
-    draw.rectangle((0, 231, width, 235), fill=theme["accent"])
+    draw.rectangle((0, 201, width, 205), fill=theme["accent"])
     draw_emphasized_centered_text(
         draw,
         (0, 25, width, 125),
@@ -524,17 +500,16 @@ def generate_event_image(events, design, start_date):
         f"{start_date.year}/{start_date.month}/{start_date.day}～"
         f"{end_date.month}/{end_date.day}"
     )
-    draw_category_legend(draw, theme, 118)
     draw_centered_text(
         draw,
-        (0, 157, width, 222),
+        (0, 125, width, 190),
         period,
         load_font(25),
         theme["header_sub_text"],
     )
 
-    first_bottom = draw_week(draw, events, start_date, 260, theme)
-    draw_week(draw, events, second_week, first_bottom + 32, theme)
+    first_bottom = draw_week(draw, events, start_date, 230, theme, link_regions)
+    draw_week(draw, events, second_week, first_bottom + 32, theme, link_regions)
 
     image_buffer = BytesIO()
     image.save(image_buffer, format="PNG")
