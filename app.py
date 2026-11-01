@@ -26,7 +26,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.23s"
+APP_VERSION = "v1.1.0-beta.9.24b"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -313,49 +313,50 @@ def latest_confirmation(items):
 
 
 def render_event_image_with_links(image_bytes, link_regions):
-    """Show the unchanged PNG with links positioned by its drawing coordinates."""
-    from io import BytesIO
+    """Render the unchanged PNG with responsive links over the text positions."""
     from PIL import Image
+    from io import BytesIO
 
     with Image.open(BytesIO(image_bytes)) as image:
-        image_width, image_height = image.size
+        width, height = image.size
     encoded = base64.b64encode(image_bytes).decode("ascii")
     links = []
     for region in link_regions:
         url = region.get("url", "")
         parsed = urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        if parsed.scheme not in ("https", "http") or not parsed.netloc:
             continue
-        left, top, right, bottom = region["bounds"]
-        if right <= left or bottom <= top:
-            continue
+        x0, y0, x1, y1 = region["bounds"]
         style = (
-            f"left:{left / image_width * 100:.6f}%;"
-            f"top:{top / image_height * 100:.6f}%;"
-            f"width:{(right - left) / image_width * 100:.6f}%;"
-            f"height:{(bottom - top) / image_height * 100:.6f}%;"
+            f"left:{100*x0/width:.6f}%;top:{100*y0/height:.6f}%;"
+            f"width:{100*(x1-x0)/width:.6f}%;"
+            f"height:{100*(y1-y0)/height:.6f}%;"
         )
+        label = html.escape(region.get("label", "イベント"), quote=True)
         safe_url = html.escape(url, quote=True)
-        safe_label = html.escape(region.get("label", "イベント"), quote=True)
         links.append(
-            f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer" '
-            f'aria-label="{safe_label} の公式ニュース" title="{safe_label} の公式ニュース" '
-            f'style="{style}"></a>'
+            f'<a class="hotspot" href="{safe_url}" target="_blank" '
+            f'rel="noopener noreferrer" aria-label="{label} の公式ニュース" '
+            f'title="{label} の公式ニュース" style="{style}"></a>'
         )
     markup = (
-        '<!doctype html><html><head><meta name="viewport" '
-        'content="width=device-width,initial-scale=1">'
-        '<style>html,body{margin:0;padding:0;overflow:hidden}'
-        '.image-wrap{position:relative;width:100%;line-height:0}'
-        '.image-wrap img{width:100%;height:auto;display:block}'
-        '.image-wrap a{position:absolute;display:block;cursor:pointer}'
-        '.image-wrap a:focus-visible{outline:3px solid #FFD54A}'
-        '</style></head><body><div class="image-wrap">'
+        '<!doctype html><html><head>'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<style>html,body{margin:0;padding:0;background:transparent;}'
+        '.frame{position:relative;width:100%;line-height:0;}'
+        '.frame img{display:block;width:100%;height:auto;}'
+        '.hotspot{position:absolute;display:block;cursor:pointer;line-height:normal;}'
+        '.hotspot:focus-visible{outline:3px solid #ffd54a;}</style>'
+        '</head><body><div class="frame">'
         f'<img src="data:image/png;base64,{encoded}" alt="イベントスケジュール">'
-        + "".join(links) + '</div></body></html>'
+        + "".join(links) + '</div>'
+        '<script>function resize(){const h=document.querySelector(".frame").getBoundingClientRect().height;'
+        'window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:Math.ceil(h)+4},"*");}'
+        'new ResizeObserver(resize).observe(document.querySelector(".frame"));'
+        'window.addEventListener("load",resize);resize();</script></body></html>'
     )
-    # Full native height avoids clipping even on a wide desktop display.
-    components.html(markup, height=image_height + 4, scrolling=False)
+    # Preserve the whole image in the component, even on narrow screens.
+    components.html(markup, height=height + 8, scrolling=False)
 
 
 def render_image_save_actions(image_buffer, file_name, caption, link_regions=None):
