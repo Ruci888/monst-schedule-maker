@@ -26,7 +26,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.24e"
+APP_VERSION = "v1.1.0-beta.9.24h"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -357,20 +357,19 @@ def render_event_image_with_links(image_bytes, link_regions):
             f'aria-label="{safe_label} の公式ニュース" title="{safe_label} の公式ニュース" '
             f'style="{style}"></a>'
         )
+    # st.html is rendered in Streamlit's document, not a fixed-height iframe.
+    # Its container naturally follows the responsive image height on iPhone.
     markup = (
-        '<!doctype html><html><head><meta name="viewport" '
-        'content="width=device-width,initial-scale=1">'
-        '<style>html,body{margin:0;padding:0;overflow:hidden}'
-        '.image-wrap{position:relative;width:100%;line-height:0}'
-        '.image-wrap img{width:100%;height:auto;display:block}'
-        '.image-wrap a{position:absolute;display:block;cursor:pointer}'
-        '.image-wrap a:focus-visible{outline:3px solid #FFD54A}'
-        '</style></head><body><div class="image-wrap">'
+        '<style>'
+        '.monst-event-image-wrap{position:relative;width:100%;line-height:0}'
+        '.monst-event-image-wrap img{width:100%;height:auto;display:block}'
+        '.monst-event-image-wrap a{position:absolute;display:block;cursor:pointer}'
+        '.monst-event-image-wrap a:focus-visible{outline:3px solid #FFD54A}'
+        '</style><div class="monst-event-image-wrap">'
         f'<img src="data:image/png;base64,{encoded}" alt="イベントスケジュール">'
-        + "".join(links) + '</div></body></html>'
+        + "".join(links) + '</div>'
     )
-    # Full native height avoids clipping even on a wide desktop display.
-    components.html(markup, height=image_height + 4, scrolling=False)
+    st.html(markup)
 
 
 def render_image_save_actions(image_buffer, file_name, caption, link_regions=None):
