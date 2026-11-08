@@ -26,7 +26,7 @@ from schedule_utils import (
 )
 
 
-APP_VERSION = "v1.1.0-beta.9.24e"
+APP_VERSION = "v1.1.0-beta.9.24f"
 
 SCHEDULE_MODE_FEATURED = "注目"
 SCHEDULE_MODE_NORMAL = "通常降臨・爆絶以下"
@@ -367,10 +367,10 @@ def render_event_image_with_links(image_bytes, link_regions):
         '.image-wrap a:focus-visible{outline:3px solid #FFD54A}'
         '</style></head><body><div class="image-wrap">'
         f'<img src="data:image/png;base64,{encoded}" alt="イベントスケジュール">'
-        + "".join(links) + '</div></body></html>'
+        + "".join(links) + "</div><script>\n(function () {\n  const wrap = document.querySelector('.image-wrap');\n  const image = wrap.querySelector('img');\n  let lastHeight = -1;\n  function resizeFrame() {\n    const height = Math.ceil(wrap.getBoundingClientRect().height) + 2;\n    if (height === lastHeight) return;\n    lastHeight = height;\n    window.parent.postMessage({\n      isStreamlitMessage: true,\n      type: 'streamlit:setFrameHeight',\n      height: height\n    }, '*');\n  }\n  if (window.ResizeObserver) {\n    new ResizeObserver(resizeFrame).observe(wrap);\n  }\n  window.addEventListener('resize', resizeFrame);\n  image.addEventListener('load', resizeFrame);\n  resizeFrame();\n})();\n</script></body></html>"
     )
-    # Full native height avoids clipping even on a wide desktop display.
-    components.html(markup, height=image_height + 4, scrolling=False)
+    # The embedded image reports its rendered height as the viewport changes.
+    components.html(markup, height=100, scrolling=False)
 
 
 def render_image_save_actions(image_buffer, file_name, caption, link_regions=None):
