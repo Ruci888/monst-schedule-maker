@@ -18728,5 +18728,23 @@
         "published": true,
         "created_at": "2026-11-01T01:06:39+00:00",
         "updated_at": "2026-11-01T01:12:25+00:00"
+    },
+    {
+        "quest_id": "quest_a41716b7e37626c7",
+        "name": "UボートVII型",
+        "name_reading": "ユーボート",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "極",
+        "category": "通常降臨",
+        "group_name": "",
+        "availability_type": "時間指定",
+        "period_end_date": "",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-11-12T03:26:30+00:00",
+        "updated_at": "2026-11-12T03:26:30+00:00"
     }
 ]
