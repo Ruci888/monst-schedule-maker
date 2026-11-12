@@ -2833,5 +2833,20 @@
         "source_url": "https://www.monster-strike.com/news/20261112_3.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "万物を帰するカルコサの塊従者 ウボ＝サスラ",
+        "short_name": "ウボ＝サスラ、獣神化・改",
+        "category": "その他",
+        "start_date": "2026-11-17",
+        "end_date": "2026-11-17",
+        "start_time": "12:00",
+        "end_time": "12:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261112_5.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
