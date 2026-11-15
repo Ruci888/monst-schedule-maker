@@ -1,1 +1,23 @@
-[]
+[
+    {
+        "year": 2026,
+        "date": "11/17",
+        "start_time": "19:00",
+        "end_time": "11:59",
+        "name": "オルステッド",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "超究極",
+        "category": "コラボ",
+        "group_name": "無職転生コラボ",
+        "availability_type": "期間中常設",
+        "period_end_date": "2026-12-01",
+        "source_type": "official",
+        "source_url": "https://www.monster-strike.com/news/20261112_2.html",
+        "fetched_at": "2026-11-15T18:55:19+09:00",
+        "period_label": "出現期間",
+        "review_status": "needs_review",
+        "review_reason": "公式記事の「出現期間」から降臨候補を抽出しました。 クエスト名を確認してください。",
+        "published": false
+    }
+]
