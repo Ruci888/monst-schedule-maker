@@ -18836,5 +18836,23 @@
         "published": true,
         "created_at": "2026-11-15T10:00:31+00:00",
         "updated_at": "2026-11-15T10:03:58+00:00"
+    },
+    {
+        "quest_id": "quest_dc2042722fd0921d",
+        "name": "オルステッド",
+        "name_reading": "",
+        "quest_name": "",
+        "attribute": "闇",
+        "difficulty": "超究極",
+        "category": "コラボ",
+        "group_name": "無職転生",
+        "availability_type": "時間指定",
+        "period_end_date": "2026-12-02",
+        "source_type": "manual",
+        "source_url": "",
+        "image_references": [],
+        "published": true,
+        "created_at": "2026-11-15T10:05:03+00:00",
+        "updated_at": "2026-11-15T10:05:03+00:00"
     }
 ]
