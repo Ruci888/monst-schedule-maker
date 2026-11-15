@@ -18846,14 +18846,14 @@
         "difficulty": "超究極",
         "category": "コラボ",
         "group_name": "無職転生",
-        "availability_type": "時間指定",
+        "availability_type": "期間中常設",
         "period_end_date": "2026-12-02",
         "source_type": "manual",
         "source_url": "",
         "image_references": [],
         "published": true,
         "created_at": "2026-11-15T10:05:03+00:00",
-        "updated_at": "2026-11-15T10:05:03+00:00"
+        "updated_at": "2026-11-15T10:06:37+00:00"
     },
     {
         "quest_id": "quest_b8f4ad2b3c07abb0",
