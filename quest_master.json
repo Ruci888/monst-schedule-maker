@@ -12611,7 +12611,7 @@
     },
     {
         "quest_id": "quest_3c42eccfc433e286",
-        "name": "フシャスラ",
+        "name": "フシャスラ・ワルヤ",
         "name_reading": "",
         "quest_name": "",
         "attribute": "木",
@@ -12625,7 +12625,7 @@
         "image_references": [],
         "published": true,
         "created_at": "2026-09-13T09:57:30+00:00",
-        "updated_at": "2026-09-13T09:57:30+00:00"
+        "updated_at": "2026-11-19T13:13:37+00:00"
     },
     {
         "quest_id": "quest_721148e5c6542ff7",
