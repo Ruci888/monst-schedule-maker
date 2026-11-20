@@ -2923,5 +2923,50 @@
         "source_url": "https://www.monster-strike.com/news/20261118_1.html",
         "confirmed_at": "",
         "published": true
+    },
+    {
+        "name": "▼メンテナンス実施日程",
+        "short_name": "メンテナンス",
+        "category": "その他",
+        "start_date": "2026-11-25",
+        "end_date": "2026-11-25",
+        "start_time": "00:00",
+        "end_time": "5:00",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261120_3.html",
+        "confirmed_at": "",
+        "published": true
+    },
+    {
+        "name": "11月21日（土）12:00より、ガチャ「水の遊宴」を開催！",
+        "short_name": "水の遊宴",
+        "category": "ガチャ",
+        "start_date": "2026-11-21",
+        "end_date": "2026-11-23",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261120_1.html",
+        "confirmed_at": "",
+        "published": true
+    },
+    {
+        "name": "11月23日（月）12:00より、ガチャ「RED STARS」を開催！",
+        "short_name": "RED STARS",
+        "category": "ガチャ",
+        "start_date": "2026-11-23",
+        "end_date": "2026-11-25",
+        "start_time": "12:00",
+        "end_time": "11:59",
+        "daily_labels": "",
+        "description": "",
+        "source_type": "manual",
+        "source_url": "https://www.monster-strike.com/news/20261120_2.html",
+        "confirmed_at": "",
+        "published": true
     }
 ]
